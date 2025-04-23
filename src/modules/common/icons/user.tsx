@@ -1,6 +1,6 @@
-import React from "react"
-
-import { IconProps } from "types/icon"
+// @modules/common/icons/user.tsx
+import React from "react";
+import { IconProps } from "types/icon";
 
 const User: React.FC<IconProps> = ({
   size = "16",
@@ -9,8 +9,6 @@ const User: React.FC<IconProps> = ({
 }) => {
   return (
     <svg
-      width={size}
-      height={size}
       viewBox="0 0 20 20"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +29,7 @@ const User: React.FC<IconProps> = ({
         strokeLinejoin="round"
       />
     </svg>
-  )
-}
+  );
+};
 
-export default User
+export default User;

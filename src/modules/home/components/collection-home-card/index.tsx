@@ -1,8 +1,7 @@
-// src/modules/home/components/collection-home-card/index.tsx
-import { StoreCollection } from "@medusajs/types";
+// src/modules/home/components/home-collection-card/index.tsx (assumed to match legacy)
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import Image from "next/image";
-import Text from "@modules/common/components/text";
+import Text from "@modules/common/components/text"; // Adjust path if needed
 import { useTranslation } from "react-i18next";
 import cn from "classnames";
 
@@ -10,7 +9,12 @@ interface Props {
   imgWidth?: number;
   imgHeight?: number;
   variant?: "default" | "modern" | "trendy" | "full";
-  collection: StoreCollection;
+  collection: {
+    slug: string;
+    image: string;
+    title: string;
+    description?: string;
+  };
 }
 
 const HomeCollectionCard: React.FC<Props> = ({
@@ -20,14 +24,13 @@ const HomeCollectionCard: React.FC<Props> = ({
   variant = "default",
 }) => {
   const { t } = useTranslation("common");
-  const { handle, title } = collection;
-  const image = collection.metadata?.image as string | undefined;
+  const { slug, image, title } = collection;
 
   const isFull = variant === "full";
 
   return (
     <LocalizedClientLink
-      href={`/collections/${handle}`}
+      href={slug}
       className={cn(
         "group text-center flex flex-col overflow-hidden rounded-md pb-4 sm:pb-0",
         {
@@ -39,7 +42,7 @@ const HomeCollectionCard: React.FC<Props> = ({
       <div className={cn("relative", isFull ? "" : "mx-auto")}>
         <Image
           src={image ?? "/assets/placeholder/collection.svg"}
-          alt={title || t("text-card-thumbnail")}
+          alt={t("title") || t("text-card-thumbnail")}
           width={imgWidth}
           height={imgHeight}
           className={cn(
@@ -61,7 +64,7 @@ const HomeCollectionCard: React.FC<Props> = ({
           variant="heading"
           className="mb-1.5 lg:mb-2.5 2xl:mb-3 3xl:mb-3.5 font-normal text-base collection-title"
         >
-          {title}
+          {t(title)}
         </Text>
         <Text className="btn-home-collection max-w-[130px] min-w-[90px] tracking-[0.3em] border text-xs mx-auto my-0 px-3.5 py-2 border-solid border-[#e8e8eb]">
           {t("text-shop-now")}

@@ -1,8 +1,9 @@
 // src/modules/home/components/sale-banner-grid/index.tsx
+"use client";
 import BannerCard from "@modules/home/components/banner-card";
 import Carousel from "@modules/common/components/carousel";
 import { SwiperSlide } from "swiper/react";
-import { saleBannerGrid } from "@lib/data/banners";
+import { saleBannerGrid } from "@lib/data/home-banner";
 
 interface BannerProps {
   className?: string;
@@ -13,15 +14,22 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
   className = "mb-12 lg:mb-14 xl:mb-16 lg:pb-1 xl:pb-0",
   limit = 4,
 }) => {
+  // Debug: Log the data to ensure it's loaded
+  console.log("SaleBannerGrid: Data:", saleBannerGrid);
+
+  // If no data, render a fallback message
+  if (!saleBannerGrid || saleBannerGrid.length === 0) {
+    return <div>No banners available.</div>;
+  }
+
   return (
     <div className={className}>
+      {/* Mobile: Carousel */}
       <div className="md:hidden">
         <Carousel
           breakpoints={{
             "0": { slidesPerView: 1, spaceBetween: 12 },
             "480": { slidesPerView: 1, spaceBetween: 12 },
-            "768": { slidesPerView: 3, spaceBetween: 20 },
-            "1025": { slidesPerView: 3, spaceBetween: 28 },
           }}
           autoplay={{ delay: 5000 }}
           prevActivateId="saleBannerPrev"
@@ -35,6 +43,7 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
                 href={`/collections/${banner.slug}`}
                 className="h-full"
                 effectActive
+                showButton={false}
                 classNameInner="aspect-[2/1]"
               />
             </SwiperSlide>
@@ -42,7 +51,9 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
         </Carousel>
       </div>
 
+      {/* Desktop: Unequal banners */}
       <div className="hidden md:grid grid-cols-2 gap-5 xl:gap-7">
+        {/* First banner (larger, left column) */}
         <div>
           {saleBannerGrid[0] && (
             <BannerCard
@@ -56,7 +67,8 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-2 grid-rows-2 gap-5">
+        {/* Right column: 2x2 grid for remaining banners */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-5 xl:gap-7">
           {saleBannerGrid.slice(1, 3).map((banner: any) => (
             <BannerCard
               key={banner.id}

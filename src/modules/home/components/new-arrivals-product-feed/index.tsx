@@ -1,4 +1,5 @@
 // src/modules/home/components/new-arrivals-product-feed/index.tsx
+"use client";
 import React from "react";
 import Carousel from "@modules/common/components/carousel";
 import ProductCard from "@modules/products/components/product-card";

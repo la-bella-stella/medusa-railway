@@ -1,10 +1,12 @@
 // src/modules/common/components/carousel/index.tsx
+"use client";
+
 import React, { useRef } from "react";
 import { Swiper } from "swiper/react";
-import { useRouter } from "next/router";
+import { useParams } from "next/navigation"; // Use App Router API
 import { Navigation, Pagination, Scrollbar, Autoplay } from "swiper/modules";
 import "swiper/css";
-import { getDirection } from "@lib/util/get-direction"; // Updated path
+import { getDirection } from "@lib/util/get-direction";
 import CarouselNavigation from "@modules/common/components/carousel-navigation";
 
 type CarouselPropsType = {
@@ -26,7 +28,7 @@ type CarouselPropsType = {
   children: React.ReactNode;
 };
 
-const Carousel: React.FunctionComponent<CarouselPropsType> = ({
+const Carousel: React.FC<CarouselPropsType> = ({
   children,
   className = "",
   prevActivateId = "",
@@ -41,8 +43,8 @@ const Carousel: React.FunctionComponent<CarouselPropsType> = ({
   showNavigation = true,
   ...props
 }) => {
-  const { locale } = useRouter();
-  const dir = getDirection(locale);
+  const { locale } = useParams(); // Get locale from URL params (e.g., /en/...)
+  const dir = getDirection(locale as string || "en");
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
 

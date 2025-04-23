@@ -2,6 +2,12 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@layer base {
+  html, body {
+    @apply antialiased text-base font-sans;
+  }
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -46,6 +52,14 @@
   input[type="search"]::-webkit-search-results-button,
   input[type="search"]::-webkit-search-results-decoration {
     -webkit-appearance: none;
+  }
+
+  .text-heading {
+    @apply text-gray-900; /* Matches legacy black color */
+  }
+
+  .text-body {
+    @apply text-gray-600; /* Matches legacy dark gray color */
   }
 }
 
@@ -109,4 +123,103 @@
   .text-3xl-semi {
     @apply text-[32px] leading-[44px] font-semibold;
   }
+
+  .headerMenu .menuItem:hover > a > span {
+    @apply w-full;
+  }
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.animate-shine {
+  animation: shine 1s ease-in-out;
+}
+
+.collection-title {
+  color: #000;
+}
+
+.btn-home-collection {
+  background-color: #fff;
+  color: #000;
+  text-transform: uppercase;
+}
+
+#siteHeader .innerSticky {
+  overflow: visible !important;
+}
+
+#siteHeader .innerSticky > div {
+  overflow: visible !important;
+}
+
+#siteHeader .flex.items-center.justify-between {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+#siteHeader .flex.items-center.justify-between > div {
+  flex-shrink: 0;
+}
+
+#siteHeader .absolute.left-1\/2.-translate-x-1\/2 {
+  max-width: 150px;
+  text-align: center;
+}
+
+/* Ensure top row elements are visible */
+#siteHeader .flex.items-center.space-x-4 > * {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#siteHeader .flex.items-center.space-x-4 svg {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure LocalizedClientLink and its children are visible */
+#siteHeader .flex.items-center.justify-center {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* styles/globals.css */
+.cart-drawer-main {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-scrollbar {
+  flex-grow: 1;
+  width: 100%;
+}
+
+.bg-heading {
+  background-color: #000 !important; /* Ensure black background for buttons */
+}
+
+.text-heading {
+  color: #000 !important; /* Ensure black text for headings */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
