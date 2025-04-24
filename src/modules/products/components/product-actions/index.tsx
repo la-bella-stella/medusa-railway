@@ -1,5 +1,7 @@
+// src/modules/products/components/product-actions.tsx
 "use client"
 
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { addToCart } from "@lib/data/cart"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
@@ -7,9 +9,11 @@ import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { isEqual } from "lodash"
-import { useParams } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
-import ProductPrice from "../product-price"
+import { useParams, useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
+import { toast } from "react-toastify"
+import useWindowSize from "react-use/lib/useWindowSize"
+import Counter from "@modules/common/components/counter"
 import MobileActions from "./mobile-actions"
 
 type ProductActionsProps = {
@@ -29,13 +33,17 @@ const optionsAsKeymap = (
 
 export default function ProductActions({
   product,
+  region,
   disabled,
 }: ProductActionsProps) {
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
-  const [isAdding, setIsAdding] = useState(false)
+  const { t } = useTranslation("common")
+  const { width } = useWindowSize()
   const countryCode = useParams().countryCode as string
+  const router = useRouter()
+  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
 
-  // If there is only 1 variant, preselect the options
   useEffect(() => {
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
@@ -54,7 +62,6 @@ export default function ProductActions({
     })
   }, [product.variants, options])
 
-  // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((prev) => ({
       ...prev,
@@ -62,7 +69,6 @@ export default function ProductActions({
     }))
   }
 
-  //check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
     return product.variants?.some((v) => {
       const variantOptions = optionsAsKeymap(v.options)
@@ -70,19 +76,15 @@ export default function ProductActions({
     })
   }, [product.variants, options])
 
-  // check if the selected variant is in stock
   const inStock = useMemo(() => {
-    // If we don't manage inventory, we can always add to cart
     if (selectedVariant && !selectedVariant.manage_inventory) {
       return true
     }
 
-    // If we allow back orders on the variant, we can add to cart
     if (selectedVariant?.allow_backorder) {
       return true
     }
 
-    // If there is inventory available, we can add to cart
     if (
       selectedVariant?.manage_inventory &&
       (selectedVariant?.inventory_quantity || 0) > 0
@@ -90,27 +92,37 @@ export default function ProductActions({
       return true
     }
 
-    // Otherwise, we can't add to cart
     return false
   }, [selectedVariant])
 
   const actionsRef = useRef<HTMLDivElement>(null)
-
   const inView = useIntersection(actionsRef, "0px")
 
-  // add the selected variant to the cart
   const handleAddToCart = async () => {
-    if (!selectedVariant?.id) return null
+    if (!selectedVariant?.id) return
 
     setIsAdding(true)
 
     await addToCart({
       variantId: selectedVariant.id,
-      quantity: 1,
+      quantity: quantity,
       countryCode,
     })
 
     setIsAdding(false)
+
+    router.refresh()
+
+    toast(t("add-to-cart"), {
+      theme: "dark",
+      progressClassName: "fancy-progress-bar",
+      position: width > 768 ? "bottom-left" : "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    })
   }
 
   return (
@@ -118,7 +130,7 @@ export default function ProductActions({
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
         <div>
           {(product.variants?.length ?? 0) > 1 && (
-            <div className="flex flex-col gap-y-4">
+            <div className="flex flex-col gap-y-4 pb-3 border-b border-gray-300 pt-7">
               {(product.options || []).map((option) => {
                 return (
                   <div key={option.id}>
@@ -138,28 +150,44 @@ export default function ProductActions({
           )}
         </div>
 
-        <ProductPrice product={product} variant={selectedVariant} />
+        <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
+          <Counter
+            quantity={quantity}
+            onIncrement={() => setQuantity((prev) => prev + 1)}
+            onDecrement={() =>
+              setQuantity((prev) => (prev !== 1 ? prev - 1 : 1))
+            }
+            disableDecrement={quantity === 1 || !inStock}
+            disableIncrement={
+              !inStock ||
+              (selectedVariant?.inventory_quantity !== undefined &&
+                quantity >= selectedVariant.inventory_quantity)
+            }
+          />
+          <Button
+            onClick={handleAddToCart}
+            disabled={
+              !inStock || !selectedVariant || !!disabled || isAdding || !isValidVariant
+            }
+            variant="primary"
+            className={`w-full md:w-6/12 xl:w-full h-11 ${
+              !inStock || !isValidVariant || !selectedVariant
+                ? "bg-gray-400 hover:bg-gray-400"
+                : "bg-black hover:bg-gray-800"
+            } text-white py-2 px-4 rounded-none`}
+            isLoading={isAdding}
+            data-testid="add-product-button"
+          >
+            <span className="py-2 3xl:px-8">
+              {!selectedVariant && !Object.keys(options).length
+                ? "Select variant"
+                : !inStock || !isValidVariant
+                ? "Out of stock"
+                : "Add to cart"}
+            </span>
+          </Button>
+        </div>
 
-        <Button
-          onClick={handleAddToCart}
-          disabled={
-            !inStock ||
-            !selectedVariant ||
-            !!disabled ||
-            isAdding ||
-            !isValidVariant
-          }
-          variant="primary"
-          className="w-full h-10"
-          isLoading={isAdding}
-          data-testid="add-product-button"
-        >
-          {!selectedVariant && !options
-            ? "Select variant"
-            : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
-        </Button>
         <MobileActions
           product={product}
           variant={selectedVariant}

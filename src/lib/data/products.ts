@@ -13,6 +13,10 @@ export type ListProductsParams = {
   pageParam?: number;
   queryParams?: HttpTypes.FindParams &
     HttpTypes.StoreProductParams & {
+      /** Filter by product handle (server-side) */
+      handle?: string;
+      /** Filter by product IDs (server-side) */
+      id?: string[];
       /** Filter by product tag IDs (server-side) */
       tag_id?: string[];
       /** Filter by creation date (e.g., created within the last 30 days) */
@@ -81,7 +85,8 @@ export async function listProducts({
   const headers = await getAuthHeaders();
   const next = await getCacheOptions("products");
 
-  const query = {
+  // Use a flexible type to allow dynamic keys like tag_id[] and id[]
+  const query: { [key: string]: any } = {
     limit,
     offset,
     region_id: region.id,
@@ -90,6 +95,17 @@ export async function listProducts({
       queryParams.fields ??
       "*variants.calculated_price,+variants.inventory_quantity,+metadata,+tags",
   };
+
+  // Transform tag_id and id if present
+  if (query.tag_id && Array.isArray(query.tag_id)) {
+    query["tag_id[]"] = query.tag_id;
+    delete query.tag_id;
+  }
+  if (query.id && Array.isArray(query.id)) {
+    query["id[]"] = query.id;
+    delete query.id;
+  }
+
   console.log("Fetching products with query:", JSON.stringify(query, null, 2));
 
   try {
@@ -107,19 +123,9 @@ export async function listProducts({
       }
     );
 
-    console.log(
-      "Fetched products:",
-      response.products.length,
-      "Count:",
-      response.count
-    );
-    if (query.tag_id) {
-      console.log(
-        "Products with tag",
-        query.tag_id,
-        ":",
-        JSON.stringify(response.products, null, 2)
-      );
+    console.log("Fetched products:", response.products.length, "Count:", response.count);
+    if (queryParams.tag_id) {
+      console.log("Products with tag", queryParams.tag_id, ":", JSON.stringify(response.products, null, 2));
     }
 
     return {
@@ -136,9 +142,7 @@ export async function listProducts({
     };
     console.error("Failed to fetch products:", JSON.stringify(errorDetails, null, 2));
     throw new Error(
-      `Failed to fetch products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(
-        errorDetails.data
-      )}`
+      `Failed to fetch products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(errorDetails.data)}`
     );
   }
 }
@@ -190,14 +194,9 @@ export async function listProductsWithSort({
       data: e.response?.data || {},
       stack: e.stack,
     };
-    console.error(
-      "Failed to fetch sorted products:",
-      JSON.stringify(errorDetails, null, 2)
-    );
+    console.error("Failed to fetch sorted products:", JSON.stringify(errorDetails, null, 2));
     throw new Error(
-      `Failed to fetch sorted products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(
-        errorDetails.data
-      )}`
+      `Failed to fetch sorted products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(errorDetails.data)}`
     );
   }
 }

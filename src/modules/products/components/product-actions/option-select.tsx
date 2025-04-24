@@ -1,6 +1,9 @@
+// src/modules/products/components/product-actions/option-select.tsx
+"use client"
+
+import React from "react"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
-import React from "react"
 
 type OptionSelectProps = {
   option: HttpTypes.StoreProductOption
@@ -16,38 +19,38 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
   current,
   updateOption,
   title,
-  "data-testid": dataTestId,
   disabled,
+  "data-testid": dataTestId,
 }) => {
   const filteredOptions = (option.values ?? []).map((v) => v.value)
+  const isColor = title.toLowerCase() === "color"
 
   return (
     <div className="flex flex-col gap-y-3">
-      <span className="text-sm">Select {title}</span>
-      <div
-        className="flex flex-wrap justify-between gap-2"
-        data-testid={dataTestId}
-      >
-        {filteredOptions.map((v) => {
-          return (
-            <button
-              onClick={() => updateOption(option.id, v)}
-              key={v}
-              className={clx(
-                "border-ui-border-base bg-ui-bg-subtle border text-small-regular h-10 rounded-rounded p-2 flex-1 ",
-                {
-                  "border-ui-border-interactive": v === current,
-                  "hover:shadow-elevation-card-rest transition-shadow ease-in-out duration-150":
-                    v !== current,
-                }
-              )}
-              disabled={disabled}
-              data-testid="option-button"
-            >
-              {v}
-            </button>
-          )
-        })}
+      <span className="text-sm font-semibold text-gray-900">Select {title}</span>
+      <div className="flex space-x-2" data-testid={dataTestId}>
+        {filteredOptions.map((v) => (
+          <button
+            key={v}
+            onClick={() => updateOption(option.id, v)}
+            className={clx(
+              "border border-gray-300 flex items-center justify-center",
+              {
+                "border-gray-900": v === current,
+                "hover:border-gray-900 transition-colors ease-in-out duration-150":
+                  v !== current && !disabled,
+                "opacity-50 cursor-not-allowed": disabled,
+                "w-6 h-6": isColor, // Smaller square for color
+                "w-8 h-8 text-sm": !isColor, // Larger square for size
+              }
+            )}
+            style={isColor ? { backgroundColor: v } : {}}
+            disabled={disabled}
+            data-testid="option-button"
+          >
+            {!isColor && v}
+          </button>
+        ))}
       </div>
     </div>
   )

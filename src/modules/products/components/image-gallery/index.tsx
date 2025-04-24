@@ -1,41 +1,148 @@
-import { HttpTypes } from "@medusajs/types"
-import { Container } from "@medusajs/ui"
-import Image from "next/image"
+// src/modules/products/components/image-gallery.tsx
+import React, { useState, useRef, useEffect } from "react";
+import { HttpTypes } from "@medusajs/types";
+import Image from "next/image";
+import Carousel from "@modules/common/components/carousel";
+import { SwiperSlide } from "swiper/react";
+import useWindowSize from "react-use/lib/useWindowSize";
+
+const productGalleryCarouselResponsive = {
+  "768": {
+    slidesPerView: 2,
+    spaceBetween: 12,
+  },
+  "0": {
+    slidesPerView: 1,
+  },
+};
 
 type ImageGalleryProps = {
-  images: HttpTypes.StoreProductImage[]
-}
+  images: HttpTypes.StoreProductImage[];
+};
 
-const ImageGallery = ({ images }: ImageGalleryProps) => {
-  return (
-    <div className="flex items-start relative">
-      <div className="flex flex-col flex-1 small:mx-16 gap-y-4">
-        {images.map((image, index) => {
-          return (
-            <Container
-              key={image.id}
-              className="relative aspect-[29/34] w-full overflow-hidden bg-ui-bg-subtle"
-              id={image.id}
-            >
-              {!!image.url && (
-                <Image
-                  src={image.url}
-                  priority={index <= 2 ? true : false}
-                  className="absolute inset-0 rounded-rounded"
-                  alt={`Product image ${index + 1}`}
-                  fill
-                  sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
-                  style={{
-                    objectFit: "cover",
-                  }}
-                />
-              )}
-            </Container>
-          )
-        })}
+const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
+  const { width } = useWindowSize();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [imgErrorIndex, setImgErrorIndex] = useState<Record<number, boolean>>({});
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    if (itemRefs.current[activeIndex]) {
+      itemRefs.current[activeIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [activeIndex]);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="flex justify-center transition duration-150 ease-in hover:opacity-90">
+        <div className="w-full max-w-[475px] aspect-[3/4] relative">
+          <Image
+            src="/assets/placeholder/products/product-gallery.svg"
+            alt="Default product image"
+            fill
+            className="object-cover"
+          />
+        </div>
       </div>
-    </div>
-  )
-}
+    );
+  }
 
-export default ImageGallery
+  return (
+    <>
+      {width < 1025 ? (
+        <Carousel
+          pagination={{ clickable: true }}
+          breakpoints={productGalleryCarouselResponsive}
+          className="product-gallery"
+          buttonClassName="hidden"
+        >
+          {images.map((item, index) => (
+            <SwiperSlide key={`product-gallery-key-${index}`}>
+              <div className="col-span-1 transition duration-150 ease-in hover:opacity-90">
+                <Image
+                  loading="lazy"
+                  src={
+                    imgErrorIndex[index]
+                      ? "/assets/placeholder/products/product-gallery.svg"
+                      : item.url ?? "/assets/placeholder/products/product-gallery.svg"
+                  }
+                  onError={() =>
+                    setImgErrorIndex((prev) => ({ ...prev, [index]: true }))
+                  }
+                  alt={`Product image ${index}`}
+                  layout="responsive"
+                  objectFit="contain"
+                  className="w-full"
+                  width={580}
+                  height={580}
+                />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Carousel>
+      ) : (
+        <div className="grid grid-cols-5 gap-2.5">
+          <div className="col-span-1 relative">
+            <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[580px] pr-1">
+              {images.map((item, index) => (
+                <div
+                  key={index}
+                  ref={(el) => {
+                    itemRefs.current[index] = el; // No return value, returns void
+                  }}
+                  className={`cursor-pointer transition duration-150 ease-in hover:opacity-90 ${
+                    index === activeIndex ? "active-slider-img" : ""
+                  }`}
+                  onClick={() => setActiveIndex(index)}
+                >
+                  <Image
+                    loading="lazy"
+                    src={
+                      imgErrorIndex[index]
+                        ? "/assets/placeholder/products/product-gallery.svg"
+                        : item.url ?? "/assets/placeholder/products/product-gallery.svg"
+                    }
+                    onError={() =>
+                      setImgErrorIndex((prev) => ({ ...prev, [index]: true }))
+                    }
+                    alt={`Product thumbnail ${index}`}
+                    layout="responsive"
+                    width={580}
+                    height={580}
+                    objectFit="contain"
+                    className="h-full w-full product-thumbnail"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="col-span-4">
+            <Image
+              loading="lazy"
+              src={
+                imgErrorIndex[activeIndex]
+                  ? "/assets/placeholder/products/product-gallery.svg"
+                  : images[activeIndex]?.url ??
+                    "/assets/placeholder/products/product-gallery.svg"
+              }
+              onError={() =>
+                setImgErrorIndex((prev) => ({ ...prev, [activeIndex]: true }))
+              }
+              alt={`Product main image`}
+              layout="responsive"
+              objectFit="contain"
+              height={580}
+              width={580}
+              className="h-full w-full product-main-image"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default ImageGallery;

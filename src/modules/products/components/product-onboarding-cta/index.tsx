@@ -1,13 +1,23 @@
-import { Button, Container, Text } from "@medusajs/ui"
-import { cookies as nextCookies } from "next/headers"
+// src/modules/products/components/product-onboarding-cta/index.tsx
+"use client"; // Mark as a Client Component
+import React from "react";
+import { Button, Container, Text } from "@medusajs/ui";
 
-async function ProductOnboardingCta() {
-  const cookies = await nextCookies()
+// Utility function to get a cookie by name (client-side)
+const getCookie = (name: string): string | undefined => {
+  if (typeof window === "undefined") return undefined; // Avoid running on the server
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+  return undefined;
+};
 
-  const isOnboarding = cookies.get("_medusa_onboarding")?.value === "true"
+function ProductOnboardingCta() {
+  // Fetch the cookie client-side
+  const isOnboarding = getCookie("_medusa_onboarding") === "true";
 
   if (!isOnboarding) {
-    return null
+    return null;
   }
 
   return (
@@ -24,7 +34,7 @@ async function ProductOnboardingCta() {
         </a>
       </div>
     </Container>
-  )
+  );
 }
 
-export default ProductOnboardingCta
+export default ProductOnboardingCta;

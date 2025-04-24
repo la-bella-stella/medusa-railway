@@ -1,22 +1,19 @@
-import { listProducts } from "@lib/data/products"
+// src/modules/products/templates/product-actions-wrapper/index.tsx
+"use client"
+
 import { HttpTypes } from "@medusajs/types"
 import ProductActions from "@modules/products/components/product-actions"
 
 /**
- * Fetches real time pricing for a product and renders the product actions component.
+ * Renders the product actions component with pre-fetched product data.
  */
-export default async function ProductActionsWrapper({
-  id,
+export default function ProductActionsWrapper({
+  product,
   region,
 }: {
-  id: string
+  product: HttpTypes.StoreProduct | null
   region: HttpTypes.StoreRegion
 }) {
-  const product = await listProducts({
-    queryParams: { id: [id] },
-    regionId: region.id,
-  }).then(({ response }) => response.products[0])
-
   if (!product) {
     return null
   }

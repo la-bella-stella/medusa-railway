@@ -1,38 +1,30 @@
+// src/modules/products/templates/product-info.tsx
+import React from "react"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@medusajs/ui"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ProductPrice from "@modules/products/components/product-price"
 
 type ProductInfoProps = {
-  product: HttpTypes.StoreProduct
+  product: HttpTypes.StoreProduct & { 
+    brand?: { name: string }
+    type?: HttpTypes.StoreProductType | null
+  }
 }
 
-const ProductInfo = ({ product }: ProductInfoProps) => {
-  return (
-    <div id="product-info">
-      <div className="flex flex-col gap-y-4 lg:max-w-[500px] mx-auto">
-        {product.collection && (
-          <LocalizedClientLink
-            href={`/collections/${product.collection.handle}`}
-            className="text-medium text-ui-fg-muted hover:text-ui-fg-subtle"
-          >
-            {product.collection.title}
-          </LocalizedClientLink>
-        )}
-        <Heading
-          level="h2"
-          className="text-3xl leading-10 text-ui-fg-base"
-          data-testid="product-title"
-        >
-          {product.title}
-        </Heading>
+const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
+  // Safely access brand or type, without a fallback
+  const brandName = product.brand?.name || product.type?.value || null
 
-        <Text
-          className="text-medium text-ui-fg-subtle whitespace-pre-line"
-          data-testid="product-description"
-        >
-          {product.description}
-        </Text>
-      </div>
+  return (
+    <div>
+      {brandName && (
+        <h1 className="text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold text-heading hover:text-black mb-3.5">
+          {brandName}
+        </h1>
+      )}
+      <h2 className="text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold text-heading hover:text-black mb-3.5">
+        {product.title}
+      </h2>
+      <ProductPrice product={product} variant={product.variants?.[0]} />
     </div>
   )
 }
