@@ -1,9 +1,11 @@
 // src/modules/home/components/banner-card/index.tsx
+"use client";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import Image from "next/image";
 import type { FC } from "react";
 import cn from "classnames";
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 
 interface BannerProps {
   data: any;
@@ -28,7 +30,21 @@ const BannerCard: FC<BannerProps> = ({
   const { title, image } = data || {};
   const mobileImageUrl = image?.mobile?.url || "/assets/placeholder/collection.svg";
   const desktopImageUrl = image?.desktop?.url || "/assets/placeholder/collection.svg";
-  const bannerTitle = title || t("text-banner-thumbnail");
+  const bannerTitleDefault = title || "text-banner-thumbnail";
+  const altTextDefault = "text-card-thumbnail";
+  const buttonTextDefault = "text-shop-now";
+
+  // Use state to defer translation resolution to client-side
+  const [bannerTitle, setBannerTitle] = useState(bannerTitleDefault);
+  const [altText, setAltText] = useState(altTextDefault);
+  const [buttonText, setButtonText] = useState(buttonTextDefault);
+
+  useEffect(() => {
+    // Resolve translations only on the client
+    setBannerTitle(title || t("text-banner-thumbnail"));
+    setAltText(t("text-card-thumbnail"));
+    setButtonText(t("text-shop-now"));
+  }, [t, title]);
 
   return (
     <div className={cn("mx-auto w-full rounded-md shadow-sm overflow-hidden", className)}>
@@ -42,7 +58,7 @@ const BannerCard: FC<BannerProps> = ({
         <Image
           src={mobileImageUrl}
           fill
-          alt={bannerTitle}
+          alt={altText}
           quality={100}
           className={cn("bg-gray-300 object-cover w-full sm:hidden", {
             "rounded-md": variant === "rounded",
@@ -53,7 +69,7 @@ const BannerCard: FC<BannerProps> = ({
         <Image
           src={desktopImageUrl}
           fill
-          alt={bannerTitle}
+          alt={altText}
           quality={100}
           className={cn("bg-gray-300 object-cover w-full hidden sm:block", {
             "rounded-md": variant === "rounded",
@@ -72,7 +88,7 @@ const BannerCard: FC<BannerProps> = ({
         {showButton && (
           <div className="absolute bottom-4 left-4 z-10">
             <span className="inline-block max-w-[130px] min-w-[90px] tracking-[0.3em] border text-xs mx-auto my-0 px-3.5 py-2 border-solid border-[#e8e8eb] bg-white text-black group-hover:bg-gray-200 transition">
-              {t("text-shop-now")}
+              {buttonText}
             </span>
           </div>
         )}

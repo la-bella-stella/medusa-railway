@@ -1,6 +1,7 @@
 // src/lib/homepage.tsx
+"use server";
+
 import { listCollections } from "@lib/data/collections";
-import { getRegion } from "@lib/data/regions";
 import { listProducts } from "@lib/data/products";
 import { HttpTypes } from "@medusajs/types";
 import Container from "@modules/common/components/container";
@@ -11,81 +12,158 @@ import ProductsFlashSaleBlock from "@modules/home/components/products-flash-sale
 import Subscription from "@modules/common/components/subscription";
 import { collectionData, collectionDataNew } from "@lib/data/home-collection";
 
-export async function renderHomepage(countryCode: string) {
-  const region = await getRegion(countryCode);
-  const { collections } = await listCollections({
-    fields: "id, handle, title, metadata, thumbnail",
-  });
+export async function renderHomepage() {
+  const regionId = "reg_01JS7PSQKQNHGZABRPR6FN5XQ4";
+  const currentDate = new Date().toISOString();
 
+  // Calculate date 30 days ago for recent products
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoISOString = thirtyDaysAgo.toISOString();
+
+  // 1) Collections
+  let collections: HttpTypes.StoreCollection[] = [];
+  try {
+    const { collections: cols } = await listCollections({
+      fields: "id, handle, title, metadata, thumbnail",
+    });
+    if (!cols || cols.length === 0) {
+      console.warn("No collections found, using empty array");
+    } else {
+      collections = cols;
+    }
+    console.log("Collections:", JSON.stringify(collections, null, 2));
+  } catch (e: any) {
+    console.error(
+      "❌ listCollections failed:",
+      e.message,
+      e.stack,
+      JSON.stringify(e.response?.data || {})
+    );
+  }
+
+  // 2) New Arrivals - First attempt to fetch recent products
   let newArrivalsProducts: HttpTypes.StoreProduct[] = [];
   let newArrivalsError: { message: string } | null = null;
-  let newArrivalsIsLoading = false;
-
   try {
-    newArrivalsIsLoading = true;
-    const result = await listProducts({
-      countryCode,
+    // First attempt: Fetch products created in the last 30 days
+    const { response } = await listProducts({
       queryParams: {
         limit: 10,
-        order: "created_at desc",
-        fields: "id, title, handle, thumbnail, type, variants.inventory_quantity, variants.calculated_price_number",
+        created_at: { gte: thirtyDaysAgoISOString }, // Filter for products created in the last 30 days
+        fields:
+          "id, title, handle, thumbnail, type, variants.inventory_quantity, variants.calculated_price_number",
       },
+      regionId,
     });
-    newArrivalsProducts = result.response.products;
+    newArrivalsProducts = response.products || [];
+    console.log(
+      "New Arrivals Products (Recent):",
+      JSON.stringify(newArrivalsProducts, null, 2)
+    );
+
+    // If no recent products are found, fall back to fetching any products
+    if (!newArrivalsProducts.length) {
+      console.log("No recent products found, falling back to any products");
+      const { response: fallbackResponse } = await listProducts({
+        queryParams: {
+          limit: 10,
+          fields:
+            "id, title, handle, thumbnail, type, variants.inventory_quantity, variants.calculated_price_number",
+        },
+        regionId,
+      });
+      newArrivalsProducts = fallbackResponse.products || [];
+      console.log(
+        "New Arrivals Products (Fallback):",
+        JSON.stringify(newArrivalsProducts, null, 2)
+      );
+    }
   } catch (e: any) {
+    console.error(
+      "❌ listProducts(new arrivals) failed:",
+      e.message,
+      e.stack,
+      JSON.stringify(e.response?.data || {})
+    );
     newArrivalsError = { message: e.message || "Failed to fetch new arrivals" };
-  } finally {
-    newArrivalsIsLoading = false;
   }
 
+  // 3) Flash Sale
   let flashSaleProducts: HttpTypes.StoreProduct[] = [];
   let flashSaleError: { message: string } | null = null;
-  let flashSaleIsLoading = false;
-
   try {
-    flashSaleIsLoading = true;
-    const result = await listProducts({
-      countryCode,
+    const { response } = await listProducts({
       queryParams: {
         limit: 10,
-        tags: ["flash-sale"],
-        fields: "id, title, handle, thumbnail, type, variants.inventory_quantity, variants.calculated_price_number",
+        tag_id: ["flash-sale"],
+        fields:
+          "id, title, handle, thumbnail, type, variants.inventory_quantity, variants.calculated_price_number",
       },
+      regionId,
     });
-    flashSaleProducts = result.response.products;
+    flashSaleProducts = response.products || [];
+    console.log("Flash Sale Products:", JSON.stringify(flashSaleProducts, null, 2));
   } catch (e: any) {
+    console.error(
+      "❌ listProducts(flash sale) failed:",
+      e.message,
+      e.stack,
+      JSON.stringify(e.response?.data || {})
+    );
     flashSaleError = { message: e.message || "Failed to fetch flash sale products" };
-  } finally {
-    flashSaleIsLoading = false;
   }
 
-  if (!collections || !region) {
-    return null;
-  }
+  console.log({
+    collections: collections.length,
+    newArrivalsProducts: newArrivalsProducts.length,
+    newArrivalsError,
+    flashSaleProducts: flashSaleProducts.length,
+    flashSaleError,
+  });
 
-  return (
-    <Container>
-      <div className="py-12">
-        <PopularCollectionBlock data={collectionDataNew} variant="trendy" layout="cols-4" />
-        <SaleBannerGrid />
-        <NewArrivalsProductFeed
-          products={newArrivalsProducts}
-          isLoading={newArrivalsIsLoading}
-          error={newArrivalsError}
-        />
-        <PopularCollectionBlock data={collectionData} variant="full" layout="cols-2" />
-        <ProductsFlashSaleBlock
-          products={flashSaleProducts}
-          isLoading={flashSaleIsLoading}
-          error={flashSaleError}
-          date="2025-07-11T05:00:00"
-          variant="slider"
-        />
-        <Subscription
-          className="relative px-5 overflow-hidden sm:px-8 md:px-16 2xl:px-24 sm:items-center lg:items-start"
-          variant="modern"
-        />
-      </div>
-    </Container>
-  );
+  try {
+    return (
+      <Container>
+        <div className="py-12">
+          <PopularCollectionBlock
+            data={collectionDataNew}
+            variant="trendy"
+            layout="cols-4"
+          />
+          <SaleBannerGrid />
+          <NewArrivalsProductFeed
+            products={newArrivalsProducts || []}
+            isLoading={newArrivalsProducts.length === 0 && !newArrivalsError}
+            error={newArrivalsError}
+          />
+          <PopularCollectionBlock
+            data={collectionData}
+            variant="full"
+            layout="cols-2"
+          />
+          <ProductsFlashSaleBlock
+            products={flashSaleProducts || []}
+            isLoading={false}             // ← changed: once fetch is done, never "loading"
+            error={flashSaleError}
+            date={currentDate}
+            variant="slider"
+          />
+          <Subscription
+            className="relative px-5 overflow-hidden sm:px-8 md:px-16 2xl:px-24 sm:items-center lg:items-start"
+            variant="modern"
+          />
+        </div>
+      </Container>
+    );
+  } catch (e: any) {
+    console.error("❌ renderHomepage rendering failed:", e.message, e.stack);
+    return (
+      <Container>
+        <div className="py-12">
+          <div>Error rendering homepage: {e.message}</div>
+        </div>
+      </Container>
+    );
+  }
 }

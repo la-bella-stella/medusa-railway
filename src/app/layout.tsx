@@ -13,18 +13,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params?: { countryCode?: string };
 }) {
-  const countryCode = params?.countryCode;
   return (
     <html lang="en" data-mode="light">
       <body>
         <Suspense fallback={<div>Loading...</div>}>
           <ClientWrapper>
-            <Nav countryCode={countryCode} />
+            <Nav />
             <main className="relative">{children}</main>
             <Footer />
           </ClientWrapper>

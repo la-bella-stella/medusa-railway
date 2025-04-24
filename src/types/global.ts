@@ -1,10 +1,13 @@
-// src/types/global.ts
 import { HttpTypes, StorePrice } from "@medusajs/types";
 
-// Extend StoreProductParams to include tags
+// Extend StoreProductParams and StoreCollectionParams
 declare module "@medusajs/types" {
   interface StoreProductParams {
     tags?: string[];
+    region_id?: string; // Already supported in products.ts
+  }
+  interface StoreCollectionParams {
+    region_id?: string; // ← Add this
   }
 }
 

@@ -1,5 +1,6 @@
 // src/modules/home/components/products-flash-sale-block/index.tsx
 "use client";
+
 import HomeSectionHeader from "@modules/home/components/home-section-header";
 import ProductCard from "@modules/products/components/product-card";
 import ProductCardGridLoader from "@modules/common/components/loaders/product-grid-card-loader";
@@ -55,8 +56,26 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
 }) => {
   const { t } = useTranslation("common");
 
+  console.log("ProductsFlashSaleBlock props:", {
+    products: products?.length,
+    isLoading,
+    error,
+    variant,
+    sectionHeading,
+    translation: t("text-no-flash-products-found"),
+  });
+
+  // **this guard will now fire as soon as isLoading=false and products.length===0**
   if (!isLoading && isEmpty(products)) {
-    return <NotFoundItem text={t("text-no-flash-products-found")} />;
+    console.log(
+      "Rendering NotFoundItem with text:",
+      t("text-no-flash-products-found")
+    );
+    return (
+      <div className="not-found text-center p-5 text-base text-gray-700">
+        <NotFoundItem text={t("text-no-flash-products-found")} />
+      </div>
+    );
   }
 
   return (
@@ -65,23 +84,26 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
         variant === "default"
           ? "border border-gray-300 rounded-md pt-5 md:pt-6 lg:pt-7 pb-5 lg:pb-7 px-4 md:px-5 lg:px-7"
           : ""
-      }`}
+      } min-h-[200px]`}
     >
       <div className="flex flex-wrap items-center justify-center mb-5 md:mb-6">
         <HomeSectionHeader sectionHeading={sectionHeading} className="mb-0" />
       </div>
+
       {error ? (
-        <Alert message={error?.message} />
+        <div className="alert bg-red-100 text-red-800 p-2.5 rounded">
+          <Alert message={error?.message} />
+        </div>
       ) : (
         <div
-          className={`${
+          className={
             variant === "default"
               ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-x-3 md:gap-x-5 xl:gap-x-7 gap-y-4 lg:gap-y-5 xl:lg:gap-y-6 2xl:gap-y-8"
               : "block"
-          }`}
+          }
         >
           {isLoading && !products?.length ? (
-            Array.from({ length: 10 }).map((_, idx) => (
+            Array.from({ length: limit }).map((_, idx) =>
               variant === "default" ? (
                 <ProductCardGridLoader
                   key={idx}
@@ -96,7 +118,7 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
                   />
                 </SwiperSlide>
               )
-            ))
+            )
           ) : (
             <>
               {variant === "default" ? (
@@ -110,22 +132,26 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
               ) : (
                 <Carousel
                   breakpoints={breakpoints}
-                  buttonClassName="-mt-8 md:-mt-10 hidden"
-                  autoplay={{
-                    delay: 3500,
-                  }}
+                  buttonClassName="-mt-8 md:-mt-10"
+                  autoplay={{ delay: 3500 }}
                   prevActivateId="flashSellSlidePrev"
                   nextActivateId="flashSellSlideNext"
                 >
-                  {products?.map((product: any) => (
-                    <SwiperSlide key={`product--key-${product.id}`}>
-                      <ProductCard
-                        key={`product--key${product.id}`}
-                        product={product}
-                        variant="gridSlim"
-                      />
-                    </SwiperSlide>
-                  ))}
+                  {products?.length ? (
+                    products.map((product: any) => (
+                      <SwiperSlide key={`product--key-${product.id}`}>
+                        <ProductCard
+                          key={`product--key${product.id}`}
+                          product={product}
+                          variant="gridSlim"
+                        />
+                      </SwiperSlide>
+                    ))
+                  ) : (
+                    <div className="text-center p-5 text-base text-gray-700">
+                      No flash sale products available
+                    </div>
+                  )}
                 </Carousel>
               )}
             </>

@@ -14,10 +14,8 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
   className = "mb-12 lg:mb-14 xl:mb-16 lg:pb-1 xl:pb-0",
   limit = 4,
 }) => {
-  // Debug: Log the data to ensure it's loaded
   console.log("SaleBannerGrid: Data:", saleBannerGrid);
 
-  // If no data, render a fallback message
   if (!saleBannerGrid || saleBannerGrid.length === 0) {
     return <div>No banners available.</div>;
   }
@@ -53,7 +51,6 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
 
       {/* Desktop: Unequal banners */}
       <div className="hidden md:grid grid-cols-2 gap-5 xl:gap-7">
-        {/* First banner (larger, left column) */}
         <div>
           {saleBannerGrid[0] && (
             <BannerCard
@@ -67,7 +64,6 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
           )}
         </div>
 
-        {/* Right column: 2x2 grid for remaining banners */}
         <div className="grid grid-cols-2 grid-rows-2 gap-5 xl:gap-7">
           {saleBannerGrid.slice(1, 3).map((banner: any) => (
             <BannerCard

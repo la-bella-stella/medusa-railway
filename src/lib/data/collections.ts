@@ -1,59 +1,77 @@
-"use server"
+"use server";
 
-import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { sdk } from "@lib/config";
+import { HttpTypes } from "@medusajs/types";
+import { getCacheOptions } from "./cookies";
 
 export const retrieveCollection = async (id: string) => {
   const next = {
     ...(await getCacheOptions("collections")),
-  }
+  };
 
-  return sdk.client
-    .fetch<{ collection: HttpTypes.StoreCollection }>(
-      `/store/collections/${id}`,
-      {
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ collection }) => collection)
-}
+  try {
+    return sdk.client
+      .fetch<{ collection: HttpTypes.StoreCollection }>(
+        `/store/collections/${id}`,
+        {
+          next,
+          cache: "force-cache",
+        }
+      )
+      .then(({ collection }) => collection);
+  } catch (e: any) {
+    throw new Error(
+      `Failed to fetch collection: ${e.message || "Unknown error"}. Status: ${e.response?.status || "N/A"}. Details: ${JSON.stringify(e.response?.data || {})}`
+    );
+  }
+};
 
 export const listCollections = async (
   queryParams: Record<string, string> = {}
 ): Promise<{ collections: HttpTypes.StoreCollection[]; count: number }> => {
   const next = {
     ...(await getCacheOptions("collections")),
+  };
+
+  queryParams.limit = queryParams.limit || "100";
+  queryParams.offset = queryParams.offset || "0";
+
+  try {
+    return sdk.client
+      .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
+        "/store/collections",
+        {
+          query: queryParams,
+          next,
+          cache: "force-cache",
+        }
+      )
+      .then(({ collections }) => ({ collections, count: collections.length }));
+  } catch (e: any) {
+    throw new Error(
+      `Failed to fetch collections: ${e.message || "Unknown error"}. Status: ${e.response?.status || "N/A"}. Details: ${JSON.stringify(e.response?.data || {})}`
+    );
   }
-
-  queryParams.limit = queryParams.limit || "100"
-  queryParams.offset = queryParams.offset || "0"
-
-  return sdk.client
-    .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
-      "/store/collections",
-      {
-        query: queryParams,
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ collections }) => ({ collections, count: collections.length }))
-}
+};
 
 export const getCollectionByHandle = async (
   handle: string
 ): Promise<HttpTypes.StoreCollection> => {
   const next = {
     ...(await getCacheOptions("collections")),
-  }
+  };
 
-  return sdk.client
-    .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
-      query: { handle, fields: "*products" },
-      next,
-      cache: "force-cache",
-    })
-    .then(({ collections }) => collections[0])
-}
+  try {
+    return sdk.client
+      .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
+        query: { handle, fields: "*products" },
+        next,
+        cache: "force-cache",
+      })
+      .then(({ collections }) => collections[0]);
+  } catch (e: any) {
+    throw new Error(
+      `Failed to fetch collection by handle: ${e.message || "Unknown error"}. Status: ${e.response?.status || "N/A"}. Details: ${JSON.stringify(e.response?.data || {})}`
+    );
+  }
+};
