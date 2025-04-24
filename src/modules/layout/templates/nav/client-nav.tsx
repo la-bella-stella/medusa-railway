@@ -17,6 +17,7 @@ import Logo from "@modules/common/components/logo";
 import SearchIcon from "@modules/common/icons/search-icon";
 import MenuIcon from "@modules/common/icons/menu-icon";
 import UserIcon from "@modules/common/icons/user";
+import { useRouter } from "next/navigation";
 import {
   RESPONSIVE_WIDTH,
   checkIsMaintenanceModeComing,
@@ -46,6 +47,7 @@ export default function ClientNav({
   const { t } = useTranslation("common");
   const { width } = useWindowSize();
   const siteHeaderRef = useRef<HTMLDivElement>(null!);
+  const router = useRouter();
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const openCart = () => setIsCartOpen(true);
@@ -55,16 +57,11 @@ export default function ClientNav({
   useActiveScroll(siteHeaderRef, 0);
   const [underComing] = useAtom(checkIsMaintenanceModeComing);
   const [shopComing] = useAtom(checkIsShopMaintenanceModeComing);
-  const [underStart, setUnderStart] = useAtom(
-    checkIsMaintenanceModeStart
-  );
-  const [shopStart, setShopStart] = useAtom(
-    checkIsShopMaintenanceModeStart
-  );
+  const [underStart, setUnderStart] = useAtom(checkIsMaintenanceModeStart);
+  const [shopStart, setShopStart] = useAtom(checkIsShopMaintenanceModeStart);
   const [isScrolling] = useAtom(checkIsScrollingStart);
 
   const maintenanceDate = new Date("2025-07-11T05:00:00");
-
   const showAlert =
     (width >= RESPONSIVE_WIDTH && underComing && !isScrolling && !shopComing) ||
     (width >= RESPONSIVE_WIDTH && shopComing && !isScrolling && !underComing);
@@ -75,12 +72,8 @@ export default function ClientNav({
   const handleMobileClose = useCallback(() => setMobileOpen(false), []);
 
   // countdown completions
-  const onUnderComplete = useCallback(() => setUnderStart(true), [
-    setUnderStart,
-  ]);
-  const onShopComplete = useCallback(() => setShopStart(true), [
-    setShopStart,
-  ]);
+  const onUnderComplete = useCallback(() => setUnderStart(true), [setUnderStart]);
+  const onShopComplete = useCallback(() => setShopStart(true), [setShopStart]);
 
   // cart item count
   const totalItems =
@@ -97,7 +90,6 @@ export default function ClientNav({
             "lg:h-28 lg:pb-4": showAlert,
           })}
         >
-          {/* maintenance alert */}
           {showAlert && (
             <Alert
               message={`Site ${t("text-maintenance-mode-title")}`}
@@ -124,9 +116,12 @@ export default function ClientNav({
                 <SearchIcon className="w-8 h-8 text-gray-600" />
               </button>
 
-              {/* centered logo */}
-              <div className="absolute left-1/2 transform -translate-x-1/2">
-              <Logo className="h-12 w-auto" />
+              {/* centered logo with click handler */}
+              <div
+                className="absolute left-1/2 transform -translate-x-1/2 cursor-pointer"
+                onClick={() => router.push("/")}
+              >
+                <Logo className="h-12 w-auto" />
               </div>
 
               <div className="flex items-center space-x-6">
@@ -171,9 +166,12 @@ export default function ClientNav({
                 <MenuIcon className="w-8 h-8" />
               </button>
 
-              {/* centered logo */}
-              <div className="absolute left-1/2 transform -translate-x-1/2">
-              <Logo className="h-12 w-auto" />
+              {/* centered logo with click */}
+              <div
+                className="absolute left-1/2 transform -translate-x-1/2 cursor-pointer"
+                onClick={() => router.push("/")}
+              >
+                <Logo className="h-12 w-auto" />
               </div>
 
               <div className="flex items-center mr-4 space-x-4">
