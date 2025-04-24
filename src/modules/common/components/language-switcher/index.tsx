@@ -21,15 +21,16 @@ export default function LanguageSwitcher() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // only include supported locales
+  // Only include supported locales
   const locales = ["en", "ar"];
   const filterItem: LanguageMenuItem[] = languageMenu.filter((el) =>
     locales.includes(el.id)
   );
 
-  const currentSelectedItem: LanguageMenuItem = countryCode
-    ? filterItem.find((o) => o.value === countryCode)!
-    : filterItem[0];
+  // Ensure currentSelectedItem is always defined
+  const currentSelectedItem: LanguageMenuItem =
+    filterItem.find((o) => o.value === countryCode) || filterItem[0];
+
   const [selectedItem, setSelectedItem] = useState<LanguageMenuItem>(
     currentSelectedItem
   );
@@ -42,6 +43,11 @@ export default function LanguageSwitcher() {
       queryString ? `?${queryString}` : ""
     }`;
     router.push(newPath);
+  }
+
+  // Defensive check to ensure selectedItem is defined
+  if (!selectedItem) {
+    return null; // Or render a fallback UI
   }
 
   return (

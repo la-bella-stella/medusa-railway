@@ -7,6 +7,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import LanguageSwitcher from "@modules/common/components/language-switcher";
 import CartIcon from "@modules/common/icons/cart-icon";
 import CartSidebar from "@modules/layout/components/cart-sidebar";
+import SearchOverlay from "@modules/common/components/search-overlay";
 import { useTranslation } from "react-i18next";
 import { useWindowSize } from "react-use";
 import { useAtom } from "jotai";
@@ -49,11 +50,17 @@ export default function ClientNav({
   const siteHeaderRef = useRef<HTMLDivElement>(null!);
   const router = useRouter();
 
+  // Cart sidebar state
   const [isCartOpen, setIsCartOpen] = useState(false);
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
-  // sticky + maintenance
+  // Search overlay state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const openSearch = () => setIsSearchOpen(true);
+  const closeSearch = () => setIsSearchOpen(false);
+
+  // Sticky header + maintenance
   useActiveScroll(siteHeaderRef, 0);
   const [underComing] = useAtom(checkIsMaintenanceModeComing);
   const [shopComing] = useAtom(checkIsShopMaintenanceModeComing);
@@ -66,16 +73,16 @@ export default function ClientNav({
     (width >= RESPONSIVE_WIDTH && underComing && !isScrolling && !shopComing) ||
     (width >= RESPONSIVE_WIDTH && shopComing && !isScrolling && !underComing);
 
-  // mobile menu
+  // Mobile menu state
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleMobileOpen = useCallback(() => setMobileOpen(true), []);
   const handleMobileClose = useCallback(() => setMobileOpen(false), []);
 
-  // countdown completions
+  // Countdown completions
   const onUnderComplete = useCallback(() => setUnderStart(true), [setUnderStart]);
   const onShopComplete = useCallback(() => setShopStart(true), [setShopStart]);
 
-  // cart item count
+  // Cart item count
   const totalItems =
     cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
@@ -90,6 +97,7 @@ export default function ClientNav({
             "lg:h-28 lg:pb-4": showAlert,
           })}
         >
+          {/* Maintenance alert */}
           {showAlert && (
             <Alert
               message={`Site ${t("text-maintenance-mode-title")}`}
@@ -108,15 +116,21 @@ export default function ClientNav({
           <div className="innerSticky fixed top-0 left-0 w-full z-30 bg-white transition duration-200 ease-in-out text-gray-700 pt-2">
             {/* TOP ROW */}
             <div className="content-container relative max-w-[1920px] px-4 lg:px-6 flex items-center justify-between h-14">
-              <button
-                onClick={() => console.log("search")}
-                aria-label="search-button"
-                className="focus:outline-none"
-              >
-                <SearchIcon className="w-8 h-8 text-gray-600" />
-              </button>
+              {/* Search button */}
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={openSearch}
+                  aria-label="search-button"
+                  className="focus:outline-none"
+                >
+                  <SearchIcon className="w-8 h-8 text-gray-600" />
+                </button>
+                {isSearchOpen && (
+                  <SearchOverlay open={isSearchOpen} onClose={closeSearch} />
+                )}
+              </div>
 
-              {/* centered logo with click handler */}
+              {/* Centered logo */}
               <div
                 className="absolute left-1/2 transform -translate-x-1/2 cursor-pointer"
                 onClick={() => router.push("/")}
@@ -124,16 +138,15 @@ export default function ClientNav({
                 <Logo className="h-12 w-auto" />
               </div>
 
-              <div className="flex items-center space-x-6">
+              {/* Language, Account, Cart */}
+              <div className="flex items-center space-x-6 flex-shrink-0">
                 <LanguageSwitcher />
-
                 <LocalizedClientLink
                   href={isAuthenticated ? "/account" : "/login"}
                   className="focus:outline-none"
                 >
                   <UserIcon className="w-8 h-8 text-gray-600" />
                 </LocalizedClientLink>
-
                 <button
                   onClick={openCart}
                   aria-label="cart-button"
@@ -157,16 +170,17 @@ export default function ClientNav({
             </div>
 
             {/* MOBILE ROW */}
-            <div className="lg:hidden relative flex items-center justify-between h-16 sm:h-20 bg-white border-b border-gray-200 text-gray-700">
-              <button
-                onClick={handleMobileOpen}
-                aria-label="menu"
-                className="ml-4 focus:outline-none"
-              >
-                <MenuIcon className="w-8 h-8" />
-              </button>
+            <div className="lg:hidden relative flex items-center justify-between h-16 sm:h-20 px-4 bg-white border-b border-gray-200 text-gray-700">
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={handleMobileOpen}
+                  aria-label="menu"
+                  className="focus:outline-none"
+                >
+                  <MenuIcon className="w-8 h-8" />
+                </button>
+              </div>
 
-              {/* centered logo with click */}
               <div
                 className="absolute left-1/2 transform -translate-x-1/2 cursor-pointer"
                 onClick={() => router.push("/")}
@@ -174,15 +188,19 @@ export default function ClientNav({
                 <Logo className="h-12 w-auto" />
               </div>
 
-              <div className="flex items-center mr-4 space-x-4">
-                <button
-                  onClick={() => console.log("search")}
-                  aria-label="search-button"
-                  className="focus:outline-none"
-                >
-                  <SearchIcon className="w-8 h-8 text-gray-600" />
-                </button>
-
+              <div className="flex items-center space-x-4 flex-shrink-0">
+                <div className="relative">
+                  <button
+                    onClick={openSearch}
+                    aria-label="search-button"
+                    className="focus:outline-none"
+                  >
+                    <SearchIcon className="w-8 h-8 text-gray-600" />
+                  </button>
+                  {isSearchOpen && (
+                    <SearchOverlay open={isSearchOpen} onClose={closeSearch} />
+                  )}
+                </div>
                 <button
                   onClick={openCart}
                   aria-label="cart-button"
@@ -195,7 +213,6 @@ export default function ClientNav({
                     </span>
                   )}
                 </button>
-
                 <LocalizedClientLink
                   href={isAuthenticated ? "/account" : "/login"}
                   className="focus:outline-none"
@@ -207,7 +224,7 @@ export default function ClientNav({
           </div>
         </header>
 
-        {/* CART OVERLAY & SIDEBAR */}
+        {/* Cart Overlay */}
         {isCartOpen && (
           <>
             <div
@@ -217,20 +234,15 @@ export default function ClientNav({
             <div
               className="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
               style={{
-                transform: isCartOpen
-                  ? "translateX(0)"
-                  : "translateX(100%)",
+                transform: isCartOpen ? "translateX(0)" : "translateX(100%)",
               }}
             >
-              <CartSidebar
-                cart={cart}
-                isOpen={isCartOpen}
-                onClose={closeCart}
-              />
+              <CartSidebar cart={cart} isOpen onClose={closeCart} />
             </div>
           </>
         )}
 
+        {/* Mobile Menu */}
         <MobileMenu isOpen={mobileOpen} onClose={handleMobileClose} />
       </>
     );
