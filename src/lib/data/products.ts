@@ -1,3 +1,4 @@
+// src/lib/data/products.ts
 "use server";
 
 import { sdk } from "@lib/config";
@@ -106,10 +107,19 @@ export async function listProducts({
       }
     );
 
-    console.log("Fetched products:", response.products.length, "Count:", response.count);
-    // Additional logging to inspect the products
+    console.log(
+      "Fetched products:",
+      response.products.length,
+      "Count:",
+      response.count
+    );
     if (query.tag_id) {
-      console.log("Products with tag", query.tag_id, ":", JSON.stringify(response.products, null, 2));
+      console.log(
+        "Products with tag",
+        query.tag_id,
+        ":",
+        JSON.stringify(response.products, null, 2)
+      );
     }
 
     return {
@@ -126,13 +136,15 @@ export async function listProducts({
     };
     console.error("Failed to fetch products:", JSON.stringify(errorDetails, null, 2));
     throw new Error(
-      `Failed to fetch products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(errorDetails.data)}`
+      `Failed to fetch products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(
+        errorDetails.data
+      )}`
     );
   }
 }
 
 export async function listProductsWithSort({
-  page = 0,
+  page = 1,
   queryParams,
   sortBy = "created_at",
   countryCode,
@@ -157,10 +169,12 @@ export async function listProductsWithSort({
       countryCode,
     });
 
+    // Convert 1-based `page` to zero-based index for slicing
     const sorted = sortProducts(allProducts, sortBy);
-    const start = page * limit;
+    const pageIndex = page > 0 ? page - 1 : 0;
+    const start = pageIndex * limit;
     const paginated = sorted.slice(start, start + limit);
-    const nextPage = count > start + limit ? page + 1 : null;
+    const nextPage = count > (pageIndex + 1) * limit ? page + 1 : null;
 
     console.log("Sorted products:", paginated.length, "Count:", count);
 
@@ -176,9 +190,14 @@ export async function listProductsWithSort({
       data: e.response?.data || {},
       stack: e.stack,
     };
-    console.error("Failed to fetch sorted products:", JSON.stringify(errorDetails, null, 2));
+    console.error(
+      "Failed to fetch sorted products:",
+      JSON.stringify(errorDetails, null, 2)
+    );
     throw new Error(
-      `Failed to fetch sorted products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(errorDetails.data)}`
+      `Failed to fetch sorted products: ${errorDetails.message}. Status: ${errorDetails.status}. Details: ${JSON.stringify(
+        errorDetails.data
+      )}`
     );
   }
 }

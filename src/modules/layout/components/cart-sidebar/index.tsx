@@ -19,10 +19,13 @@ interface CartSidebarProps {
 
 const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
   const { t } = useTranslation("common");
-  const isEmpty = !cart?.items || cart.items.length === 0;
-  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(undefined);
-  const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
-  const itemRef = useRef<number>(totalItems || 0);
+  // default items to an empty array if undefined
+  const items = cart?.items ?? [];
+
+  const isEmpty = items.length === 0;
+  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer>();
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const prevCount = useRef<number>(totalItems);
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -31,77 +34,68 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
     currency_code: cart?.currency_code || "USD",
   });
 
-  const timedOpen = () => {
-    console.log("Timed open triggered");
+  const scheduleAutoClose = () => {
     onClose();
-
     const timer = setTimeout(onClose, 5000);
     setActiveTimer(timer);
   };
 
-  // Clean up the timer when the component unmounts
   useEffect(() => {
     return () => {
-      if (activeTimer) {
-        clearTimeout(activeTimer);
-      }
+      if (activeTimer) clearTimeout(activeTimer);
     };
   }, [activeTimer]);
 
-  // Open cart sidebar when modifying the cart items, but only if we're not on the cart page
   useEffect(() => {
-    if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
-      timedOpen();
+    if (prevCount.current !== totalItems && !pathname.includes("/cart")) {
+      scheduleAutoClose();
     }
-    itemRef.current = totalItems;
+    prevCount.current = totalItems;
   }, [totalItems, pathname]);
 
-  // Handle click-outside-to-close
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
-      ) {
+    const handleOutside = (e: MouseEvent) => {
+      if (isOpen && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, [isOpen, onClose]);
 
   return (
-    <div className="flex flex-col justify-between w-full h-full cart-drawer-main">
-      <div className="w-full flex justify-between items-center relative px-5 md:px-7 py-4 border-b border-gray-100">
-        <h2 className="m-0 text-xl font-bold md:text-2xl text-heading">
+    <div ref={sidebarRef} className="flex flex-col justify-between w-full h-full cart-drawer-main">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center px-5 md:px-7 py-4 border-b border-gray-100">
+        <h2 className="text-xl md:text-2xl font-bold text-heading m-0">
           {t("text-shopping-cart")}
         </h2>
         <button
-          className="flex items-center justify-center px-4 text-2xl text-gray-500 transition-opacity focus:outline-none hover:opacity-60"
           onClick={onClose}
           aria-label="close"
+          className="px-4 text-2xl text-gray-500 hover:opacity-60 transition-opacity focus:outline-none"
         >
           <IoClose className="text-black" />
         </button>
       </div>
+
+      {/* Items */}
       {!isEmpty ? (
-        <div className="flex-grow w-full overflow-y-scroll max-h-[402px] no-scrollbar">
-          <div className="w-full px-5 md:px-7">
-            {cart?.items
-              ?.sort((a, b) => {
-                return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1;
-              })
-              .map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  currencyCode={cart?.currency_code || "USD"}
-                />
-              ))}
+        <div className="flex-grow overflow-y-scroll max-h-[402px] no-scrollbar w-full">
+          <div className="px-5 md:px-7 w-full">
+            <table className="w-full border-collapse">
+              <tbody>
+                {items
+                  .sort((a, b) => (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1)
+                  .map((item) => (
+                    <CartItem
+                      key={item.id}
+                      item={item}
+                      currencyCode={cart?.currency_code || "USD"}
+                    />
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
       ) : (
@@ -130,13 +124,18 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
         </div>
       )}
 
-      <div className="flex flex-col px-5 pt-2 pb-5 md:px-7 md:pb-7">
+      {/* Footer */}
+      <div className="px-5 pt-2 pb-5 md:px-7 md:pb-7 flex flex-col">
         {!isEmpty && (
-          <div className="flex items-center justify-between text-small-regular mb-4">
-            <span className="text-ui-fg-base font-semibold">
+          <div className="flex items-center justify-between mb-4 text-small-regular">
+            <span className="font-semibold text-ui-fg-base">
               Subtotal <span className="font-normal">(excl. taxes)</span>
             </span>
-            <span className="text-large-semi" data-testid="cart-subtotal" data-value={cart?.subtotal}>
+            <span
+              className="text-large-semi"
+              data-testid="cart-subtotal"
+              data-value={cart?.subtotal}
+            >
               {cartSubtotal}
             </span>
           </div>
@@ -145,17 +144,17 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
           href={isEmpty ? "/" : "/checkout"}
           passHref
           className={classNames(
-            "w-full px-5 py-3 flex items-center justify-center bg-heading rounded-md text-sm sm:text-base text-white focus:outline-none transition duration-300 hover:bg-gray-600",
+            "w-full px-5 py-3 flex items-center justify-center bg-heading rounded-md text-sm sm:text-base text-white transition hover:bg-gray-600 focus:outline-none",
             {
               "cursor-not-allowed bg-gray-400 hover:bg-gray-400": isEmpty,
             }
           )}
         >
-          <span className="w-full ltr:pr-5 rtl:pl-5 -mt-0.5 py-0.5">
+          <span className="w-full ltr:pr-5 rtl:pl-5 py-0.5 -mt-0.5">
             {t("text-proceed-to-checkout")}
           </span>
-          <span className="ltr:ml-auto rtl:mr-auto flex-shrink-0 -mt-0.5 py-0.5 rtl:flex">
-            <span className="ltr:border-l rtl:border-r border-white ltr:pr-5 rtl:pl-5 py-0.5" />
+          <span className="flex-shrink-0 ltr:ml-auto rtl:mr-auto py-0.5 -mt-0.5 rtl:flex">
+            <span className="border-white ltr:border-l rtl:border-r ltr:pr-5 rtl:pl-5 py-0.5" />
             {cartSubtotal}
           </span>
         </LocalizedClientLink>
