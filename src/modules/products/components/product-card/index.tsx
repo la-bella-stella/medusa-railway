@@ -1,19 +1,21 @@
 // src/modules/products/components/product-card/index.tsx
-"use client";
-import cn from "classnames";
-import Image from "next/image";
-import { FC, useState } from "react";
-import { StoreProduct } from "@medusajs/types";
-import { useTranslation } from "react-i18next";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { getProductPrice } from "@lib/util/get-product-price";
+"use client"
+
+import cn from "classnames"
+import Image from "next/image"
+import { FC, useState } from "react"
+import { HttpTypes } from "@medusajs/types"
+import { useTranslation } from "react-i18next"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { getProductPrice } from "@lib/util/get-product-price"
 
 interface ProductProps {
-  product: StoreProduct;
-  className?: string;
-  imageContentClassName?: string;
-  variant?: "grid" | "gridSlim" | "list" | "gridModern";
-  imgLoading?: "eager" | "lazy";
+  product: HttpTypes.StoreProduct
+  className?: string
+  imageContentClassName?: string
+  variant?: "grid" | "gridSlim" | "list" | "gridModern"
+  imgLoading?: "eager" | "lazy"
+  region?: HttpTypes.StoreRegion | null // Region prop already added
 }
 
 const ProductCard: FC<ProductProps> = ({
@@ -22,39 +24,32 @@ const ProductCard: FC<ProductProps> = ({
   imageContentClassName = "",
   variant = "gridModern",
   imgLoading = "lazy",
+  region,
 }) => {
-  const { t } = useTranslation("common");
-  const {
-    title,
-    thumbnail,
-    variants,
-    type,
-    handle,
-  } = product;
+  const { t } = useTranslation("common")
+  const { title, thumbnail, variants, type, handle } = product
 
-  // Use getProductPrice to handle pricing
-  const { cheapestPrice } = getProductPrice({ product });
+  // Use getProductPrice to handle pricing, passing the full region object
+  const { cheapestPrice } = getProductPrice({ product, region })
 
-  const selectedPrice = cheapestPrice;
+  const selectedPrice = cheapestPrice
 
   if (!selectedPrice) {
-    return (
-      <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
-    );
+    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
   }
 
-  const currentPrice = selectedPrice.calculated_price;
-  const basePrice = selectedPrice.original_price || selectedPrice.calculated_price;
-  const isOnSale = selectedPrice.price_type === "sale";
-  const discount = selectedPrice.percentage_diff;
+  const currentPrice = selectedPrice.calculated_price
+  const basePrice = selectedPrice.original_price || selectedPrice.calculated_price
+  const isOnSale = selectedPrice.price_type === "sale"
+  const discount = selectedPrice.percentage_diff
 
-  const isVariable = variants ? variants.length > 1 : false;
-  const hasRange = false; // We'll add range logic later if needed
+  const isVariable = variants ? variants.length > 1 : false
+  const hasRange = false // We'll add range logic later if needed
 
   // Check inventory quantity from the first variant
-  const inventoryQuantity = variants?.[0]?.inventory_quantity ?? 0;
+  const inventoryQuantity = variants?.[0]?.inventory_quantity ?? 0
 
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError] = useState(false)
 
   return (
     <LocalizedClientLink
@@ -131,7 +126,7 @@ const ProductCard: FC<ProductProps> = ({
         </div>
       </div>
     </LocalizedClientLink>
-  );
-};
+  )
+}
 
-export default ProductCard;
+export default ProductCard
