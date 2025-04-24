@@ -1,81 +1,127 @@
 // src/modules/layout/components/header-menu/index.tsx
-import React from "react";
+
+import React, { useState } from "react";
+import { usePopper } from "react-popper";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import MegaMenu from "@modules/layout/components/mega-menu";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
+import {
+  RESPONSIVE_WIDTH,
+  checkIsMaintenanceModeComing,
+  checkIsMaintenanceModeStart,
+  checkIsScrollingStart,
+} from "@lib/config/constants";
+import { useWindowSize } from "react-use";
+import { useAtom } from "jotai";
+import Alert from "@modules/common/components/alert";
+import CountdownTimer from "@modules/common/components/countdown-timer";
 
 interface MenuProps {
-  data: any;
+  data: Array<{
+    id: string | number;
+    path: string;
+    label: string;
+    columns?: any[];
+    image?: string;
+  }>;
   className?: string;
 }
 
 const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
   const { t } = useTranslation("menu");
+  const { width } = useWindowSize();
+  const [underMaintenanceIsComing] = useAtom(checkIsMaintenanceModeComing);
+  const [, setUnderMaintenanceStart] = useAtom(checkIsMaintenanceModeStart);
+  const [isScrolling] = useAtom(checkIsScrollingStart);
 
   return (
-    <nav
-      className={classNames(
-        "headerMenu flex justify-center w-full relative lg:py-2",
-        className
+    <>
+      {/* Maintenance alert (desktop only) */}
+      {width >= RESPONSIVE_WIDTH && underMaintenanceIsComing && !isScrolling && (
+        <Alert
+          message={t("text-maintenance-mode-title")}
+          variant="info"
+          className="fixed top-0 left-0 z-40 w-full bg-white border-b border-gray-200"
+          childClassName="flex justify-center items-center w-full gap-4 text-sm font-semibold text-gray-700 py-2"
+        >
+          <CountdownTimer
+            date={new Date("2025-07-11T05:00:00")}
+            className="text-gray-700 [&>p]:bg-gray-100 [&>p]:p-1 [&>p]:text-xs [&>p]:rounded"
+            onComplete={() => setUnderMaintenanceStart(true)}
+          />
+        </Alert>
       )}
-    >
-      <div className="flex items-center max-w-[1920px] mx-auto">
-        {data?.map((item: any, index: number) => (
-          <div
-            className="menuItem group cursor-pointer px-3 lg:px-4"
-            key={item.id}
-          >
-            <LocalizedClientLink
-              href={item.path}
-              className={classNames(
-                "relative inline-flex items-center py-2 text-sm font-normal uppercase tracking-wider text-gray-700 transition-colors",
-                {
-                  "text-red-500 hover:text-red-600": index === data.length - 1,
-                  "hover:text-gray-900": index !== data.length - 1,
-                }
-              )}
-            >
-              {t(item.label)}
-              <span
-                className={classNames(
-                  "absolute w-0 bg-gray-900 h-[1px] bottom-0 left-0 transition-all duration-300 ease-in-out"
-                )}
-              />
-            </LocalizedClientLink>
 
-            {item?.columns && Array.isArray(item.columns) && (
+      <nav
+        className={classNames(
+          "headerMenu flex justify-center w-full relative lg:py-2",
+          className
+        )}
+      >
+        {/* Use px-4 gutter to match site container */}
+        <div className="flex items-center max-w-[1920px] mx-auto px-4">
+          {data.map((item, index) => {
+            // Popper state
+            const [referenceElement, setReferenceElement] =
+              useState<HTMLElement | null>(null);
+            const [popperElement, setPopperElement] =
+              useState<HTMLDivElement | null>(null);
+
+            // Popper instance for the drop‐down
+            const { styles, attributes } = usePopper(
+              referenceElement,
+              popperElement,
+              {
+                placement: "bottom-start",
+                modifiers: [
+                  { name: "offset", options: { offset: [0, 25] } },
+                  {
+                    name: "preventOverflow",
+                    options: {
+                      rootBoundary: "viewport",
+                      padding: 16,
+                    },
+                  },
+                ],
+              }
+            );
+
+            return (
               <div
-                className={classNames(
-                  "absolute bg-white invisible subMenu shadow-lg border border-gray-100 ltr:left-0 rtl:right-0 group-hover:visible transition-all duration-400 ease-in-out w-[220px] lg:w-[240px] top-[calc(100%_+_25px)] group-hover:top-full z-50"
-                )}
+                key={item.id}
+                className="menuItem group cursor-pointer px-4"
               >
-                <div className="py-4 text-sm text-gray-600 flex">
-                  {item.columns.map((column: any) => (
-                    <ul key={column.id} className="px-4">
-                      {column.columnItems.map((menu: any) => (
-                        <li key={menu.id} className="py-1">
-                          <LocalizedClientLink href={menu.path}>
-                            {t(menu.label)}
-                          </LocalizedClientLink>
-                        </li>
-                      ))}
-                    </ul>
-                  ))}
-                  {item.image && (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-auto h-auto"
-                      style={{ maxWidth: item.size }}
-                    />
+                <LocalizedClientLink
+                  href={item.path}
+                  className={classNames(
+                    "relative inline-flex items-center py-2 transition-colors",
+                    {
+                      "text-red-500 hover:text-red-600":
+                        index === data.length - 1,
+                    }
                   )}
-                </div>
+                  ref={setReferenceElement}
+                >
+                  {t(item.label)}
+                </LocalizedClientLink>
+
+                {item.columns && (
+                  <div
+                    ref={setPopperElement}
+                    style={styles.popper}
+                    {...attributes.popper}
+                    className="megaMenu opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+                  >
+                    <MegaMenu columns={item.columns} image={item.image} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </nav>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 };
 

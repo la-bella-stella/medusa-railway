@@ -1,8 +1,10 @@
+// src/modules/layout/components/ClientNav.tsx
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import { StoreRegion, HttpTypes } from "@medusajs/types";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import LanguageSwitcher from "@modules/common/components/language-switcher";
 import CartIcon from "@modules/common/icons/cart-icon";
 import CartSidebar from "@modules/layout/components/cart-sidebar";
 import { useTranslation } from "react-i18next";
@@ -28,8 +30,6 @@ import { menu } from "@lib/data/menus";
 import HeaderMenu from "@modules/layout/components/header-menu";
 import MobileMenu from "@modules/layout/components/mobile-menu";
 
-type DivElementRef = React.MutableRefObject<HTMLDivElement>;
-
 interface ClientNavProps {
   regions: StoreRegion[];
   isAuthenticated: boolean;
@@ -45,54 +45,46 @@ export default function ClientNav({
 }: ClientNavProps) {
   const { t } = useTranslation("common");
   const { width } = useWindowSize();
-  const siteHeaderRef = React.useRef() as DivElementRef;
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const siteHeaderRef = useRef<HTMLDivElement>(null!);
 
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
+  // sticky + maintenance
   useActiveScroll(siteHeaderRef, 0);
-
-  const [underMaintenanceIsComing] = useAtom(checkIsMaintenanceModeComing);
-  const [shopUnderMaintenanceIsComing] = useAtom(checkIsShopMaintenanceModeComing);
-  const [underMaintenanceStart, setUnderMaintenanceStart] = useAtom(checkIsMaintenanceModeStart);
-  const [shopUnderMaintenanceStart, setShopUnderMaintenanceStart] = useAtom(checkIsMaintenanceModeStart);
+  const [underComing] = useAtom(checkIsMaintenanceModeComing);
+  const [shopComing] = useAtom(checkIsShopMaintenanceModeComing);
+  const [underStart, setUnderStart] = useAtom(
+    checkIsMaintenanceModeStart
+  );
+  const [shopStart, setShopStart] = useAtom(
+    checkIsShopMaintenanceModeStart
+  );
   const [isScrolling] = useAtom(checkIsScrollingStart);
 
-  const settings = {
-    maintenance: { start: new Date("2025-07-11T05:00:00") },
-  };
+  const maintenanceDate = new Date("2025-07-11T05:00:00");
 
-  const isAlertMessage =
-    (width >= RESPONSIVE_WIDTH &&
-      underMaintenanceIsComing &&
-      !isScrolling &&
-      !shopUnderMaintenanceIsComing) ||
-    (width >= RESPONSIVE_WIDTH &&
-      !underMaintenanceIsComing &&
-      !isScrolling &&
-      shopUnderMaintenanceIsComing);
+  const showAlert =
+    (width >= RESPONSIVE_WIDTH && underComing && !isScrolling && !shopComing) ||
+    (width >= RESPONSIVE_WIDTH && shopComing && !isScrolling && !underComing);
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // mobile menu
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const handleMobileOpen = useCallback(() => setMobileOpen(true), []);
+  const handleMobileClose = useCallback(() => setMobileOpen(false), []);
 
-  const handleMobileMenu = useCallback(() => {
-    setIsMobileMenuOpen(true);
-  }, []);
+  // countdown completions
+  const onUnderComplete = useCallback(() => setUnderStart(true), [
+    setUnderStart,
+  ]);
+  const onShopComplete = useCallback(() => setShopStart(true), [
+    setShopStart,
+  ]);
 
-  const handleMobileMenuClose = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
-
-  const handleMaintenanceComplete = useCallback(() => {
-    setUnderMaintenanceStart(true);
-  }, [setUnderMaintenanceStart]);
-
-  const handleShopMaintenanceComplete = useCallback(() => {
-    setShopUnderMaintenanceStart(true);
-  }, [setShopUnderMaintenanceStart]);
-
+  // cart item count
   const totalItems =
-    cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+    cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   try {
     return (
@@ -101,156 +93,155 @@ export default function ClientNav({
           id="siteHeader"
           ref={siteHeaderRef}
           className={classNames("w-full relative z-20 bg-white", {
-            "lg:h-24": !isAlertMessage,
-            "lg:h-28 lg:pb-4": isAlertMessage,
+            "lg:h-24": !showAlert,
+            "lg:h-28 lg:pb-4": showAlert,
           })}
         >
-          {width >= RESPONSIVE_WIDTH &&
-            underMaintenanceIsComing &&
-            !isScrolling &&
-            !shopUnderMaintenanceIsComing && (
-              <Alert
-                message={`Site ${t("text-maintenance-mode-title")}`}
-                variant="info"
-                className="fixed top-0 left-0 z-40 w-full bg-white border-b border-gray-200"
-                childClassName="flex justify-center font-semibold items-center w-full gap-4 text-gray-700 py-2"
+          {/* maintenance alert */}
+          {showAlert && (
+            <Alert
+              message={`Site ${t("text-maintenance-mode-title")}`}
+              variant="info"
+              className="fixed top-0 left-0 z-40 w-full bg-white border-b border-gray-200"
+              childClassName="flex justify-center items-center w-full gap-4 text-sm font-semibold text-gray-700 py-2"
+            >
+              <CountdownTimer
+                date={maintenanceDate}
+                className="text-gray-700 [&>p]:bg-gray-100 [&>p]:p-1 [&>p]:text-xs [&>p]:rounded"
+                onComplete={onUnderComplete}
+              />
+            </Alert>
+          )}
+
+          <div className="innerSticky fixed top-0 left-0 w-full z-30 bg-white transition duration-200 ease-in-out text-gray-700 pt-2">
+            {/* TOP ROW */}
+            <div className="content-container relative max-w-[1920px] px-4 lg:px-6 flex items-center justify-between h-14">
+              <button
+                onClick={() => console.log("search")}
+                aria-label="search-button"
+                className="focus:outline-none"
               >
-                <CountdownTimer
-                  date={settings?.maintenance?.start}
-                  className="text-gray-700 [&>p]:bg-gray-100 [&>p]:p-1 [&>p]:text-xs [&>p]:rounded"
-                  onComplete={handleMaintenanceComplete}
-                />
-              </Alert>
-            )}
+                <SearchIcon className="w-8 h-8 text-gray-600" />
+              </button>
 
-          <div className="innerSticky fixed top-0 left-0 w-full z-30 bg-white transition duration-200 ease-in-out text-gray-700">
-            <div className="mx-auto max-w-[1920px] px-4 lg:px-6">
-              {/* Desktop View */}
-              <div className="hidden lg:flex lg:flex-col">
-                {/* Top Row: Search, Logo, Cart/User */}
-                <div
-                  className={classNames(
-                    "flex items-center justify-between h-14 flex-wrap-nowrap min-w-0",
-                    {
-                      "lg:mt-6": isAlertMessage,
-                    }
-                  )}
-                >
-                  <div className="flex items-center space-x-4 flex-shrink-0 ml-1">
-                    <button
-                      className="flex items-center justify-center flex-shrink-0 h-auto relative focus:outline-none transform transition-colors"
-                      onClick={() => console.log("Open search")}
-                      aria-label="search-button"
-                    >
-                      <SearchIcon className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </div>
-
-                  <Logo className="absolute left-1/2 -translate-x-1/2 max-w-[150px]" />
-
-                  <div className="flex items-center space-x-1 flex-shrink-0 mr-1">
-                    <button
-                      className="flex items-center justify-center flex-shrink-0 h-auto relative focus:outline-none transform transition-colors"
-                      onClick={openCart}
-                      aria-label="cart-button"
-                    >
-                      <CartIcon className="w-5 h-5 text-gray-600" />
-                      {totalItems > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                          {totalItems}
-                        </span>
-                      )}
-                    </button>
-                    <LocalizedClientLink
-                      className="flex items-center justify-center flex-shrink-0 h-auto relative focus:outline-none transform transition-colors"
-                      href={isAuthenticated ? "/account" : "/login"}
-                      data-testid="nav-account-link"
-                    >
-                      <UserIcon className="w-5 h-5 text-gray-600" />
-                    </LocalizedClientLink>
-                  </div>
-                </div>
-
-                {/* Bottom Row: Menu Items */}
-                <div className="flex justify-center mt-1">
-                  <HeaderMenu
-                    data={menu}
-                    className="flex items-center space-x-6 text-sm uppercase tracking-wider text-gray-600"
-                  />
-                </div>
+              {/* centered logo */}
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+              <Logo className="h-12 w-auto" />
               </div>
 
-              {/* Mobile View */}
-              <div className="relative flex items-center justify-between h-16 sm:h-20 px-4 bg-white border-b border-gray-200 text-gray-700 lg:hidden">
-                <div className="flex items-center gap-4">
-                  <button
-                    aria-label="Menu"
-                    className="flex items-center justify-center"
-                    onClick={handleMobileMenu}
-                  >
-                    <MenuIcon />
-                  </button>
-                </div>
+              <div className="flex items-center space-x-6">
+                <LanguageSwitcher />
 
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                  <Logo className="max-w-[150px]" />
-                </div>
+                <LocalizedClientLink
+                  href={isAuthenticated ? "/account" : "/login"}
+                  className="focus:outline-none"
+                >
+                  <UserIcon className="w-8 h-8 text-gray-600" />
+                </LocalizedClientLink>
 
-                <div className="flex items-center gap-4">
-                  <button
-                    className="flex items-center justify-center"
-                    onClick={() => console.log("Open search")}
-                    aria-label="search-button"
-                  >
-                    <SearchIcon />
-                  </button>
-                  <button
-                    className="flex items-center justify-center flex-shrink-0 h-auto relative focus:outline-none transform transition-colors"
-                    onClick={openCart}
-                    aria-label="cart-button"
-                  >
-                    <CartIcon className="w-5 h-5 text-gray-600" />
-                    {totalItems > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        {totalItems}
-                      </span>
-                    )}
-                  </button>
-                  <LocalizedClientLink
-                    className="flex items-center justify-center"
-                    href={isAuthenticated ? "/account" : "/login"}
-                    data-testid="nav-account-link"
-                  >
-                    <UserIcon className="w-5 h-5 text-gray-600" />
-                  </LocalizedClientLink>
-                </div>
+                <button
+                  onClick={openCart}
+                  aria-label="cart-button"
+                  className="relative focus:outline-none"
+                >
+                  <CartIcon className="w-8 h-8 text-gray-600" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* MEGA-MENU ROW (desktop) */}
+            <div className="content-container max-w-[1920px] px-4 lg:px-6 hidden lg:flex lg:flex-col">
+              <div className="flex justify-center mt-1">
+                <HeaderMenu data={menu} />
+              </div>
+            </div>
+
+            {/* MOBILE ROW */}
+            <div className="lg:hidden relative flex items-center justify-between h-16 sm:h-20 bg-white border-b border-gray-200 text-gray-700">
+              <button
+                onClick={handleMobileOpen}
+                aria-label="menu"
+                className="ml-4 focus:outline-none"
+              >
+                <MenuIcon className="w-8 h-8" />
+              </button>
+
+              {/* centered logo */}
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+              <Logo className="h-12 w-auto" />
+              </div>
+
+              <div className="flex items-center mr-4 space-x-4">
+                <button
+                  onClick={() => console.log("search")}
+                  aria-label="search-button"
+                  className="focus:outline-none"
+                >
+                  <SearchIcon className="w-8 h-8 text-gray-600" />
+                </button>
+
+                <button
+                  onClick={openCart}
+                  aria-label="cart-button"
+                  className="relative focus:outline-none"
+                >
+                  <CartIcon className="w-8 h-8 text-gray-600" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+
+                <LocalizedClientLink
+                  href={isAuthenticated ? "/account" : "/login"}
+                  className="focus:outline-none"
+                >
+                  <UserIcon className="w-8 h-8 text-gray-600" />
+                </LocalizedClientLink>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Blurred Overlay and Sidebar */}
+        {/* CART OVERLAY & SIDEBAR */}
         {isCartOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 transition-opacity duration-200 ease-in-out"
-              style={{ opacity: isCartOpen ? 1 : 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
               onClick={closeCart}
             />
             <div
-              className="cart-sidebar fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
-              style={{ transform: isCartOpen ? "translateX(0)" : "translateX(100%)" }}
+              className="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
+              style={{
+                transform: isCartOpen
+                  ? "translateX(0)"
+                  : "translateX(100%)",
+              }}
             >
-              <CartSidebar cart={cart} isOpen={isCartOpen} onClose={closeCart} />
+              <CartSidebar
+                cart={cart}
+                isOpen={isCartOpen}
+                onClose={closeCart}
+              />
             </div>
           </>
         )}
 
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={handleMobileMenuClose} />
+        <MobileMenu isOpen={mobileOpen} onClose={handleMobileClose} />
       </>
     );
   } catch (error) {
-    console.error("ClientNav: Error rendering:", error);
-    return <div>Error loading navigation. Please refresh the page.</div>;
+    console.error("ClientNav rendering error:", error);
+    return (
+      <div className="text-center py-4">
+        Error loading navigation. Please refresh the page.
+      </div>
+    );
   }
 }

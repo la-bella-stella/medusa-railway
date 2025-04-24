@@ -1,3 +1,4 @@
+// tailwind.config.js
 const path = require("path")
 
 module.exports = {
@@ -11,6 +12,23 @@ module.exports = {
     "./node_modules/@medusajs/ui/dist/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+    // Mirror legacy container settings:
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: "1rem",  // px-4
+        md:      "2rem",  // md:px-8
+        "2xl":   "4rem",  // 2xl:px-16
+      },
+      screens: {
+        DEFAULT: "100%",
+        sm:      "640px",
+        md:      "768px",
+        lg:      "1024px",
+        xl:      "1280px",
+        "2xl":   "1920px", // bump cap to 1920px
+      },
+    },
     extend: {
       transitionProperty: {
         width: "width margin",
@@ -48,11 +66,11 @@ module.exports = {
       },
       screens: {
         "2xsmall": "320px",
-        xsmall: "512px",
-        small: "1024px",
-        medium: "1280px",
-        large: "1440px",
-        xlarge: "1680px",
+        xsmall:    "512px",
+        small:     "1024px",
+        medium:    "1280px",
+        large:     "1440px",
+        xlarge:    "1680px",
         "2xlarge": "1920px",
       },
       fontSize: {

@@ -1,9 +1,10 @@
 // src/modules/home/components/popular-collection-block/index.tsx
 "use client";
+
 import HomeSectionHeader from "@modules/home/components/home-section-header";
 import HomeCollectionCard from "@modules/home/components/collection-home-card";
 
-// Define types for both static and Medusa data
+// Static vs. Medusa collection item types
 interface StaticCollectionItem {
   id: number;
   slug: string;
@@ -22,7 +23,7 @@ interface MedusaCollectionItem {
 
 type CollectionItem = StaticCollectionItem | MedusaCollectionItem;
 
-// Define the shape expected by HomeCollectionCard
+// Normalized shape for HomeCollectionCard
 interface NormalizedCollectionItem {
   slug: string;
   image: string;
@@ -45,32 +46,29 @@ const PopularCollectionBlock: React.FC<Props> = ({
   sectionHeading,
   layout = "cols-2",
 }) => {
+  // Two-col on small, four-col on large if layout=cols-4
   const layoutClass =
     layout === "cols-4"
       ? "grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
       : "grid-cols-1 md:grid-cols-2";
   const isCols4 = layout === "cols-4";
 
-  // Normalize data to match HomeCollectionCard's expected shape
-  const normalizedData: NormalizedCollectionItem[] = data.map((item) => {
-    if ("slug" in item) {
-      // StaticCollectionItem
-      return {
-        slug: item.slug,
-        image: item.image,
-        title: item.title,
-        description: item.description,
-      };
-    } else {
-      // MedusaCollectionItem
-      return {
-        slug: item.handle, // Map handle to slug
-        image: item.thumbnail ?? "/assets/placeholder/collection.svg", // Map thumbnail to image, with fallback
-        title: item.title,
-        description: item.metadata?.description ?? "", // Use metadata for description, with fallback
-      };
-    }
-  });
+  // Normalize incoming data for the card component
+  const normalizedData: NormalizedCollectionItem[] = data.map((item) =>
+    "slug" in item
+      ? {
+          slug: item.slug,
+          image: item.image,
+          title: item.title,
+          description: item.description,
+        }
+      : {
+          slug: item.handle,
+          image: item.thumbnail ?? "/assets/placeholder/collection.svg",
+          title: item.title,
+          description: item.metadata?.description ?? "",
+        }
+  );
 
   return (
     <div>
@@ -78,13 +76,19 @@ const PopularCollectionBlock: React.FC<Props> = ({
 
       <div className={`grid ${layoutClass} gap-5 xl:gap-7 ${className}`}>
         {normalizedData.map((item, index) => (
-          <HomeCollectionCard
+          <div
             key={index}
-            collection={item}
-            variant={variant}
-            imgWidth={isCols4 ? 680 : 580}
-            imgHeight={isCols4 ? 680 : 580}
-          />
+            // force each card to sit in a 372px-wide box when in 4-col mode
+            className={isCols4 ? "w-[372px] mx-auto" : ""}
+          >
+            <HomeCollectionCard
+              collection={item}
+              variant={variant}
+              // use exact 372×496 px on desktop four-col
+              imgWidth={isCols4 ? 372 : 580}
+              imgHeight={isCols4 ? 496 : 580}
+            />
+          </div>
         ))}
       </div>
     </div>
