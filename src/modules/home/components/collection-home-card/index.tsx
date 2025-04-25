@@ -1,4 +1,3 @@
-// src/modules/home/components/home-collection-card/index.tsx
 import React from "react";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import Image from "next/image";
@@ -24,9 +23,12 @@ const HomeCollectionCard: React.FC<Props> = ({
   imgHeight = 580,
   variant = "default",
 }) => {
-  const { t } = useTranslation("common");
+  const { t, ready } = useTranslation("common");
   const { slug, image, title } = collection;
   const isFull = variant === "full";
+
+  // Render a loading state until translations are ready
+  if (!ready) return <div>Loading...</div>;
 
   // Compute padding-top % to enforce correct aspect ratio
   const paddingTopPercent = !isFull

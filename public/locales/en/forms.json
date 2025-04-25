@@ -60,6 +60,7 @@
     "error-credential-wrong": "Invalid credentials",
     "text-login-mobile": "Login with Mobile Number",
     "error-code-required": "Please input the otp code",
-    "error-min-code": "Code must be at least 6 characters"
+    "error-min-code": "Code must be at least 6 characters",
+    "subscribe-success": "Success!"
   }
   

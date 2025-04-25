@@ -1,4 +1,3 @@
-// src/lib/data/products.ts
 "use server";
 
 import { sdk } from "@lib/config";
@@ -17,7 +16,7 @@ export type ListProductsParams = {
       handle?: string;
       /** Filter by product IDs (server-side) */
       id?: string[];
-      /** Filter by product tag IDs (server-side) */
+      /** Filter by product tag IDs or values (server-side) */
       tag_id?: string[];
       /** Filter by creation date (e.g., created within the last 30 days) */
       created_at?: { gte?: string; lte?: string };
@@ -27,6 +26,30 @@ export type ListProductsParams = {
   /** optional — you can still pass a region ID directly */
   regionId?: string;
 };
+
+/**
+ * Fetches the tag ID for a given tag value from the Medusa backend.
+ * @param value - The tag value (e.g., "flash-sale")
+ * @returns The tag ID (e.g., "ptag_01...") or null if not found
+ */
+async function getTagIdByValue(value: string): Promise<string | null> {
+  try {
+    const { product_tags } = await sdk.client.fetch<{
+      product_tags: { id: string; value: string }[];
+    }>("/store/product-tags", {
+      method: "GET",
+      query: { q: value },
+      headers: await getAuthHeaders(),
+      next: await getCacheOptions("product-tags"),
+    });
+    console.log("Fetched tags for value:", value, JSON.stringify(product_tags, null, 2));
+    const tag = product_tags.find((t) => t.value.toLowerCase() === value.toLowerCase());
+    return tag ? tag.id : null;
+  } catch (e: any) {
+    console.error("Failed to fetch tag ID for value:", value, e.message, e.stack);
+    return null;
+  }
+}
 
 export async function listProducts({
   pageParam = 1,
@@ -96,11 +119,27 @@ export async function listProducts({
       "*variants.calculated_price,+variants.inventory_quantity,+metadata,+tags",
   };
 
-  // Transform tag_id and id if present
+  // Transform tag_id if present: resolve tag values to tag IDs
   if (query.tag_id && Array.isArray(query.tag_id)) {
-    query["tag_id[]"] = query.tag_id;
+    const tagIds = [];
+    for (const tag of query.tag_id) {
+      const tagId = await getTagIdByValue(tag);
+      if (tagId) {
+        tagIds.push(tagId);
+      } else {
+        console.warn(`Tag value "${tag}" not found in Medusa backend`);
+      }
+    }
+    if (tagIds.length > 0) {
+      query["tag_id[]"] = tagIds;
+    } else {
+      console.warn("No valid tag IDs found for provided tag values:", query.tag_id);
+      query["tag_id[]"] = query.tag_id; // Fallback to original values if no IDs found
+    }
     delete query.tag_id;
   }
+
+  // Transform id if present
   if (query.id && Array.isArray(query.id)) {
     query["id[]"] = query.id;
     delete query.id;
@@ -119,13 +158,14 @@ export async function listProducts({
         query,
         headers,
         next,
-        cache: "force-cache",
+        cache: "no-store", // Changed to no-store for debugging; revert to "force-cache" after testing
       }
     );
 
+    console.log("API Response:", JSON.stringify(response, null, 2));
     console.log("Fetched products:", response.products.length, "Count:", response.count);
-    if (queryParams.tag_id) {
-      console.log("Products with tag", queryParams.tag_id, ":", JSON.stringify(response.products, null, 2));
+    if (query["tag_id[]"]) {
+      console.log("Products with tags", query["tag_id[]"], ":", JSON.stringify(response.products, null, 2));
     }
 
     return {

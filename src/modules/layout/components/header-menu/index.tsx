@@ -1,5 +1,4 @@
 // src/modules/layout/components/header-menu/index.tsx
-
 import React, { useState } from "react";
 import { usePopper } from "react-popper";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
@@ -37,7 +36,6 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
 
   return (
     <>
-      {/* Maintenance alert (desktop only) */}
       {width >= RESPONSIVE_WIDTH && underMaintenanceIsComing && !isScrolling && (
         <Alert
           message={t("text-maintenance-mode-title")}
@@ -59,16 +57,13 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
           className
         )}
       >
-        {/* Use px-4 gutter to match site container */}
         <div className="flex items-center max-w-[1920px] mx-auto px-4">
           {data.map((item, index) => {
-            // Popper state
             const [referenceElement, setReferenceElement] =
               useState<HTMLElement | null>(null);
             const [popperElement, setPopperElement] =
               useState<HTMLDivElement | null>(null);
 
-            // Popper instance for the drop‐down
             const { styles, attributes } = usePopper(
               referenceElement,
               popperElement,
@@ -88,10 +83,7 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
             );
 
             return (
-              <div
-                key={item.id}
-                className="menuItem group cursor-pointer px-4"
-              >
+              <div key={item.id} className="menuItem group cursor-pointer px-4">
                 <LocalizedClientLink
                   href={item.path}
                   className={classNames(
@@ -103,7 +95,7 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
                   )}
                   ref={setReferenceElement}
                 >
-                  {t(item.label)}
+                  {t(item.label.trim())} {/* Trim whitespace */}
                 </LocalizedClientLink>
 
                 {item.columns && (

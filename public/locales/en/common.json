@@ -194,6 +194,7 @@
     "button-chat-services": "Chat With Member Services",
     "button-update": "Update",
     "text-successfully-updated": "Successfully Updated!",
+    "text-free-shipping": "FREE SHIPPING & EASY RETURNS",
     "text-tax-calculation-label": "Taxes",
     "text-tax-checkout-calculation": "Calculated at checkout",
     "text-shipping-calculation-label": "Estimated Shipping",
@@ -439,6 +440,13 @@
     "text-follow-us": "Follow Us",
     "text-since": "Since",
     "text-news": "NEWS",
-    "text-commission": "Commission"
+    "text-commission": "Commission",
+    "2025 Sale Collection": "2025 Sale Collection",
+    "Women's Sale": "Women's Sale",
+    "Men's Sale": "Men's Sale",
+    "Gift Collection": "Gift Collection",
+    "Women's Collection": "Women's Collection",
+    "Men's Collection": "Men's Collection",
+    "English": "English"
   }
   
