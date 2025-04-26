@@ -33,3 +33,14 @@ export type StoreFreeShippingPrice = StorePrice & {
   target_remaining: number;
   remaining_percentage: number;
 };
+
+export type Filters = {
+  category?: string[];      // checkbox can select multiple
+  brand?: string[];
+  collection?: string[];
+  grouped_color?: string[];
+  gender?: string[];
+  season?: string[];
+  price?: string[];
+  tags?: string[];         // PriceFilter might emit a single-range string like "300-500"
+};

@@ -4239,6 +4239,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/body-scroll-lock@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@types/body-scroll-lock@npm:3.1.2"
+  checksum: b114b5bd2152ac4414b3e881ed372d53de36342eb8b5365e3b607e6c1d40fb0b554628bd05d9d840d18550541e4b9f6128c86099b4a8f511d48a31a5d7c34f47
+  languageName: node
+  linkType: hard
+
 "@types/classnames@npm:^2.3.0":
   version: 2.3.0
   resolution: "@types/classnames@npm:2.3.0"
@@ -5237,6 +5244,13 @@ __metadata:
   version: 2.3.0
   resolution: "binary-extensions@npm:2.3.0"
   checksum: bcad01494e8a9283abf18c1b967af65ee79b0c6a9e6fcfafebfe91dbe6e0fc7272bafb73389e198b310516ae04f7ad17d79aacf6cb4c0d5d5202a7e2e52c7d98
+  languageName: node
+  linkType: hard
+
+"body-scroll-lock@npm:^4.0.0-beta.0":
+  version: 4.0.0-beta.0
+  resolution: "body-scroll-lock@npm:4.0.0-beta.0"
+  checksum: 61d40007fddf64ecc69e9e02ed9d96bb895f88d7da65cea7651081110225de48efa44ffc4acd376ed004788e242a9af12059fec728c096774b49365524ea6f46
   languageName: node
   linkType: hard
 
@@ -7635,6 +7649,7 @@ __metadata:
     "@stripe/react-stripe-js": ^1.7.2
     "@stripe/stripe-js": ^1.29.0
     "@tanstack/react-query": ^4.36.1
+    "@types/body-scroll-lock": ^3.1.2
     "@types/classnames": ^2.3.0
     "@types/i18next": ^12.1.0
     "@types/lodash": ^4.17.16
@@ -7649,6 +7664,7 @@ __metadata:
     ansi-colors: ^4.1.3
     autoprefixer: ^10.4.21
     babel-loader: ^8.2.3
+    body-scroll-lock: ^4.0.0-beta.0
     classnames: ^2.5.1
     eslint: 8.10.0
     eslint-config-next: 15.0.3
@@ -7667,6 +7683,7 @@ __metadata:
     prettier: ^2.8.8
     qs: ^6.12.1
     react: 19.0.0-rc-66855b96-20241106
+    react-content-loader: ^7.0.2
     react-countdown: ^2.3.6
     react-country-flag: ^3.1.0
     react-dom: 19.0.0-rc-66855b96-20241106
@@ -7675,6 +7692,7 @@ __metadata:
     react-icons: ^5.5.0
     react-mailchimp-subscribe: ^2.1.3
     react-popper: ^2.3.0
+    react-sticky-box: ^2.0.5
     react-toastify: ^11.0.5
     react-use: ^17.6.0
     server-only: ^0.0.1
@@ -8847,6 +8865,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-content-loader@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "react-content-loader@npm:7.0.2"
+  peerDependencies:
+    react: ">=16.0.0"
+  checksum: 8f2f97cfb9a831cf487b8295fc60e05b153340a7bbaa2aa117c4af4c694ce0759313d8f538677ed231d3eb11d626e0561c416bc94f4ed158426bab5e8fa2ff67
+  languageName: node
+  linkType: hard
+
 "react-countdown@npm:^2.3.6":
   version: 2.3.6
   resolution: "react-countdown@npm:2.3.6"
@@ -9033,6 +9060,15 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
   checksum: f2d2482e74267e76a8bc863c299c0c78a99fdede826a9083ac63b34f74f637fe8e859990a5a16fa76cabeedfda94f29004c542d262de4f57714b4cd9024047dd
+  languageName: node
+  linkType: hard
+
+"react-sticky-box@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "react-sticky-box@npm:2.0.5"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 54d79e4d6b8bbff1bd0102ab3e2e5778fbad68575e36726de2c94b8b25d9767ce6e146fa094143b9b18027afae94a4f71bf6a2265930798e7fb7fa3ff1b51b33
   languageName: node
   linkType: hard
 

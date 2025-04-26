@@ -10,7 +10,7 @@ type RelatedProductsProps = {
   region: HttpTypes.StoreRegion | null
   countryCode: string
   relatedProducts?: HttpTypes.StoreProduct[]
-  sectionHeading?: string // Add sectionHeading prop
+  sectionHeading?: string
 }
 
 export default function RelatedProducts({
@@ -18,9 +18,9 @@ export default function RelatedProducts({
   region,
   countryCode,
   relatedProducts = [],
-  sectionHeading = "text-related-products", // Default to the translation key
+  sectionHeading = "text-related-products",
 }: RelatedProductsProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation("common")
 
   if (!region || !relatedProducts.length) {
     return null
@@ -30,14 +30,18 @@ export default function RelatedProducts({
     <div className="product-page-constraint">
       <div className="flex flex-col mb-16">
         <span className="text-lg font-semibold text-heading mb-6">
-          {t(sectionHeading)} {/* Use translation for the heading */}
+          {t(sectionHeading)}
         </span>
       </div>
 
       <ul className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-8">
         {relatedProducts.map((relatedProduct) => (
           <li key={relatedProduct.id}>
-            <ProductPreview product={relatedProduct} region={region} />
+            <ProductPreview
+              product={relatedProduct}
+              region={region}
+              countryCode={countryCode}
+            />
           </li>
         ))}
       </ul>

@@ -1,4 +1,3 @@
-// src/modules/layout/components/ClientNav.tsx
 "use client";
 
 import React, { useCallback, useState, useRef } from "react";
@@ -126,7 +125,12 @@ export default function ClientNav({
                   <SearchIcon className="w-8 h-8 text-gray-600" />
                 </button>
                 {isSearchOpen && (
-                  <SearchOverlay open={isSearchOpen} onClose={closeSearch} />
+                  <SearchOverlay
+                    open={isSearchOpen}
+                    onClose={closeSearch}
+                    region={regions[0] || null}
+                    countryCode={regionId}
+                  />
                 )}
               </div>
 
@@ -198,7 +202,12 @@ export default function ClientNav({
                     <SearchIcon className="w-8 h-8 text-gray-600" />
                   </button>
                   {isSearchOpen && (
-                    <SearchOverlay open={isSearchOpen} onClose={closeSearch} />
+                    <SearchOverlay
+                      open={isSearchOpen}
+                      onClose={closeSearch}
+                      region={regions[0] || null}
+                      countryCode={regionId}
+                    />
                   )}
                 </div>
                 <button

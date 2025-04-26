@@ -91,10 +91,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                 <div
                   key={index}
                   ref={(el) => {
-                    itemRefs.current[index] = el; // No return value, returns void
+                    itemRefs.current[index] = el;
                   }}
                   className={`cursor-pointer transition duration-150 ease-in hover:opacity-90 ${
-                    index === activeIndex ? "active-slider-img" : ""
+                    index === activeIndex ? "border border-black" : ""
                   }`}
                   onClick={() => setActiveIndex(index)}
                 >
@@ -109,11 +109,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                       setImgErrorIndex((prev) => ({ ...prev, [index]: true }))
                     }
                     alt={`Product thumbnail ${index}`}
-                    layout="responsive"
-                    width={580}
-                    height={580}
+                    width={80}
+                    height={80}
                     objectFit="contain"
-                    className="h-full w-full product-thumbnail"
+                    className="h-full w-full"
                   />
                 </div>
               ))}
@@ -136,7 +135,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
               objectFit="contain"
               height={580}
               width={580}
-              className="h-full w-full product-main-image"
+              className="h-full w-full"
             />
           </div>
         </div>

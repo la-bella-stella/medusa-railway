@@ -3,13 +3,12 @@ import { clx } from "@medusajs/ui";
 import { getProductPrice } from "@lib/util/get-product-price";
 import { HttpTypes } from "@medusajs/types";
 
-export default function ProductPrice({
-  product,
-  variant,
-}: {
+type ProductPriceProps = {
   product: HttpTypes.StoreProduct;
   variant?: HttpTypes.StoreProductVariant;
-}) {
+};
+
+export default function ProductPrice({ product, variant }: ProductPriceProps) {
   const { cheapestPrice, variantPrice } = getProductPrice({
     product,
     variantId: variant?.id,
@@ -34,7 +33,7 @@ export default function ProductPrice({
         data-testid="product-price"
         data-value={selectedPrice.calculated_price_number}
       >
-        {!variant && "From "} {selectedPrice.calculated_price}
+        {selectedPrice.calculated_price}
       </span>
       {selectedPrice.price_type === "sale" && (
         <del

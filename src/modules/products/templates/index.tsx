@@ -1,42 +1,47 @@
 // src/modules/products/templates/index.tsx
-"use client"
+"use client";
 
-import React, { useState, forwardRef } from "react"
-import { HttpTypes } from "@medusajs/types"
-import ImageGallery from "@modules/products/components/image-gallery"
-import ProductActions from "@modules/products/components/product-actions"
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
-import ProductTabs from "@modules/products/components/product-tabs"
-import RelatedProducts from "@modules/products/components/related-products"
-import ProductInfo from "@modules/products/templates/product-info"
-import ProductActionsWrapper from "./product-actions-wrapper"
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import Subscription from "@modules/common/components/subscription"
-import { FaChevronUp, FaChevronDown } from "react-icons/fa"
-import { Transition } from "@headlessui/react"
-import { Suspense } from "react"
-import { useTranslation } from "react-i18next"
+import React, { useState, forwardRef } from "react";
+import { HttpTypes } from "@medusajs/types";
+import ImageGallery from "@modules/products/components/image-gallery";
+import ProductActions from "@modules/products/components/product-actions";
+import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta";
+import ProductTabs from "@modules/products/components/product-tabs";
+import RelatedProducts from "@modules/products/components/related-products";
+import ProductInfo from "@modules/products/templates/product-info";
+import ProductActionsWrapper from "./product-actions-wrapper";
+import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products";
+import Subscription from "@modules/common/components/subscription";
+import { FaChevronUp, FaChevronDown } from "react-icons/fa";
+import { Transition } from "@headlessui/react";
+import { Suspense } from "react";
+import { useTranslation } from "react-i18next";
 
 // Simple Breadcrumb component
 const Breadcrumb: React.FC<{ productTitle: string }> = ({ productTitle }) => {
   return (
     <div className="text-sm text-gray-600 mb-4">
-      <a href="/" className="hover:underline">Home</a> /{" "}
-      <a href="/products" className="hover:underline">Products</a> /{" "}
-      <span className="text-heading">{productTitle}</span>
+      <a href="/" className="hover:underline">
+        Home
+      </a>{" "}
+      /{" "}
+      <a href="/products" className="hover:underline">
+        Products
+      </a>{" "}
+      / <span className="text-heading">{productTitle}</span>
     </div>
-  )
-}
+  );
+};
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct & {
-    brand?: { name: string }
-    type?: HttpTypes.StoreProductType | null
-  }
-  region: HttpTypes.StoreRegion
-  countryCode: string
-  relatedProducts?: HttpTypes.StoreProduct[]
-}
+    brand?: { name: string };
+    type?: HttpTypes.StoreProductType | null;
+  };
+  region: HttpTypes.StoreRegion;
+  countryCode: string;
+  relatedProducts?: HttpTypes.StoreProduct[];
+};
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
   product,
@@ -44,25 +49,26 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   countryCode,
   relatedProducts = [],
 }) => {
-  const { t } = useTranslation("common")
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true)
-  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true)
-
-  // Debug: Log the translation output for "text-free-shipping"
-  console.log("Translation for text-free-shipping:", t("text-free-shipping"))
+  const { t } = useTranslation("common");
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
+  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<
+    HttpTypes.StoreProductVariant | undefined
+  >(undefined);
 
   const toggleDescription = () => {
-    setIsDescriptionOpen(!isDescriptionOpen)
-  }
+    setIsDescriptionOpen(!isDescriptionOpen);
+  };
 
   const toggleSpecifications = () => {
-    setIsSpecificationOpen(!isSpecificationOpen)
-  }
+    setIsSpecificationOpen(!isSpecificationOpen);
+  };
 
-  const TransitionWrapper = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
-    ({ children }, ref) => <div ref={ref}>{children}</div>
-  )
-  TransitionWrapper.displayName = "TransitionWrapper"
+  const TransitionWrapper = forwardRef<
+    HTMLDivElement,
+    { children: React.ReactNode }
+  >(({ children }, ref) => <div ref={ref}>{children}</div>);
+  TransitionWrapper.displayName = "TransitionWrapper";
 
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
@@ -79,9 +85,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         {/* Product Details Section */}
         <div className="col-span-4 pt-8 lg:pt-0">
           <div className="pb-7 mb-7 border-b border-gray-300">
-            <ProductInfo product={product} />
-            <p className="text-gray-500 text-base text-center mt-8 leading-6">
-              {t("text-free-shipping", "FREE SHIPPING & EASY RETURNS")} {/* Add fallback */}
+            <ProductInfo product={product} variant={selectedVariant} />
+            <p className="text-gray-500 text-base text-center mt-8 leading-6 uppercase">
+              {t("text-free-shipping", "FREE SHIPPING & EASY RETURNS")}
             </p>
           </div>
 
@@ -95,7 +101,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 />
               }
             >
-              <ProductActionsWrapper product={product} region={region} />
+              <ProductActions
+                product={product}
+                region={region}
+                onVariantChange={setSelectedVariant}
+              />
             </Suspense>
             <ProductOnboardingCta />
           </div>
@@ -183,7 +193,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <Subscription />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductTemplate
+export default ProductTemplate;

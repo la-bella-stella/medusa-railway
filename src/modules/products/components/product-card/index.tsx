@@ -1,21 +1,25 @@
-// src/modules/products/components/product-card/index.tsx
-"use client"
+"use client";
 
-import cn from "classnames"
-import Image from "next/image"
-import { FC, useState } from "react"
-import { HttpTypes } from "@medusajs/types"
-import { useTranslation } from "react-i18next"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { getProductPrice } from "@lib/util/get-product-price"
+import cn from "classnames";
+import Image from "next/image";
+import { FC, useState } from "react";
+import { HttpTypes } from "@medusajs/types";
+import { useTranslation } from "react-i18next";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { getProductPrice } from "@lib/util/get-product-price";
+
+interface Brand {
+  id: string;
+  name: string;
+}
 
 interface ProductProps {
-  product: HttpTypes.StoreProduct
-  className?: string
-  imageContentClassName?: string
-  variant?: "grid" | "gridSlim" | "list" | "gridModern"
-  imgLoading?: "eager" | "lazy"
-  region?: HttpTypes.StoreRegion | null // Region prop already added
+  product: HttpTypes.StoreProduct & { brand?: Brand };
+  className?: string;
+  imageContentClassName?: string;
+  variant?: "grid" | "gridSlim" | "list" | "gridModern";
+  imgLoading?: "eager" | "lazy";
+  region?: HttpTypes.StoreRegion | null;
 }
 
 const ProductCard: FC<ProductProps> = ({
@@ -24,42 +28,41 @@ const ProductCard: FC<ProductProps> = ({
   imageContentClassName = "",
   variant = "gridModern",
   imgLoading = "lazy",
-  region,
+  region = null,
 }) => {
-  const { t } = useTranslation("common")
-  const { title, thumbnail, variants, type, handle } = product
+  const { t } = useTranslation("common");
+  const { cheapestPrice } = getProductPrice({ product, region });
 
-  // Use getProductPrice to handle pricing, passing the full region object
-  const { cheapestPrice } = getProductPrice({ product, region })
-
-  const selectedPrice = cheapestPrice
-
-  if (!selectedPrice) {
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
+  if (!cheapestPrice) {
+    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />;
   }
 
-  const currentPrice = selectedPrice.calculated_price
-  const basePrice = selectedPrice.original_price || selectedPrice.calculated_price
-  const isOnSale = selectedPrice.price_type === "sale"
-  const discount = selectedPrice.percentage_diff
+  const {
+    calculated_price: currentPrice,
+    original_price: maybeBase,
+    price_type,
+    percentage_diff: discount,
+  } = cheapestPrice;
 
-  const isVariable = variants ? variants.length > 1 : false
-  const hasRange = false // We'll add range logic later if needed
+  const basePrice = maybeBase || currentPrice;
+  const isOnSale = price_type === "sale";
+  const isVariable = (product.variants?.length ?? 0) > 1;
+  const inventoryQuantity = product.variants?.[0]?.inventory_quantity ?? 0;
 
-  // Check inventory quantity from the first variant
-  const inventoryQuantity = variants?.[0]?.inventory_quantity ?? 0
+  const [imgError, setImgError] = useState(false);
 
-  const [imgError, setImgError] = useState(false)
+  // Brand name (if any)
+  const brandName = product.brand?.name;
 
   return (
     <LocalizedClientLink
-      href={`/products/${handle}`}
+      href={`/products/${product.handle}`}
       className={cn(
         "group bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1",
         className
       )}
       role="button"
-      title={title}
+      title={product.title}
     >
       <div
         className={cn(
@@ -71,49 +74,60 @@ const ProductCard: FC<ProductProps> = ({
           src={
             imgError
               ? "/assets/placeholder/collection.svg"
-              : thumbnail ?? "/assets/placeholder/collection.svg"
+              : product.thumbnail ?? "/assets/placeholder/collection.svg"
           }
+          alt={product.title || t("text-product-image", "Product Image")}
           fill
           loading={imgLoading}
           quality={100}
-          alt={title || t("text-product-image")}
-          className="object-cover rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
+          style={{ objectFit: "cover" }}
+          className="rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
           onError={() => setImgError(true)}
         />
 
         {isOnSale && discount && (
           <span className="absolute top-3 start-3 bg-red-500 text-white text-[11px] px-2.5 py-1.5 rounded-md leading-tight font-semibold">
-            {discount} {t("text-off")}
+            {discount} {t("text-off", "off")}
           </span>
         )}
-
         {inventoryQuantity === 0 && (
-          <span className="absolute top-3 end-3 text-xs text-white bg-heading px-2 py-1 rounded-md">
-            {t("text-out-stock")}
+          <span className="absolute top-3 end-3 text-xs text-white bg-gray-600 px-2 py-1 rounded-md">
+            {t("text-out-stock", "Out of Stock")}
           </span>
         )}
       </div>
 
-      <div className="px-3 py-3">
-        {type?.value && (
-          <div className="text-xs text-gray-500 uppercase mb-1 truncate">
-            {type.value}
+      <div className="px-3 py-3 flex flex-col flex-grow w-full">
+        {/* BRAND */}
+        {brandName && (
+          <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
+            {brandName}
           </div>
         )}
-        <h3 className="text-sm font-semibold text-heading truncate mb-1.5">
-          {title}
+
+        {/* PRODUCT TYPE */}
+        {product.type?.value && (
+          <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
+            {product.type.value}
+          </div>
+        )}
+
+        {/* TITLE */}
+        <h3 className="text-sm font-semibold text-gray-800 truncate mb-1.5 w-full">
+          {product.title}
         </h3>
 
-        <div className="text-sm font-semibold mt-2 flex items-center space-x-2">
-          {isVariable && hasRange && (
-            <span className="text-sm font-bold text-heading uppercase">
-              {t("text-from")}
+        {/* PRICE */}
+        <div className="mt-2 flex items-center space-x-2 w-full">
+          {isVariable && (
+            <span className="text-sm font-bold text-gray-800 uppercase">
+              {t("text-from", "From")}
             </span>
           )}
           <span
             className={cn(
               "text-base font-semibold",
-              isOnSale ? "text-red-500" : "text-heading"
+              isOnSale ? "text-red-500" : "text-gray-800"
             )}
           >
             {currentPrice}
@@ -126,7 +140,7 @@ const ProductCard: FC<ProductProps> = ({
         </div>
       </div>
     </LocalizedClientLink>
-  )
-}
+  );
+};
 
-export default ProductCard
+export default ProductCard;

@@ -1,37 +1,38 @@
-// src/modules/common/components/localized-client-link.tsx
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useMemo } from "react"
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useMemo } from "react";
 
-interface LocalizedClientLinkProps {
-  href: string
-  children: React.ReactNode
-  className?: string
-  [key: string]: any
+// Configurable default country code
+const DEFAULT_COUNTRY_CODE = "us";
+
+interface LocalizedClientLinkProps extends Omit<React.ComponentProps<typeof Link>, "href"> {
+  href: string; // Explicitly required
+  children: React.ReactNode; // Explicitly required
+  className?: string;
 }
 
 const LocalizedClientLink: React.FC<LocalizedClientLinkProps> = ({
   href,
   children,
   className,
-  ...props
+  ...restProps
 }) => {
-  const pathname = usePathname()
+  const params = useParams();
+  const countryCode = (params.countryCode as string) || DEFAULT_COUNTRY_CODE;
 
   const localizedHref = useMemo(() => {
-    const countryCode = pathname.split("/")[1] || ""
-    const isDefaultCountry = countryCode === "" || countryCode === "us"
-    const normalizedHref = href.startsWith("/") ? href : `/${href}`
-    return isDefaultCountry ? normalizedHref : `/${countryCode}${normalizedHref}`
-  }, [pathname, href])
+    const isDefaultCountry = countryCode === DEFAULT_COUNTRY_CODE;
+    const normalizedHref = href.startsWith("/") ? href : `/${href}`;
+    return isDefaultCountry ? normalizedHref : `/${countryCode}${normalizedHref}`;
+  }, [countryCode, href]);
 
   return (
-    <Link href={localizedHref} className={className} {...props}>
+    <Link href={localizedHref} className={className} {...restProps}>
       {children}
     </Link>
-  )
-}
+  );
+};
 
-export default LocalizedClientLink
+export default LocalizedClientLink;
