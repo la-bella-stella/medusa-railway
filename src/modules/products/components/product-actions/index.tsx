@@ -14,12 +14,13 @@ import { toast } from "react-toastify";
 import useWindowSize from "react-use/lib/useWindowSize";
 import Counter from "@modules/common/components/counter";
 import MobileActions from "./mobile-actions";
+import { useUI } from "@lib/context/ui-context";
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct;
   region: HttpTypes.StoreRegion;
   disabled?: boolean;
-  onVariantChange?: (variant: HttpTypes.StoreProductVariant | undefined) => void; // Add callback to notify parent of variant changes
+  onVariantChange?: (variant: HttpTypes.StoreProductVariant | undefined) => void;
 };
 
 const optionsAsKeymap = (
@@ -41,6 +42,7 @@ export default function ProductActions({
   const { width } = useWindowSize();
   const countryCode = useParams().countryCode as string;
   const router = useRouter();
+  const { openSidebar } = useUI();
   const [options, setOptions] = useState<Record<string, string | undefined>>({});
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -63,7 +65,6 @@ export default function ProductActions({
     });
   }, [product.variants, options]);
 
-  // Notify parent of variant change
   useEffect(() => {
     onVariantChange?.(selectedVariant);
   }, [selectedVariant, onVariantChange]);
@@ -109,26 +110,33 @@ export default function ProductActions({
 
     setIsAdding(true);
 
-    await addToCart({
-      variantId: selectedVariant.id,
-      quantity: quantity,
-      countryCode,
-    });
+    try {
+      await addToCart({
+        variantId: selectedVariant.id,
+        quantity,
+        countryCode,
+      });
 
-    setIsAdding(false);
+      router.refresh();
 
-    router.refresh();
+      toast(t("add-to-cart"), {
+        theme: "dark",
+        progressClassName: "fancy-progress-bar",
+        position: width > 768 ? "bottom-left" : "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
 
-    toast(t("add-to-cart"), {
-      theme: "dark",
-      progressClassName: "fancy-progress-bar",
-      position: width > 768 ? "bottom-left" : "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
+      openSidebar({ view: "CART_SIDEBAR" });
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+      toast.error(t("error-adding-to-cart", "Failed to add item to cart"));
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (

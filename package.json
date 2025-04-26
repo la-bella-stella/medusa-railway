@@ -32,7 +32,6 @@
     "jotai": "^2.12.3",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
-    "medusa-react": "^9.0.18",
     "next": "15.0.3",
     "overlayscrollbars": "^2.11.1",
     "overlayscrollbars-react": "^0.5.6",

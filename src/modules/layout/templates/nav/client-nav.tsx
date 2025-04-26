@@ -1,6 +1,7 @@
+// src/modules/layout/templates/nav/ClientNav.tsx
 "use client";
 
-import React, { useCallback, useState, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StoreRegion, HttpTypes } from "@medusajs/types";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import LanguageSwitcher from "@modules/common/components/language-switcher";
@@ -17,7 +18,7 @@ import Logo from "@modules/common/components/logo";
 import SearchIcon from "@modules/common/icons/search-icon";
 import MenuIcon from "@modules/common/icons/menu-icon";
 import UserIcon from "@modules/common/icons/user";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   RESPONSIVE_WIDTH,
   checkIsMaintenanceModeComing,
@@ -30,6 +31,7 @@ import { useActiveScroll } from "@lib/util/add-active-scroll";
 import { menu } from "@lib/data/menus";
 import HeaderMenu from "@modules/layout/components/header-menu";
 import MobileMenu from "@modules/layout/components/mobile-menu";
+import { useUI } from "@lib/context/ui-context";
 
 interface ClientNavProps {
   regions: StoreRegion[];
@@ -48,11 +50,11 @@ export default function ClientNav({
   const { width } = useWindowSize();
   const siteHeaderRef = useRef<HTMLDivElement>(null!);
   const router = useRouter();
-
-  // Cart sidebar state
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
+  const pathname = usePathname();
+  const { isSidebarOpen, sidebarView, openSidebar, closeSidebar } = useUI();
+  const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout>();
+  const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const prevTotalRef = useRef<number>(totalItems);
 
   // Search overlay state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -81,9 +83,27 @@ export default function ClientNav({
   const onUnderComplete = useCallback(() => setUnderStart(true), [setUnderStart]);
   const onShopComplete = useCallback(() => setShopStart(true), [setShopStart]);
 
-  // Cart item count
-  const totalItems =
-    cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  // Open the sidebar when the cart items change, but not on the cart page
+  useEffect(() => {
+    if (
+      prevTotalRef.current !== totalItems &&
+      !pathname.includes("/cart") &&
+      totalItems > 0
+    ) {
+      openSidebar({ view: "CART_SIDEBAR" });
+      const timer = setTimeout(() => {
+        closeSidebar();
+      }, 5000);
+      setAutoCloseTimer(timer);
+    }
+    prevTotalRef.current = totalItems;
+
+    return () => {
+      if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+      }
+    };
+  }, [totalItems, pathname, openSidebar, closeSidebar]);
 
   try {
     return (
@@ -152,7 +172,7 @@ export default function ClientNav({
                   <UserIcon className="w-8 h-8 text-gray-600" />
                 </LocalizedClientLink>
                 <button
-                  onClick={openCart}
+                  onClick={() => openSidebar({ view: "CART_SIDEBAR" })}
                   aria-label="cart-button"
                   className="relative focus:outline-none"
                 >
@@ -211,7 +231,7 @@ export default function ClientNav({
                   )}
                 </div>
                 <button
-                  onClick={openCart}
+                  onClick={() => openSidebar({ view: "CART_SIDEBAR" })}
                   aria-label="cart-button"
                   className="relative focus:outline-none"
                 >
@@ -234,19 +254,19 @@ export default function ClientNav({
         </header>
 
         {/* Cart Overlay */}
-        {isCartOpen && (
+        {(isSidebarOpen && sidebarView === "CART_SIDEBAR") && (
           <>
             <div
               className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
-              onClick={closeCart}
+              onClick={closeSidebar}
             />
             <div
               className="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
               style={{
-                transform: isCartOpen ? "translateX(0)" : "translateX(100%)",
+                transform: isSidebarOpen && sidebarView === "CART_SIDEBAR" ? "translateX(0)" : "translateX(100%)",
               }}
             >
-              <CartSidebar cart={cart} isOpen onClose={closeCart} />
+              <CartSidebar cart={cart} isOpen onClose={closeSidebar} />
             </div>
           </>
         )}

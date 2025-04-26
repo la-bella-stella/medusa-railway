@@ -10,6 +10,7 @@ import classNames from "classnames";
 import { usePathname } from "next/navigation";
 import CartItem from "@modules/cart/components/item";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { Table } from "@medusajs/ui";
 
 interface CartSidebarProps {
   cart: HttpTypes.StoreCart | null;
@@ -62,9 +63,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, [isOpen, onClose]);
 
+  // Prevent clicks inside the sidebar from propagating to the document
+  const handleSidebarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
+
   return (
     <div
       ref={sidebarRef}
+      onClick={handleSidebarClick}
       className="flex flex-col w-full h-full bg-white cart-drawer-main"
     >
       {/* HEADER */}
@@ -77,7 +84,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
               View cart
             </LocalizedClientLink>
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent propagation to the click-outside handler
+                onClose();
+              }}
               aria-label="Close cart"
               className="text-2xl text-gray-600 hover:text-gray-800 focus:outline-none"
             >
@@ -124,28 +134,28 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
             {t("text-empty-cart")}
           </div>
         ) : (
-          <div className="space-y-6">
-            {items
-              .sort((a, b) =>
-                (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-              )
-              .map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  currencyCode={cart?.currency_code || "USD"}
-                />
-              ))}
-          </div>
+          <Table>
+            <Table.Body>
+              {items
+                .sort((a, b) =>
+                  (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+                )
+                .map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    currencyCode={cart?.currency_code || "USD"}
+                  />
+                ))}
+            </Table.Body>
+          </Table>
         )}
       </div>
 
       {/* OPTIONAL “You may also like” */}
       <div className="px-5 md:px-7 py-4 border-t border-gray-200">
         <h3 className="text-sm font-semibold mb-2">You may also like…</h3>
-        {/* TODO: insert a horizontal carousel of recommendations here */}
         <div className="h-24 bg-gray-100 rounded flex items-center justify-center text-gray-400">
-          {/* Placeholder */}
           Recommendations
         </div>
       </div>
