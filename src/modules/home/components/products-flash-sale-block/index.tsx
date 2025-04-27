@@ -1,6 +1,6 @@
-// src/modules/home/components/products-flash-sale-block/index.tsx
 "use client";
 
+import React from "react";
 import HomeSectionHeader from "@modules/home/components/home-section-header";
 import ProductCard from "@modules/products/components/product-card";
 import ProductCardGridLoader from "@modules/common/components/loaders/product-grid-card-loader";
@@ -10,16 +10,18 @@ import Carousel from "@modules/common/components/carousel";
 import { SwiperSlide } from "swiper/react";
 import { useTranslation } from "react-i18next";
 import isEmpty from "lodash/isEmpty";
+import { HttpTypes } from "@medusajs/types";
 
 interface ProductsProps {
   sectionHeading?: string;
   className?: string;
-  date?: any;
+  date: string;
   variant?: "default" | "slider";
   limit?: number;
-  products: any[];
+  products: HttpTypes.StoreProduct[];
   isLoading: boolean;
-  error: any;
+  error: { message: string } | null;
+  region: HttpTypes.StoreRegion | null;
 }
 
 const breakpoints = {
@@ -53,24 +55,22 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
   products,
   isLoading,
   error,
+  region,
 }) => {
   const { t } = useTranslation("common");
 
-  console.log("ProductsFlashSaleBlock props:", {
+  // Debug: Log props
+  console.log("ProductsFlashSaleBlock - Props:", {
     products: products?.length,
     isLoading,
     error,
     variant,
     sectionHeading,
-    translation: t("text-no-flash-products-found"),
+    region,
   });
 
-  // **this guard will now fire as soon as isLoading=false and products.length===0**
   if (!isLoading && isEmpty(products)) {
-    console.log(
-      "Rendering NotFoundItem with text:",
-      t("text-no-flash-products-found")
-    );
+    console.log("Rendering NotFoundItem in ProductsFlashSaleBlock");
     return (
       <div className="not-found text-center p-5 text-base text-gray-700">
         <NotFoundItem text={t("text-no-flash-products-found")} />
@@ -122,11 +122,12 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
           ) : (
             <>
               {variant === "default" ? (
-                products?.map((product: any) => (
+                products?.map((product) => (
                   <ProductCard
                     key={`product--key${product.id}`}
                     product={product}
                     variant="gridSlim"
+                    region={region}
                   />
                 ))
               ) : (
@@ -138,12 +139,13 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
                   nextActivateId="flashSellSlideNext"
                 >
                   {products?.length ? (
-                    products.map((product: any) => (
+                    products.map((product) => (
                       <SwiperSlide key={`product--key-${product.id}`}>
                         <ProductCard
                           key={`product--key${product.id}`}
                           product={product}
                           variant="gridSlim"
+                          region={region}
                         />
                       </SwiperSlide>
                     ))

@@ -1,228 +1,173 @@
-// src/lib/homepage.tsx
-"use server"
+"use server";
 
-import { listCollections } from "@lib/data/collections"
-import { listProducts } from "@lib/data/products"
-import { getRegion } from "@lib/data/regions"
-import { HttpTypes } from "@medusajs/types"
-import Container from "@modules/common/components/container"
-import PopularCollectionBlock from "@modules/home/components/popular-collection-block"
-import SaleBannerGrid from "@modules/home/components/sale-banner-grid"
-import NewArrivalsProductFeed from "@modules/home/components/new-arrivals-product-feed"
-import ProductsFlashSaleBlock from "@modules/home/components/products-flash-sale-block"
-import Subscription from "@modules/common/components/subscription"
-import { collectionData, collectionDataNew } from "@lib/data/home-collection"
+import { listCollections } from "@lib/data/collections";
+import { listProducts } from "@lib/data/products";
+import { getRegion } from "@lib/data/regions";
+import { HttpTypes } from "@medusajs/types";
+import Container from "@modules/common/components/container";
+import PopularCollectionBlock from "@modules/home/components/popular-collection-block";
+import SaleBannerGrid from "@modules/home/components/sale-banner-grid";
+import NewArrivalsProductFeed from "@modules/home/components/new-arrivals-product-feed";
+import ProductsFlashSaleBlock from "@modules/home/components/products-flash-sale-block";
+import Subscription from "@modules/common/components/subscription";
+import { collectionData, collectionDataNew } from "@lib/data/home-collection";
 
-const DEFAULT_COUNTRY = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
+const DEFAULT_COUNTRY = (process.env.NEXT_PUBLIC_DEFAULT_REGION || "us").toLowerCase();
+const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
 
 export async function renderHomepage() {
-  const regionId = "reg_01JS7PSQKQNHGZABRPR6FN5XQ4"
-  const currentDate = new Date().toISOString()
+  const currentDate = new Date().toISOString();
 
-  // Calculate date 30 days ago for recent products
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  const thirtyDaysAgoISOString = thirtyDaysAgo.toISOString()
-
-  // Fetch region data to ensure consistency
-  let region: HttpTypes.StoreRegion | null = null
+  // 1) Determine region
+  let region: HttpTypes.StoreRegion;
   try {
-    region = await getRegion()
-    if (!region) {
-      console.error("Failed to fetch region data")
-      region = null
-    } else {
-      console.log("Fetched Region:", JSON.stringify(region, null, 2))
-      if (region.id !== regionId) {
-        console.warn(`Region ID mismatch: Expected ${regionId}, but fetched region has ID ${region.id}`)
-      }
-      if (region.currency_code !== "USD") {
-        console.warn(`Region currency mismatch: Expected USD, but region has ${region.currency_code}`)
-      }
-    }
+    const fetched = await getRegion();
+    region = fetched ?? {
+      id: DEFAULT_REGION_ID,
+      currency_code: "USD",
+      name: "Default Region",
+    };
+    console.log("Region fetched in homepage:", region);
   } catch (e: any) {
-    console.error("❌ getRegion failed:", e.message, e.stack)
+    console.error("getRegion failed in homepage:", { message: e.message, stack: e.stack });
+    region = {
+      id: DEFAULT_REGION_ID,
+      currency_code: "USD",
+      name: "Default Region",
+    };
   }
 
-  // 1) Collections
-  let collections: HttpTypes.StoreCollection[] = []
+  // 2) Collections
+  let collections: HttpTypes.StoreCollection[] = [];
   try {
     const { collections: cols } = await listCollections({
       fields: "id, handle, title, metadata, thumbnail",
-    })
-    if (!cols || cols.length === 0) {
-      console.warn("No collections found, using empty array")
-    } else {
-      collections = cols
-    }
-    console.log("Collections:", JSON.stringify(collections, null, 2))
+    });
+    collections = cols ?? [];
+    console.log("Collections fetched:", collections);
   } catch (e: any) {
-    console.error(
-      "❌ listCollections failed:",
-      e.message,
-      e.stack,
-      JSON.stringify(e.response?.data || {})
-    )
+    console.error("listCollections failed:", { message: e.message, stack: e.stack });
   }
 
-  // 2) New Arrivals - First attempt to fetch recent products
-  let newArrivalsProducts: HttpTypes.StoreProduct[] = []
-  let newArrivalsError: { message: string } | null = null
+  // 3) New Arrivals
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoISOString = thirtyDaysAgo.toISOString();
+
+  let newArrivalsProducts: HttpTypes.StoreProduct[] = [];
+  let newArrivalsError: { message: string } | null = null;
+
   try {
-    // First attempt: Fetch products created in the last 30 days
+    console.log("Fetching new arrivals with region ID:", region.id);
     const { response } = await listProducts({
+      countryCode: DEFAULT_COUNTRY,
+      regionId: region.id,
       queryParams: {
         limit: 10,
         created_at: { gte: thirtyDaysAgoISOString },
       },
-      countryCode: DEFAULT_COUNTRY,
-    })
-    newArrivalsProducts = response.products || []
-    console.log(
-      "New Arrivals Products (Recent):",
-      JSON.stringify(newArrivalsProducts, null, 2)
-    )
+    });
+    newArrivalsProducts = response.products || [];
+    console.log("New Arrivals Products:", newArrivalsProducts);
 
-    // Enhanced debug logging for variant data
-    console.log(
-      "New Arrivals Variant Details (Recent):",
-      newArrivalsProducts.map((p) => ({
-        id: p.id,
-        title: p.title,
-        variants: p.variants?.map((v: any) => ({
-          id: v.id,
-          calculated_price: v.calculated_price,
-          inventory_quantity: v.inventory_quantity,
-          prices: v.prices,
-        })),
-      }))
-    )
-
-    // If no recent products are found, fall back to fetching any products
-    if (!newArrivalsProducts.length) {
-      console.log("No recent products found, falling back to any products")
-      const { response: fallbackResponse } = await listProducts({
-        queryParams: {
-          limit: 10,
-        },
+    if (newArrivalsProducts.length === 0) {
+      console.log("No new arrivals found, trying fallback...");
+      const { response: fallback } = await listProducts({
         countryCode: DEFAULT_COUNTRY,
-      })
-      newArrivalsProducts = fallbackResponse.products || []
-      console.log(
-        "New Arrivals Products (Fallback):",
-        JSON.stringify(newArrivalsProducts, null, 2)
-      )
-      console.log(
-        "New Arrivals Variant Details (Fallback):",
-        newArrivalsProducts.map((p) => ({
-          id: p.id,
-          title: p.title,
-          variants: p.variants?.map((v: any) => ({
-            id: v.id,
-            calculated_price: v.calculated_price,
-            inventory_quantity: v.inventory_quantity,
-            prices: v.prices,
-          })),
-        }))
-      )
+        regionId: region.id,
+        queryParams: { limit: 10 },
+      });
+      newArrivalsProducts = fallback.products || [];
+      console.log("Fallback Products:", newArrivalsProducts);
     }
   } catch (e: any) {
-    console.error(
-      "❌ listProducts(new arrivals) failed:",
-      e.message,
-      e.stack,
-      JSON.stringify(e.response?.data || {})
-    )
-    newArrivalsError = { message: e.message || "Failed to fetch new arrivals" }
+    console.error("listProducts(new arrivals) failed:", {
+      message: e.message,
+      stack: e.stack,
+      regionId: region.id,
+      countryCode: DEFAULT_COUNTRY,
+      queryParams: { limit: 10, created_at: { gte: thirtyDaysAgoISOString } },
+    });
+    newArrivalsError = { message: e.message };
   }
 
-  // 3) Flash Sale
-  let flashSaleProducts: HttpTypes.StoreProduct[] = []
-  let flashSaleError: { message: string } | null = null
+  // 4) Flash Sale
+  let flashSaleProducts: HttpTypes.StoreProduct[] = [];
+  let flashSaleError: { message: string } | null = null;
+
   try {
+    console.log("Fetching flash sale with region ID:", region.id);
     const { response } = await listProducts({
+      countryCode: DEFAULT_COUNTRY,
+      regionId: region.id,
       queryParams: {
         limit: 10,
         tag_id: ["flash-sale"],
       },
+    });
+    flashSaleProducts = response.products || [];
+    console.log("Flash Sale Products:", flashSaleProducts);
+
+    if (flashSaleProducts.length === 0) {
+      console.log("No flash sale products found, trying fallback...");
+      const { response: fallback } = await listProducts({
+        countryCode: DEFAULT_COUNTRY,
+        regionId: region.id,
+        queryParams: { limit: 10 },
+      });
+      flashSaleProducts = fallback.products || [];
+      console.log("Flash Sale Fallback Products:", flashSaleProducts);
+    }
+  } catch (e: any) {
+    console.error("listProducts(flash sale) failed:", {
+      message: e.message,
+      stack: e.stack,
+      regionId: region.id,
       countryCode: DEFAULT_COUNTRY,
-    })
-    flashSaleProducts = response.products || []
-    console.log("Flash Sale Products:", JSON.stringify(flashSaleProducts, null, 2))
-    console.log(
-      "Flash Sale Variant Details:",
-      flashSaleProducts.map((p) => ({
-        id: p.id,
-        title: p.title,
-        variants: p.variants?.map((v: any) => ({
-          id: v.id,
-          calculated_price: v.calculated_price,
-          inventory_quantity: v.inventory_quantity,
-          prices: v.prices,
-        })),
-      }))
-    )
-  } catch (e: any) {
-    console.error(
-      "❌ listProducts(flash sale) failed:",
-      e.message,
-      e.stack,
-      JSON.stringify(e.response?.data || {})
-    )
-    flashSaleError = { message: e.message || "Failed to fetch flash sale products" }
+      queryParams: { limit: 10, tag_id: ["flash-sale"] },
+    });
+    flashSaleError = { message: e.message };
   }
 
-  console.log({
-    collections: collections.length,
-    newArrivalsProducts: newArrivalsProducts.length,
-    newArrivalsError,
-    flashSaleProducts: flashSaleProducts.length,
-    flashSaleError,
-  })
+  // 5) Render
+  return (
+    <Container>
+      <div className="py-12">
+        <PopularCollectionBlock
+          data={collectionDataNew}
+          variant="trendy"
+          layout="cols-4"
+        />
 
-  try {
-    return (
-      <Container>
-        <div className="py-12">
-          <PopularCollectionBlock
-            data={collectionDataNew}
-            variant="trendy"
-            layout="cols-4"
-          />
-          <SaleBannerGrid />
-          <NewArrivalsProductFeed
-            products={newArrivalsProducts || []}
-            isLoading={newArrivalsProducts.length === 0 && !newArrivalsError}
-            error={newArrivalsError}
-            region={region}
-          />
-          <PopularCollectionBlock
-            data={collectionData}
-            variant="full"
-            layout="cols-2"
-          />
-          <ProductsFlashSaleBlock
-            products={flashSaleProducts || []}
-            isLoading={false}
-            error={flashSaleError}
-            date={currentDate}
-            variant="slider"
-          />
-          <Subscription
-            className="relative px-5 overflow-hidden sm:px-8 md:px-16 2xl:px-24 sm:items-center lg:items-start"
-            variant="modern"
-          />
-        </div>
-      </Container>
-    )
-  } catch (e: any) {
-    console.error("❌ renderHomepage rendering failed:", e.message, e.stack)
-    return (
-      <Container>
-        <div className="py-12">
-          <div>Error rendering homepage: {e.message}</div>
-        </div>
-      </Container>
-    )
-  }
+        <SaleBannerGrid />
+
+        <NewArrivalsProductFeed
+          products={newArrivalsProducts}
+          isLoading={false}
+          error={newArrivalsError}
+          region={region}
+        />
+
+        <PopularCollectionBlock
+          data={collectionData}
+          variant="full"
+          layout="cols-2"
+        />
+
+        <ProductsFlashSaleBlock
+          products={flashSaleProducts}
+          isLoading={false}
+          error={flashSaleError}
+          date={currentDate}
+          variant="slider"
+          region={region}
+        />
+
+        <Subscription
+          className="relative px-5 overflow-hidden sm:px-8 md:px-16 2xl:px-24 sm:items-center lg:items-start"
+          variant="modern"
+        />
+      </div>
+    </Container>
+  );
 }

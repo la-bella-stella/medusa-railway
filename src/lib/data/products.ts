@@ -1,4 +1,3 @@
-// src/lib/data/products.ts
 "use server";
 
 import { sdk } from "@lib/config";
@@ -8,6 +7,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { getAuthHeaders, getCacheOptions } from "./cookies";
 import { getRegion, retrieveRegion } from "./regions";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export type ListProductsParams = {
   pageParam?: number;
@@ -52,6 +52,51 @@ export async function getTagIdByValue(value: string): Promise<string | null> {
   }
 }
 
+/**
+ * Fetches a single product by handle.
+ * @param handle - The product handle
+ * @param regionId - The region ID
+ * @returns The product or undefined if not found
+ */
+export const getProductByHandle = cache(async function (
+  handle: string,
+  regionId: string
+): Promise<HttpTypes.StoreProduct | undefined> {
+  console.log("getProductByHandle called with:", { handle, regionId });
+
+  try {
+    const { products } = await sdk.store.product.list(
+      {
+        handle,
+        region_id: regionId,
+        fields: "*variants.calculated_price,*variants.prices,+variants.inventory_quantity,+metadata,+tags",
+      },
+      { next: { tags: ["products"] }, cache: "no-store" }
+    );
+    console.log("getProductByHandle - Product fetched:", JSON.stringify(products[0], null, 2));
+    console.log("getProductByHandle - Inventory details:", {
+      id: products[0]?.id,
+      title: products[0]?.title,
+      variants: products[0]?.variants?.map((v) => ({
+        id: v.id,
+        inventory_quantity: v.inventory_quantity,
+      })),
+    });
+    return products[0];
+  } catch (e: any) {
+    console.error("getProductByHandle - Failed to fetch product:", {
+      handle,
+      regionId,
+      message: e.message,
+      stack: e.stack,
+    });
+    return undefined;
+  }
+});
+
+/**
+ * Fetches a list of products with pagination and filtering.
+ */
 export async function listProducts({
   pageParam = 1,
   queryParams = {},
@@ -76,17 +121,24 @@ export async function listProducts({
   let region: HttpTypes.StoreRegion | null | undefined = null;
   try {
     if (regionId) {
+      console.log("Attempting to retrieve region by ID:", regionId);
       region = await retrieveRegion(regionId);
       console.log("Retrieved region by ID:", region?.id, "Region details:", JSON.stringify(region, null, 2));
     } else if (countryCode) {
+      console.log("Attempting to retrieve region by countryCode:", countryCode);
       region = await getRegion(countryCode);
       console.log("Retrieved region by countryCode:", region?.id, "Region details:", JSON.stringify(region, null, 2));
     }
 
     if (!region) {
-      throw new Error(
-        `Could not resolve region for countryCode=${countryCode} regionId=${regionId}`
+      console.warn(
+        `Could not resolve region for countryCode=${countryCode} regionId=${regionId}. Falling back to default region.`
       );
+      region = {
+        id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
+        currency_code: "USD",
+        name: "Default Region",
+      } as HttpTypes.StoreRegion;
     }
   } catch (e: any) {
     console.error(
@@ -97,19 +149,20 @@ export async function listProducts({
       "Stack:",
       e.stack
     );
-    throw new Error(
-      `Region resolution failed: ${e.message}. Details: ${JSON.stringify(e.response?.data || {})}`
+    console.warn(
+      `Region resolution failed for countryCode=${countryCode} regionId=${regionId}. Falling back to default region.`
     );
+    region = {
+      id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
+      currency_code: "USD",
+      name: "Default Region",
+    } as HttpTypes.StoreRegion;
   }
 
   const limit = queryParams.limit ?? 12;
   const _page = Math.max(pageParam, 1);
   const offset = _page === 1 ? 0 : (_page - 1) * limit;
 
-  const headers = await getAuthHeaders();
-  const next = await getCacheOptions("products");
-
-  // Use a flexible type to allow dynamic keys like tag_id[] and id[]
   const query: { [key: string]: any } = {
     limit,
     offset,
@@ -117,7 +170,7 @@ export async function listProducts({
     ...queryParams,
     fields:
       queryParams.fields ??
-      "*variants.calculated_price,+variants.inventory_quantity,+metadata,+tags",
+      "*variants.calculated_price,*variants.prices,+variants.inventory_quantity,+metadata,+tags",
   };
 
   // Transform tag_id if present: resolve tag values to tag IDs
@@ -134,10 +187,9 @@ export async function listProducts({
     if (tagIds.length > 0) {
       query["tag_id[]"] = tagIds;
     } else {
-      console.warn("No valid tag IDs found for provided tag values:", query.tag_id);
-      query["tag_id[]"] = query.tag_id; // Fallback to original values if no IDs found
+      console.warn("No valid tag IDs found for tag values:", query.tag_id);
+      delete query.tag_id;
     }
-    delete query.tag_id;
   }
 
   // Transform id if present
@@ -146,32 +198,43 @@ export async function listProducts({
     delete query.id;
   }
 
+  // Log if fetching by handle
+  if (query.handle) {
+    console.log("Fetching product by handle:", query.handle);
+  }
+
   console.log("Fetching products with query:", JSON.stringify(query, null, 2));
 
   try {
-    const response = await sdk.client.fetch<{
-      products: HttpTypes.StoreProduct[];
-      count: number;
-    }>(
-      "/store/products",
-      {
-        method: "GET",
-        query,
-        headers,
-        next,
-        cache: "no-store", // Changed to no-store for debugging; revert to "force-cache" after testing
-      }
-    );
+    const { products, count } = await sdk.store.product.list(query, {
+      next: { tags: ["products"] },
+      cache: "no-store",
+    });
 
-    console.log("API Response:", JSON.stringify(response, null, 2));
-    console.log("Fetched products:", response.products.length, "Count:", response.count);
+    console.log("API Response:", JSON.stringify({ products, count }, null, 2));
+    console.log("Fetched products:", products.length, "Count:", count);
+    // Log inventory details
+    console.log(
+      "Inventory details:",
+      products.map((p) => ({
+        id: p.id,
+        title: p.title,
+        variants: p.variants?.map((v) => ({
+          id: v.id,
+          inventory_quantity: v.inventory_quantity,
+        })),
+      }))
+    );
     if (query["tag_id[]"]) {
-      console.log("Products with tags", query["tag_id[]"], ":", JSON.stringify(response.products, null, 2));
+      console.log("Products with tag_id[]", query["tag_id[]"], ":", JSON.stringify(products, null, 2));
+    }
+    if (query.handle) {
+      console.log("Product fetched by handle:", query.handle, JSON.stringify(products, null, 2));
     }
 
     return {
-      response: { products: response.products, count: response.count },
-      nextPage: response.count > offset + limit ? pageParam + 1 : null,
+      response: { products, count },
+      nextPage: count > offset + limit ? pageParam + 1 : null,
       queryParams,
     };
   } catch (e: any) {
@@ -188,6 +251,9 @@ export async function listProducts({
   }
 }
 
+/**
+ * Fetches and sorts products with pagination.
+ */
 export async function listProductsWithSort({
   page = 1,
   queryParams,
@@ -214,7 +280,6 @@ export async function listProductsWithSort({
       countryCode,
     });
 
-    // Convert 1-based `page` to zero-based index for slicing
     const sorted = sortProducts(allProducts, sortBy);
     const pageIndex = page > 0 ? page - 1 : 0;
     const start = pageIndex * limit;

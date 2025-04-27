@@ -1,5 +1,5 @@
-// src/modules/home/components/new-arrivals-product-feed/index.tsx
 "use client";
+
 import React from "react";
 import Carousel from "@modules/common/components/carousel";
 import ProductCard from "@modules/products/components/product-card";
@@ -12,6 +12,7 @@ import { SwiperSlide } from "swiper/react";
 import { useTranslation } from "react-i18next";
 import isEmpty from "lodash/isEmpty";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { HttpTypes } from "@medusajs/types";
 
 const breakpoints = {
   "1500": {
@@ -40,14 +41,25 @@ export default function NewArrivalsProductFeed({
   products,
   isLoading,
   error,
+  region,
 }: {
-  products: any[];
+  products: HttpTypes.StoreProduct[];
   isLoading: boolean;
-  error: any;
+  error: { message: string } | null;
+  region: HttpTypes.StoreRegion | null;
 }) {
   const { t } = useTranslation("common");
 
+  // Debug: Log props
+  console.log("NewArrivalsProductFeed - Props:", {
+    products: products?.length,
+    isLoading,
+    error,
+    region,
+  });
+
   if (!isLoading && isEmpty(products)) {
+    console.log("Rendering NotFoundItem in NewArrivalsProductFeed");
     return <NotFoundItem text={t("text-no-products-found")} />;
   }
 
@@ -66,10 +78,10 @@ export default function NewArrivalsProductFeed({
 
       {error ? (
         <Alert
-        message={error.message}
-        closeable={true}
-        onClose={() => console.log("Error dismissed")} // Add logic to clear the error
-      />
+          message={error.message}
+          closeable={true}
+          onClose={() => console.log("Error dismissed")}
+        />
       ) : (
         <Carousel
           autoplay={{ delay: 3500 }}
@@ -88,9 +100,9 @@ export default function NewArrivalsProductFeed({
                   />
                 </SwiperSlide>
               ))
-            : products?.map((product: any) => (
+            : products?.map((product) => (
                 <SwiperSlide key={`new-arrivals-product-${product.id}`}>
-                  <ProductCard product={product} variant="gridSlim" />
+                  <ProductCard product={product} variant="gridSlim" region={region} />
                 </SwiperSlide>
               ))}
         </Carousel>

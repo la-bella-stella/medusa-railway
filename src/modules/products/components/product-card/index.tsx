@@ -33,7 +33,27 @@ const ProductCard: FC<ProductProps> = ({
   const { t } = useTranslation("common");
   const { cheapestPrice } = getProductPrice({ product, region });
 
+  // Debug: Log product and price
+  console.log("ProductCard - Product:", {
+    id: product.id,
+    title: product.title,
+    handle: product.handle,
+    variants: product.variants,
+    inventory: product.variants?.map((v) => ({
+      id: v.id,
+      inventory_quantity: v.inventory_quantity,
+    })),
+    thumbnail: product.thumbnail,
+    cheapestPrice,
+    region,
+  });
+  console.log("getProductPrice Input:", {
+    product: { id: product.id, handle: product.handle, variants: product.variants },
+    region,
+  });
+
   if (!cheapestPrice) {
+    console.warn("No cheapestPrice for product:", product.id);
     return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />;
   }
 
@@ -47,11 +67,15 @@ const ProductCard: FC<ProductProps> = ({
   const basePrice = maybeBase || currentPrice;
   const isOnSale = price_type === "sale";
   const isVariable = (product.variants?.length ?? 0) > 1;
-  const inventoryQuantity = product.variants?.[0]?.inventory_quantity ?? 0;
+
+  // Check if any variant has stock
+  const inventoryQuantity = product.variants?.reduce(
+    (total, variant) => total + (variant.inventory_quantity ?? 0),
+    0
+  ) ?? 0;
 
   const [imgError, setImgError] = useState(false);
 
-  // Brand name (if any)
   const brandName = product.brand?.name;
 
   return (
@@ -72,9 +96,9 @@ const ProductCard: FC<ProductProps> = ({
       >
         <Image
           src={
-            imgError
+            imgError || !product.thumbnail
               ? "/assets/placeholder/collection.svg"
-              : product.thumbnail ?? "/assets/placeholder/collection.svg"
+              : product.thumbnail
           }
           alt={product.title || t("text-product-image", "Product Image")}
           fill
@@ -98,26 +122,22 @@ const ProductCard: FC<ProductProps> = ({
       </div>
 
       <div className="px-3 py-3 flex flex-col flex-grow w-full">
-        {/* BRAND */}
         {brandName && (
           <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
             {brandName}
           </div>
         )}
 
-        {/* PRODUCT TYPE */}
         {product.type?.value && (
           <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
             {product.type.value}
           </div>
         )}
 
-        {/* TITLE */}
         <h3 className="text-sm font-semibold text-gray-800 truncate mb-1.5 w-full">
           {product.title}
         </h3>
 
-        {/* PRICE */}
         <div className="mt-2 flex items-center space-x-2 w-full">
           {isVariable && (
             <span className="text-sm font-bold text-gray-800 uppercase">
