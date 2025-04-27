@@ -1,3 +1,4 @@
+// src/lib/data/products.ts
 "use server";
 
 import { sdk } from "@lib/config";
@@ -32,7 +33,7 @@ export type ListProductsParams = {
  * @param value - The tag value (e.g., "flash-sale")
  * @returns The tag ID (e.g., "ptag_01...") or null if not found
  */
-async function getTagIdByValue(value: string): Promise<string | null> {
+export async function getTagIdByValue(value: string): Promise<string | null> {
   try {
     const { product_tags } = await sdk.client.fetch<{
       product_tags: { id: string; value: string }[];
@@ -176,9 +177,9 @@ export async function listProducts({
   } catch (e: any) {
     const errorDetails = {
       message: e.message || "Unknown error",
-      status: e.response?.status || "N/A",
-      data: e.response?.data || {},
-      stack: e.stack,
+      status: e.status || e.response?.status || "N/A",
+      data: e.response?.data || e.data || {},
+      stack: e.stack || "N/A",
     };
     console.error("Failed to fetch products:", JSON.stringify(errorDetails, null, 2));
     throw new Error(

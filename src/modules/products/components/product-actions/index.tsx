@@ -15,6 +15,7 @@ import useWindowSize from "react-use/lib/useWindowSize";
 import Counter from "@modules/common/components/counter";
 import MobileActions from "./mobile-actions";
 import { useUI } from "@lib/context/ui-context";
+import OptionSelect from "./option-select";
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct;
@@ -43,7 +44,17 @@ export default function ProductActions({
   const countryCode = useParams().countryCode as string;
   const router = useRouter();
   const { openSidebar } = useUI();
-  const [options, setOptions] = useState<Record<string, string | undefined>>({});
+
+  const [options, setOptions] = useState<Record<string, string | undefined>>(() => {
+    const initialOptions: Record<string, string | undefined> = {};
+    product.options?.forEach((option) => {
+      if (option.values && option.values.length > 0) {
+        initialOptions[option.id] = option.values[0].value;
+      }
+    });
+    return initialOptions;
+  });
+
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -144,68 +155,39 @@ export default function ProductActions({
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
         <div>
           {(product.variants?.length ?? 0) > 0 && (
-            <div className="flex flex-col gap-y-4 pb-3 border-b border-gray-300 pt-7">
-              {(product.options || []).map((option) => {
-                const isColor = option.title?.toLowerCase().includes("color");
-                return (
-                  <div key={option.id}>
-                    <label className="block text-sm font-medium mb-2 capitalize">
-                      {option.title}
-                    </label>
-                    <div className="flex space-x-2">
-                      {option.values?.map((value) => (
-                        <button
-                          key={value.id}
-                          onClick={() =>
-                            setOptionValue(option.id, value.value || "")
-                          }
-                          className={`transition-all duration-200 ${
-                            isColor
-                              ? `w-8 h-8 border-2 rounded-sm ${
-                                  options[option.id] === value.value
-                                    ? "border-black"
-                                    : "border-gray-300"
-                                } hover:border-black hover:scale-105`
-                              : `px-4 py-2 border-2 rounded-sm font-semibold text-sm ${
-                                  options[option.id] === value.value
-                                    ? "border-black bg-gray-100 text-black"
-                                    : "border-gray-300 text-gray-700"
-                                } hover:border-black hover:bg-gray-50`
-                          }`}
-                          style={
-                            isColor
-                              ? { backgroundColor: value.value?.toLowerCase() }
-                              : {}
-                          }
-                          disabled={!!disabled || isAdding}
-                          data-testid={`option-${option.id}-${value.value}`}
-                        >
-                          {isColor ? "" : value.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-y-3 pb-2 border-b border-gray-200 pt-4">
+              {(product.options || []).map((option) => (
+                <OptionSelect
+                  key={option.id}
+                  option={option}
+                  current={options[option.id]}
+                  updateOption={setOptionValue}
+                  title={option.title || ""}
+                  disabled={!!disabled || isAdding}
+                  data-testid={`option-${option.id}`}
+                />
+              ))}
               <Divider />
             </div>
           )}
         </div>
 
-        <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
-          <Counter
-            quantity={quantity}
-            onIncrement={() => setQuantity((prev) => prev + 1)}
-            onDecrement={() =>
-              setQuantity((prev) => (prev !== 1 ? prev - 1 : 1))
-            }
-            disableDecrement={quantity === 1 || !inStock}
-            disableIncrement={
-              !inStock ||
-              (selectedVariant?.inventory_quantity !== undefined &&
-                quantity >= selectedVariant.inventory_quantity)
-            }
-          />
+        <div className="flex items-center py-3 space-x-2 border-b border-gray-200">
+          {(product.variants?.length === 0 || selectedVariant) && (
+            <Counter
+              quantity={quantity}
+              onIncrement={() => setQuantity((prev) => prev + 1)}
+              onDecrement={() =>
+                setQuantity((prev) => (prev !== 1 ? prev - 1 : 1))
+              }
+              disableDecrement={quantity === 1 || !inStock}
+              disableIncrement={
+                !inStock ||
+                (selectedVariant?.inventory_quantity !== undefined &&
+                  quantity >= selectedVariant.inventory_quantity)
+              }
+            />
+          )}
           <Button
             onClick={handleAddToCart}
             disabled={
@@ -216,7 +198,7 @@ export default function ProductActions({
               !isValidVariant
             }
             variant="primary"
-            className={`w-full bg-black text-white py-3 rounded-md uppercase font-semibold text-sm tracking-wide transition-all duration-200 ${
+            className={`w-full bg-black text-white py-2 rounded-full uppercase font-semibold text-xs tracking-wide transition-all duration-200 ${
               !inStock || !isValidVariant || !selectedVariant
                 ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
                 : "hover:bg-gray-900"
@@ -224,7 +206,7 @@ export default function ProductActions({
             isLoading={isAdding}
             data-testid="add-product-button"
           >
-            <span className="py-2">
+            <span className="py-1">
               {!selectedVariant && !Object.keys(options).length
                 ? t("select-variant", "Select variant")
                 : !inStock || !isValidVariant

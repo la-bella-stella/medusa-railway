@@ -3,14 +3,14 @@
 
 import React from "react";
 import type { FC } from "react";
-import { useProducts } from "@lib/hooks/use-products";
+import { useProducts, InfiniteProductResponse } from "@lib/hooks/use-products";
 import { HttpTypes } from "@medusajs/types";
 import ProductInfiniteGrid from "@modules/products/components/product-infinite-grid";
 import { useTranslation } from "react-i18next";
 import FilterIcon from "@modules/common/icons/filter-icon";
 import { useUI } from "@lib/context/ui-context";
 import type { Filters } from "types/global";
-import { UseInfiniteQueryResult } from "@tanstack/react-query"; // Import for casting
+import { UseInfiniteQueryResult } from "@tanstack/react-query";
 
 const PRODUCT_LIMIT = 12;
 
@@ -31,6 +31,7 @@ const ProductSearchBlock: FC<ProductSearchBlockProps> = ({
   // Build the params object
   const params: Record<string, any> = {
     regionId: region.id,
+    countryCode, // Pass countryCode
     limit: PRODUCT_LIMIT,
     infinite: true, // Enable infinite query
   };
@@ -66,13 +67,34 @@ const ProductSearchBlock: FC<ProductSearchBlockProps> = ({
     hasNextPage,
     data,
     error,
-  } = useProducts(params) as UseInfiniteQueryResult<
-    { data: HttpTypes.StoreProduct[]; total: number; region: HttpTypes.StoreRegion | null },
-    Error
-  >; // Cast to UseInfiniteQueryResult
+    isError,
+  } = useProducts(params) as UseInfiniteQueryResult<InfiniteProductResponse, Error>;
 
-  if (error) {
-    return <p className="p-4 text-center text-red-600">{error.message}</p>;
+  // Log detailed error information
+  if (isError) {
+    console.error("Product search error:", {
+      message: error?.message,
+      cause: error?.cause,
+      stack: error?.stack,
+      params,
+    });
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <span>{t("text-loading", "Loading...")}</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-red-500 text-center py-10">
+        {t("text-error-loading-products", "Failed to load products")}:{" "}
+        {error?.message || t("text-unknown-error", "An unknown error occurred")}
+      </div>
+    );
   }
 
   const totalItems = data?.pages?.[0]?.total ?? 0;
@@ -97,7 +119,7 @@ const ProductSearchBlock: FC<ProductSearchBlockProps> = ({
           </span>
         </div>
         <button
-          className="lg:hidden text-gray-800 text-sm px-4 py-2 font-semibold border border-gray-300 rounded-md flex items-center transition duration-200 ease-in-out focus:outline-none hover:bg-gray-200"
+          className="lg:hidden text-gray-800 text-sm px-4 py-2 font-semibold border border-gray-300 rounded-md flex items-center transition duration-200 ease-in-out focus:outline-none hover:bg-gray-100"
           onClick={handleFilterOpen}
         >
           <FilterIcon className="w-5 h-5 ltr:mr-2.5 rtl:ml-2.5" />

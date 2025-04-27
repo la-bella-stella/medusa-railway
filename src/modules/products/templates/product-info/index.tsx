@@ -1,6 +1,7 @@
 // src/modules/products/templates/product-info.tsx
 import React from "react";
 import { HttpTypes } from "@medusajs/types";
+import Link from "next/link";
 import ProductPrice from "@modules/products/components/product-price";
 
 type ProductInfoProps = {
@@ -8,20 +9,30 @@ type ProductInfoProps = {
     brand?: { name: string };
     type?: HttpTypes.StoreProductType | null;
   };
-  variant?: HttpTypes.StoreProductVariant; // Add variant prop to reflect selected variant
+  variant?: HttpTypes.StoreProductVariant;
 };
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
-  // Combine brand and product title, append variant size if available
+  // Determine the size from the variant options (if available)
   const size = variant?.options?.find((opt) => opt.option_id?.includes("size"))?.value;
-  const title = `${product.brand?.name || ""} ${product.title}${size ? ` - Size ${size}` : ""}`.trim();
+  const titleWithSize = size ? `${product.title} - Size ${size}` : product.title;
 
   return (
-    <div>
-      <h1 className="text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold uppercase">
-        {title}
-      </h1>
-      <div className="flex items-center mt-5">
+    <div className="flex flex-col gap-y-2">
+      {product.brand?.name && (
+        <h1 className="text-heading text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold uppercase hover:text-black">
+          <Link
+            href={`/brands/${product.brand.name.toLowerCase().replace(/\s+/g, "-")}`}
+            className="inline-block pe-1.5 transition hover:underline hover:text-heading last:pe-0"
+          >
+            {product.brand.name}
+          </Link>
+        </h1>
+      )}
+      <h2 className="text-heading text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold uppercase hover:text-black mb-3.5">
+        {titleWithSize}
+      </h2>
+      <div className="flex items-center mt-5 gap-x-2">
         <ProductPrice product={product} variant={variant} />
       </div>
     </div>
