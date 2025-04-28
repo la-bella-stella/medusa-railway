@@ -1,3 +1,4 @@
+// src/app/(main)/products/[handle]/page.tsx
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listProducts, getProductByHandle } from "@lib/data/products";
@@ -14,17 +15,12 @@ export async function generateStaticParams(): Promise<Params[]> {
   try {
     const { response } = await listProducts({
       countryCode: DEFAULT_COUNTRY,
-      queryParams: {
-        fields: "handle",
-        limit: 100,
-      },
+      queryParams: { fields: "handle", limit: 100 },
     });
-    console.log("generateStaticParams - Fetched products:", response.products.length);
     return response.products
       .map((p) => ({ handle: p.handle! }))
       .filter((p) => Boolean(p.handle));
-  } catch (e: any) {
-    console.error("generateStaticParams - Failed to fetch products:", e.message, e.stack);
+  } catch {
     return [];
   }
 }
@@ -32,59 +28,27 @@ export async function generateStaticParams(): Promise<Params[]> {
 export async function generateMetadata({
   params,
 }: {
-  params: Params
+  params: Params;
 }): Promise<Metadata> {
-  const { handle } = params;
-  console.log("generateMetadata - Fetching product with handle:", handle);
-
-  try {
-    const region = await getRegion();
-    const regionId = region?.id || DEFAULT_REGION_ID;
-    const product = await getProductByHandle(handle, regionId);
-    console.log("generateMetadata - Product fetch response:", JSON.stringify(product, null, 2));
-
-    if (!product) {
-      console.log("generateMetadata - No product found for handle:", handle);
-      notFound();
-    }
-
-    return {
+  const region = await getRegion();
+  const regionId = region?.id || DEFAULT_REGION_ID;
+  const product = await getProductByHandle(params.handle, regionId);
+  if (!product) notFound();
+  return {
+    title: `${product.title} | Your Store Name`,
+    description: product.title,
+    openGraph: {
       title: `${product.title} | Your Store Name`,
       description: product.title,
-      openGraph: {
-        title: `${product.title} | Your Store Name`,
-        description: product.title,
-        images: product.thumbnail ? [product.thumbnail] : [],
-      },
-    };
-  } catch (e: any) {
-    console.error("generateMetadata - Failed to fetch product:", {
-      handle,
-      message: e.message,
-      stack: e.stack,
-    });
-    notFound();
-  }
+      images: product.thumbnail ? [product.thumbnail] : [],
+    },
+  };
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
-  const { handle } = params;
-  console.log("ProductPage - Fetching product with handle:", handle);
-
-  let region: HttpTypes.StoreRegion | null = null;
-  try {
-    region = await getRegion();
-    console.log("ProductPage - Region fetched:", region);
-    if (!region) {
-      console.warn("ProductPage - No region found, using default region");
-      region = {
-        id: DEFAULT_REGION_ID,
-        currency_code: "USD",
-        name: "Default Region",
-      } as HttpTypes.StoreRegion;
-    }
-  } catch (e: any) {
-    console.error("ProductPage - getRegion failed:", e.message, e.stack);
+  // 1. Fetch region
+  let region = await getRegion().catch(() => null);
+  if (!region) {
     region = {
       id: DEFAULT_REGION_ID,
       currency_code: "USD",
@@ -92,49 +56,59 @@ export default async function ProductPage({ params }: { params: Params }) {
     } as HttpTypes.StoreRegion;
   }
 
-  try {
-    const product = await getProductByHandle(handle, region.id);
-    console.log("ProductPage - Product fetch response:", JSON.stringify(product, null, 2));
+  // 2. Fetch product
+  const product = await getProductByHandle(params.handle, region.id);
+  if (!product) notFound();
 
-    if (!product) {
-      console.log("ProductPage - No product found for handle:", handle);
-      notFound();
-    }
+  // 3. Map to the extra fields ProductTemplate expects
+  const mappedProduct: HttpTypes.StoreProduct & {
+    brand?: { name: string };
+    type?: HttpTypes.StoreProductType | null;
+    handle: string;
+    subtitle: string | null;
+    description: string | null;
+    material: string | null;
+    origin_country: string | null;
+    metadata?: { season?: string | null; gender?: string | null };
+  } = {
+    ...product,
+    // brand comes from metadata.brand
+    brand: product.metadata?.brand
+      ? { name: String(product.metadata.brand) }
+      : undefined,
+    // keep original type if present
+    type: product.type ?? null,
+    // handle, subtitle, description
+    handle: product.handle!,
+    subtitle: product.subtitle ?? null,
+    description: product.description ?? null,
+    // map your custom metafields
+    material: (product.metadata?.materials as string) ?? null,
+    origin_country: (product.metadata?.origin as string) ?? null,
+    metadata: {
+      season: (product.metadata?.season as string) ?? null,
+      gender: (product.metadata?.gender as string) ?? null,
+    },
+  };
 
-    // Fetch related products
-    const { response: relatedResponse } = await listProducts({
-      queryParams: {
-        region_id: region.id,
-        limit: 10,
-      },
-      countryCode: DEFAULT_COUNTRY,
-    });
-    console.log("ProductPage - Related products response:", JSON.stringify(relatedResponse, null, 2));
+  // 4. Fetch related products
+  const { response: relatedResponse } = await listProducts({
+    countryCode: DEFAULT_COUNTRY,
+    queryParams: { region_id: region.id, limit: 10 },
+  });
+  const relatedProducts = relatedResponse.products.filter(
+    (p) =>
+      p.id !== product.id &&
+      (!product.collection_id || p.collection_id === product.collection_id) &&
+      !p.is_giftcard
+  );
 
-    const relatedProducts = relatedResponse.products.filter(
-      (p) =>
-        p.id !== product.id &&
-        (!product.collection_id || p.collection_id === product.collection_id) &&
-        (!product.tags ||
-          p.tags?.some((t) => product.tags!.map((pt) => pt.id).includes(t.id))) &&
-        !p.is_giftcard
-    );
-
-    return (
-      <ProductTemplate
-        product={product}
-        region={region}
-        countryCode={DEFAULT_COUNTRY}
-        relatedProducts={relatedProducts}
-      />
-    );
-  } catch (e: any) {
-    console.error("ProductPage - Product fetch failed:", {
-      handle,
-      regionId: region.id,
-      message: e.message,
-      stack: e.stack,
-    });
-    notFound();
-  }
+  return (
+    <ProductTemplate
+      product={mappedProduct}
+      region={region}
+      countryCode={DEFAULT_COUNTRY}
+      relatedProducts={relatedProducts}
+    />
+  );
 }

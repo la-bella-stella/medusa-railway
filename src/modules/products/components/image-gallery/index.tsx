@@ -1,10 +1,9 @@
-// src/modules/products/components/image-gallery.tsx
-import React, { useState, useRef, useEffect } from "react";
-import { HttpTypes } from "@medusajs/types";
-import Image from "next/image";
-import Carousel from "@modules/common/components/carousel";
-import { SwiperSlide } from "swiper/react";
-import useWindowSize from "react-use/lib/useWindowSize";
+import React, { useState, useRef, useEffect } from "react"
+import { HttpTypes } from "@medusajs/types"
+import Image from "next/image"
+import Carousel from "@modules/common/components/carousel"
+import { SwiperSlide } from "swiper/react"
+import useWindowSize from "react-use/lib/useWindowSize"
 
 const productGalleryCarouselResponsive = {
   "768": {
@@ -14,26 +13,34 @@ const productGalleryCarouselResponsive = {
   "0": {
     slidesPerView: 1,
   },
-};
+}
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[];
-};
+}
 
 const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
-  const { width } = useWindowSize();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [imgErrorIndex, setImgErrorIndex] = useState<Record<number, boolean>>({});
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const { width } = useWindowSize()
+  const [mounted, setMounted] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [imgErrorIndex, setImgErrorIndex] = useState<Record<number, boolean>>({})
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (itemRefs.current[activeIndex]) {
       itemRefs.current[activeIndex]?.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
-      });
+      })
     }
-  }, [activeIndex]);
+  }, [activeIndex])
+
+  // Determine mobile only after mount to avoid SSR mismatch
+  const isMobile = mounted && width < 1025
 
   if (!images || images.length === 0) {
     return (
@@ -47,12 +54,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
           />
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <>
-      {width < 1025 ? (
+      {isMobile ? (
         <Carousel
           pagination={{ clickable: true }}
           breakpoints={productGalleryCarouselResponsive}
@@ -69,15 +76,13 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                       ? "/assets/placeholder/products/product-gallery.svg"
                       : item.url ?? "/assets/placeholder/products/product-gallery.svg"
                   }
-                  onError={() =>
-                    setImgErrorIndex((prev) => ({ ...prev, [index]: true }))
-                  }
+                  onError={() => setImgErrorIndex((prev) => ({ ...prev, [index]: true }))}
                   alt={`Product image ${index}`}
                   layout="responsive"
                   objectFit="contain"
-                  className="w-full"
                   width={580}
                   height={580}
+                  className="w-full"
                 />
               </div>
             </SwiperSlide>
@@ -90,9 +95,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
               {images.map((item, index) => (
                 <div
                   key={index}
-                  ref={(el) => {
-                    itemRefs.current[index] = el;
-                  }}
+                  ref={(el) => { itemRefs.current[index] = el }}
                   className={`cursor-pointer transition duration-150 ease-in hover:opacity-90 ${
                     index === activeIndex ? "border border-black" : ""
                   }`}
@@ -105,9 +108,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
                         ? "/assets/placeholder/products/product-gallery.svg"
                         : item.url ?? "/assets/placeholder/products/product-gallery.svg"
                     }
-                    onError={() =>
-                      setImgErrorIndex((prev) => ({ ...prev, [index]: true }))
-                    }
+                    onError={() => setImgErrorIndex((prev) => ({ ...prev, [index]: true }))}
                     alt={`Product thumbnail ${index}`}
                     width={80}
                     height={80}
@@ -124,13 +125,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
               src={
                 imgErrorIndex[activeIndex]
                   ? "/assets/placeholder/products/product-gallery.svg"
-                  : images[activeIndex]?.url ??
-                    "/assets/placeholder/products/product-gallery.svg"
+                  : images[activeIndex]?.url ?? "/assets/placeholder/products/product-gallery.svg"
               }
-              onError={() =>
-                setImgErrorIndex((prev) => ({ ...prev, [activeIndex]: true }))
-              }
-              alt={`Product main image`}
+              onError={() => setImgErrorIndex((prev) => ({ ...prev, [activeIndex]: true }))}
+              alt="Product main image"
               layout="responsive"
               objectFit="contain"
               height={580}
@@ -141,7 +139,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
         </div>
       )}
     </>
-  );
-};
+  )
+}
 
 export default ImageGallery;

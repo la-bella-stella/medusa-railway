@@ -1,13 +1,24 @@
 // src/modules/layout/components/mobile-menu/index.tsx
 "use client";
-import React, { useState } from "react";
-import Scrollbar from "@modules/layout/components/scrollbar"; // Update import path
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import Logo from "@modules/common/components/logo";
-import { mobileMenu } from "@lib/data/menus";
-import { useTranslation } from "react-i18next";
+
+import React, { Fragment, useState } from "react";
+import { Transition } from "@headlessui/react";
 import { IoClose } from "react-icons/io5";
 import { IoIosArrowDown } from "react-icons/io";
+import Scrollbar from "@modules/layout/components/scrollbar";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import Logo from "@modules/common/components/logo";
+import { mobileMenu as rawMenu } from "@lib/data/menus";
+import { useTranslation } from "react-i18next";
+
+interface MenuItem {
+  id: number;
+  path: string;
+  label: string;
+  subMenu?: MenuItem[];
+}
+
+const mobileMenu = rawMenu as MenuItem[];
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -15,129 +26,112 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
-  const [activeMenus, setActiveMenus] = useState<string[]>([]);
+  const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
   const { t } = useTranslation("menu");
 
-  const handleArrowClick = (menuName: string) => {
-    let newActiveMenus = [...activeMenus];
-    if (newActiveMenus.includes(menuName)) {
-      let index = newActiveMenus.indexOf(menuName);
-      if (index > -1) {
-        newActiveMenus.splice(index, 1);
-      }
-    } else {
-      newActiveMenus.push(menuName);
-    }
-    setActiveMenus(newActiveMenus);
+  const toggleSubMenu = (key: string) => {
+    setOpenSubMenus((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
   };
 
-  const ListMenu = ({
-    dept,
-    data,
-    hasSubMenu,
-    menuName,
-    menuIndex,
-    className = "",
-  }: any) =>
-    data.label && (
-      <li className={`mb-0.5 ${className}`}>
-        <div className="flex items-center justify-between">
-          <LocalizedClientLink
-            href={data.path}
-            className="w-full text-[15px] menu-item relative py-3 ltr:pl-5 ltr:md:pl-7 rtl:pr-5 rtl:md:pr-7 ltr:pr-4 rtl:pl-4 transition duration-300 ease-in-out"
-          >
-            <span className="block w-full" onClick={onClose}>
-              {t(`${data.label}`)}
-            </span>
-          </LocalizedClientLink>
-          {hasSubMenu && (
-            <div
-              className="cursor-pointer w-16 md:w-20 h-8 text-lg flex-shrink-0 flex items-center justify-center"
-              onClick={() => handleArrowClick(menuName)}
-            >
-              <IoIosArrowDown
-                className={`transition duration-200 ease-in-out transform text-heading ${
-                  activeMenus.includes(menuName) ? "-rotate-180" : "rotate-0"
-                }`}
-              />
+  const renderMenu = (items: MenuItem[], depth = 0, parentKey = "") => (
+    <ul className={depth === 0 ? "mobileMenu" : "pt-1"}>
+      {items.map((item, i) => {
+        const key = `${parentKey}${item.id}-${i}`;
+        const hasChildren = !!item.subMenu?.length;
+        const padding = depth === 0 ? "pl-0" : "pl-6";
+
+        return (
+          <li key={key} className={`mb-1 ${padding}`}>
+            <div className="flex items-center justify-between">
+              <LocalizedClientLink
+                href={item.path}
+                className="w-full text-[15px] menu-item py-2 transition duration-300 ease-in-out"
+                onClick={onClose}
+              >
+                {/* add dash for sub-items */}
+                <span>
+                  {depth > 0 ? "– " : ""}
+                  {t(item.label)}
+                </span>
+              </LocalizedClientLink>
+
+              {hasChildren && (
+                <button
+                  onClick={() => toggleSubMenu(key)}
+                  aria-label="Toggle submenu"
+                  className="p-2 focus:outline-none"
+                >
+                  <IoIosArrowDown
+                    className={`transform transition-transform ${
+                      openSubMenus.includes(key) ? "-rotate-180" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              )}
             </div>
-          )}
-        </div>
-        {hasSubMenu && (
-          <SubMenu
-            dept={dept}
-            data={data.subMenu}
-            toggle={activeMenus.includes(menuName)}
-            menuIndex={menuIndex}
-          />
-        )}
-      </li>
-    );
 
-  const SubMenu = ({ dept, data, toggle, menuIndex }: any) => {
-    if (!toggle) {
-      return null;
-    }
-
-    dept = dept + 1;
-
-    return (
-      <ul className="pt-0.5">
-        {data?.map((menu: any, index: number) => {
-          const menuName: string = `sidebar-submenu-${dept}-${menuIndex}-${index}`;
-          return (
-            <ListMenu
-              dept={dept}
-              data={menu}
-              hasSubMenu={menu.subMenu}
-              menuName={menuName}
-              key={menuName}
-              menuIndex={index}
-              className={dept > 1 && "ltr:pl-4 rtl:pr-4"}
-            />
-          );
-        })}
-      </ul>
-    );
-  };
-
-  if (!isOpen) return null;
+            {hasChildren && openSubMenus.includes(key) && (
+              renderMenu(item.subMenu!, depth + 1, `${key}-`)
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 bg-white">
-      <div className="flex flex-col justify-between w-full h-full">
-        <div className="w-full border-b border-gray-100 flex justify-between items-center relative ltr:pl-5 ltr:md:pl-7 rtl:pr-5 rtl:md:pr-7 flex-shrink-0 py-0.5">
-          <Logo />
-          <button
-            className="flex text-2xl items-center justify-center text-gray-500 px-4 md:px-5 py-6 lg:py-8 focus:outline-none transition-opacity hover:opacity-60"
+    <Transition show={isOpen} as={Fragment}>
+      <div className="fixed inset-0 z-50 flex">
+        {/* backdrop */}
+        <Transition.Child
+          as={Fragment}
+          enter="transition-opacity duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="transition-opacity duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div
+            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
             onClick={onClose}
-            aria-label="close"
-          >
-            <IoClose className="text-black mt-1 md:mt-0.5" />
-          </button>
-        </div>
+          />
+        </Transition.Child>
 
-        <Scrollbar className="menu-scrollbar flex-grow mb-auto">
-          <div className="flex flex-col py-7 px-0 lg:px-2 text-heading">
-            <ul className="mobileMenu">
-              {mobileMenu?.map((menu: any, index: number) => {
-                const dept: number = 1;
-                const menuName: string = `sidebar-menu-${dept}-${index}`;
-                return (
-                  <ListMenu
-                    dept={dept}
-                    data={menu}
-                    hasSubMenu={menu.subMenu}
-                    menuName={menuName}
-                    key={menuName}
-                    menuIndex={index}
-                  />
-                );
-              })}
-            </ul>
+        {/* drawer */}
+        <Transition.Child
+          as="aside"
+          enter="transform transition duration-300 ease-in-out"
+          enterFrom="-translate-x-full"
+          enterTo="translate-x-0"
+          leave="transform transition duration-200 ease-in-out"
+          leaveFrom="translate-x-0"
+          leaveTo="-translate-x-full"
+          className="relative bg-white w-3/4 max-w-md h-full shadow-xl flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <Logo />
+            <button
+              onClick={onClose}
+              aria-label="Close menu"
+              className="text-2xl text-gray-500 hover:opacity-60 focus:outline-none"
+            >
+              <IoClose />
+            </button>
           </div>
-        </Scrollbar>
+
+          {/* menu body */}
+          <Scrollbar className="flex-grow overflow-y-auto">
+            <nav className="py-6 px-4 text-heading">
+              {renderMenu(mobileMenu)}
+            </nav>
+          </Scrollbar>
+        </Transition.Child>
       </div>
-    </div>
+    </Transition>
   );
 }

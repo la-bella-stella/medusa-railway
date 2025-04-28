@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import { getBaseURL } from "@lib/util/env";
 import { Metadata } from "next";
 import "styles/globals.css";
@@ -11,6 +10,7 @@ import { StoreCartShippingOption } from "@medusajs/types";
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner";
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge";
 import ClientWrapper from "./ClientWrapper";
+import NextUIProviderWrapper from "./NextUIProviderWrapper"; // Import the new wrapper
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -29,23 +29,25 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light">
       <body>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ClientWrapper>
-            <Nav />
-            {customer && cart && (
-              <CartMismatchBanner customer={customer} cart={cart} />
-            )}
-            {cart && (
-              <FreeShippingPriceNudge
-                variant="popup"
-                cart={cart}
-                shippingOptions={shippingOptions}
-              />
-            )}
-            <main className="relative">{children}</main>
-            <Footer />
-          </ClientWrapper>
-        </Suspense>
+        <NextUIProviderWrapper>
+          <Suspense fallback={<div>Loading...</div>}>
+            <ClientWrapper>
+              <Nav />
+              {customer && cart && (
+                <CartMismatchBanner customer={customer} cart={cart} />
+              )}
+              {cart && (
+                <FreeShippingPriceNudge
+                  variant="popup"
+                  cart={cart}
+                  shippingOptions={shippingOptions}
+                />
+              )}
+              <main className="relative">{children}</main>
+              <Footer />
+            </ClientWrapper>
+          </Suspense>
+        </NextUIProviderWrapper>
       </body>
     </html>
   );

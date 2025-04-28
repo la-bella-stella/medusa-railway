@@ -80,11 +80,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
     // Create the customer record
     const headers = { ...(await getAuthHeaders()) };
-    const { customer: createdCustomer } = await sdk.store.customer.create(
-      customerForm,
-      {},
-      headers
-    );
+    await sdk.store.customer.create(customerForm, {}, headers);
 
     // Log in again to refresh token
     const loginToken = (await sdk.auth.login("customer", "emailpass", {
@@ -95,9 +91,15 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
     // Revalidate cache and transfer cart
     revalidateTag(await getCacheTag("customers"));
-    await transferCart();
+    const cartId = await getCartId();
+    if (cartId) {
+      const transferHeaders = { ...(await getAuthHeaders()) };
+      await sdk.store.cart.transferCart(cartId, {}, transferHeaders);
+      revalidateTag(await getCacheTag("carts"));
+    }
 
-    return createdCustomer;
+    // Finally, redirect into the account dashboard
+    redirect("/account");
   } catch (error: any) {
     return error.toString();
   }
@@ -122,7 +124,12 @@ export async function login(_currentState: unknown, formData: FormData) {
   }
 
   try {
-    await transferCart();
+    const cartId = await getCartId();
+    if (cartId) {
+      const headers = { ...(await getAuthHeaders()) };
+      await sdk.store.cart.transferCart(cartId, {}, headers);
+      revalidateTag(await getCacheTag("carts"));
+    }
   } catch (error: any) {
     return error.toString();
   }

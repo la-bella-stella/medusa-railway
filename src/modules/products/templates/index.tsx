@@ -27,7 +27,6 @@ type ProductTemplateProps = {
     handle: string
     subtitle?: string | null
     description?: string | null
-    // added fields used by ProductTabs
     material?: string | null
     origin_country?: string | null
     metadata?: {
@@ -66,7 +65,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   }
 
   // Sanitize HTML, preserving lists, paragraphs, headings, basic formatting
-  // Sanitize HTML, preserving lists, paragraphs, headings, basic formatting
   const sanitizeHtml = (html: string) => {
     if (DOMPurify && typeof DOMPurify.sanitize === "function") {
       try {
@@ -91,7 +89,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
       {/* Breadcrumb */}
-      <div className="pt-8">
+      <div className="pt-12">
         <div className="flex items-center chawkbazarBreadcrumb">
           <ol className="flex items-center w-full overflow-hidden">
             <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
@@ -112,7 +110,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
       </div>
 
       {/* Gallery + Main Details */}
-      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14 pt-7">
+      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14 pt-10">
         <div className="col-span-5">
           <ImageGallery images={product.images || []} />
         </div>
@@ -135,7 +133,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
       </div>
 
       {/* Specifications & Description */}
-      <div className="grid grid-cols-1 lg:grid-cols-9 gap-x-10 xl:gap-x-14 pt-7 pb-10 lg:pb-14 2xl:pb-20 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-9 gap-x-10 xl:gap-x-14 pt-10 pb-10 lg:pb-14 2xl:pb-20 items-start">
         {/* Specifications */}
         <div className="col-span-5 order-2 lg:order-1">
           <div className="pb-7 mb-7 pt-7 md:pt-0 border-b border-gray-300">
