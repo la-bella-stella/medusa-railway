@@ -1,4 +1,3 @@
-// src/modules/products/templates/index.tsx
 "use client";
 
 import React, { useState, Suspense } from "react";
@@ -55,8 +54,13 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-4 lg:px-6">
+      {/* Breadcrumbs moved to top left */}
+      <div className="pt-7">
+        <Breadcrumb productTitle={product.title} />
+      </div>
+
       {/* === First row: Gallery + Main Details === */}
-      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14 pt-7">
+      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14">
         {/* Gallery */}
         <div className="col-span-5">
           <ImageGallery images={product.images || []} />
@@ -65,7 +69,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         {/* Product info, title, actions */}
         <div className="col-span-4 pt-8 lg:pt-0">
           <div className="pb-7 mb-7 border-b border-gray-300">
-            <Breadcrumb productTitle={product.title} />
             <ProductInfo product={product} variant={selectedVariant} />
             <p className="text-body text-center mt-8 text-base lg:text-base leading-6 lg:leading-8 uppercase tracking-wide">
               {t("text-free-shipping", "FREE SHIPPING & EASY RETURNS")}

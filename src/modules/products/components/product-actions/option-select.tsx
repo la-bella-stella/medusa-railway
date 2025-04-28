@@ -1,4 +1,3 @@
-// src/modules/products/components/product-actions/option-select.tsx
 "use client"
 
 import React from "react"
@@ -34,7 +33,7 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
             key={v}
             onClick={() => updateOption(option.id, v)}
             className={clx(
-              "border border-gray-300 flex items-center justify-center",
+              "border border-gray-300 flex items-center justify-center h-full w-full rounded block",
               {
                 "border-gray-900": v === current,
                 "hover:border-gray-900 transition-colors ease-in-out duration-150":

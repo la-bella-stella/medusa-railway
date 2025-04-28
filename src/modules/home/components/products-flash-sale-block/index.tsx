@@ -59,20 +59,10 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
 }) => {
   const { t } = useTranslation("common");
 
-  // Debug: Log props
-  console.log("ProductsFlashSaleBlock - Props:", {
-    products: products?.length,
-    isLoading,
-    error,
-    variant,
-    sectionHeading,
-    region,
-  });
-
   if (!isLoading && isEmpty(products)) {
     console.log("Rendering NotFoundItem in ProductsFlashSaleBlock");
     return (
-      <div className="not-found text-center p-5 text-base text-gray-700">
+      <div className="text-center p-5 text-base text-gray-700 bg-gray-100 rounded">
         <NotFoundItem text={t("text-no-flash-products-found")} />
       </div>
     );
@@ -150,7 +140,7 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
                       </SwiperSlide>
                     ))
                   ) : (
-                    <div className="text-center p-5 text-base text-gray-700">
+                    <div className="text-center p-5 text-base text-gray-700 bg-gray-100 rounded">
                       No flash sale products available
                     </div>
                   )}

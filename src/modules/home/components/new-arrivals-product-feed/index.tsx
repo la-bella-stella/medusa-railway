@@ -50,17 +50,13 @@ export default function NewArrivalsProductFeed({
 }) {
   const { t } = useTranslation("common");
 
-  // Debug: Log props
-  console.log("NewArrivalsProductFeed - Props:", {
-    products: products?.length,
-    isLoading,
-    error,
-    region,
-  });
-
   if (!isLoading && isEmpty(products)) {
     console.log("Rendering NotFoundItem in NewArrivalsProductFeed");
-    return <NotFoundItem text={t("text-no-products-found")} />;
+    return (
+      <div className="text-center p-5 text-base text-gray-700 bg-gray-100 rounded">
+        <NotFoundItem text={t("text-no-products-found")} />
+      </div>
+    );
   }
 
   return (
@@ -80,7 +76,7 @@ export default function NewArrivalsProductFeed({
         <Alert
           message={error.message}
           closeable={true}
-          onClose={() => console.log("Error dismissed")}
+          onClose={() => {}}
         />
       ) : (
         <Carousel

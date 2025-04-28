@@ -33,42 +33,25 @@ const ProductCard: FC<ProductProps> = ({
   const { t } = useTranslation("common");
   const { cheapestPrice } = getProductPrice({ product, region });
 
-  // Debug: Log product and price
-  console.log("ProductCard - Product:", {
-    id: product.id,
-    title: product.title,
-    handle: product.handle,
-    variants: product.variants,
-    inventory: product.variants?.map((v) => ({
-      id: v.id,
-      inventory_quantity: v.inventory_quantity,
-    })),
-    thumbnail: product.thumbnail,
-    cheapestPrice,
-    region,
-  });
-  console.log("getProductPrice Input:", {
-    product: { id: product.id, handle: product.handle, variants: product.variants },
-    region,
-  });
-
   if (!cheapestPrice) {
-    console.warn("No cheapestPrice for product:", product.id);
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />;
+    console.warn("No cheapestPrice for product:", {
+      id: product.id,
+      regionId: region?.id,
+      variants: product.variants?.length,
+    });
   }
 
   const {
-    calculated_price: currentPrice,
+    calculated_price: currentPrice = "Price Unavailable",
     original_price: maybeBase,
     price_type,
     percentage_diff: discount,
-  } = cheapestPrice;
+  } = cheapestPrice || {};
 
   const basePrice = maybeBase || currentPrice;
   const isOnSale = price_type === "sale";
   const isVariable = (product.variants?.length ?? 0) > 1;
 
-  // Check if any variant has stock
   const inventoryQuantity = product.variants?.reduce(
     (total, variant) => total + (variant.inventory_quantity ?? 0),
     0
@@ -152,7 +135,7 @@ const ProductCard: FC<ProductProps> = ({
           >
             {currentPrice}
           </span>
-          {isOnSale && (
+          {isOnSale && maybeBase && (
             <del className="text-sm text-gray-400 font-normal">
               {basePrice}
             </del>

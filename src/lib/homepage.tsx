@@ -27,9 +27,8 @@ export async function renderHomepage() {
       currency_code: "USD",
       name: "Default Region",
     };
-    console.log("Region fetched in homepage:", region);
   } catch (e: any) {
-    console.error("getRegion failed in homepage:", { message: e.message, stack: e.stack });
+    console.error("getRegion failed in homepage:", { message: e.message });
     region = {
       id: DEFAULT_REGION_ID,
       currency_code: "USD",
@@ -44,92 +43,68 @@ export async function renderHomepage() {
       fields: "id, handle, title, metadata, thumbnail",
     });
     collections = cols ?? [];
-    console.log("Collections fetched:", collections);
   } catch (e: any) {
-    console.error("listCollections failed:", { message: e.message, stack: e.stack });
+    console.error("listCollections failed:", { message: e.message });
   }
 
-  // 3) New Arrivals
+  // 3) Helper function to fetch products
+  async function fetchProducts(queryParams: any) {
+    try {
+      const { response } = await listProducts({
+        countryCode: DEFAULT_COUNTRY,
+        regionId: region.id,
+        queryParams,
+      });
+      const products = response.products || [];
+      console.log("Fetched products:", products.length);
+      return products;
+    } catch (e: any) {
+      console.error("listProducts failed:", {
+        message: e.message,
+        regionId: region.id,
+        queryParams,
+      });
+      return [];
+    }
+  }
+
+  // 4) New Arrivals
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoISOString = thirtyDaysAgo.toISOString();
+  const thirtyDaysAgoISOString = thirtyDaysAgo.toISOString().split("T")[0] + "T00:00:00.000Z";
 
   let newArrivalsProducts: HttpTypes.StoreProduct[] = [];
-  let newArrivalsError: { message: string } | null = null;
-
-  try {
-    console.log("Fetching new arrivals with region ID:", region.id);
-    const { response } = await listProducts({
-      countryCode: DEFAULT_COUNTRY,
-      regionId: region.id,
-      queryParams: {
-        limit: 10,
-        created_at: { gte: thirtyDaysAgoISOString },
-      },
+  newArrivalsProducts = await fetchProducts({
+    limit: 10,
+    created_at: { gte: thirtyDaysAgoISOString },
+  });
+  if (newArrivalsProducts.length === 0) {
+    console.log("No new arrivals found, trying fallback...");
+    newArrivalsProducts = await fetchProducts({
+      limit: 10,
     });
-    newArrivalsProducts = response.products || [];
-    console.log("New Arrivals Products:", newArrivalsProducts);
-
     if (newArrivalsProducts.length === 0) {
-      console.log("No new arrivals found, trying fallback...");
-      const { response: fallback } = await listProducts({
-        countryCode: DEFAULT_COUNTRY,
-        regionId: region.id,
-        queryParams: { limit: 10 },
-      });
-      newArrivalsProducts = fallback.products || [];
-      console.log("Fallback Products:", newArrivalsProducts);
+      console.warn("No products found for new arrivals, even after fallback.");
     }
-  } catch (e: any) {
-    console.error("listProducts(new arrivals) failed:", {
-      message: e.message,
-      stack: e.stack,
-      regionId: region.id,
-      countryCode: DEFAULT_COUNTRY,
-      queryParams: { limit: 10, created_at: { gte: thirtyDaysAgoISOString } },
-    });
-    newArrivalsError = { message: e.message };
   }
 
-  // 4) Flash Sale
+  // 5) Flash Sale
   let flashSaleProducts: HttpTypes.StoreProduct[] = [];
-  let flashSaleError: { message: string } | null = null;
-
-  try {
-    console.log("Fetching flash sale with region ID:", region.id);
-    const { response } = await listProducts({
-      countryCode: DEFAULT_COUNTRY,
-      regionId: region.id,
-      queryParams: {
-        limit: 10,
-        tag_id: ["flash-sale"],
-      },
+  flashSaleProducts = await fetchProducts({
+    limit: 10,
+    tag_id: ["FLASH SALE"],
+  });
+  if (flashSaleProducts.length === 0) {
+    console.log("No flash sale products found, trying fallback...");
+    flashSaleProducts = await fetchProducts({
+      limit: 10,
     });
-    flashSaleProducts = response.products || [];
-    console.log("Flash Sale Products:", flashSaleProducts);
-
     if (flashSaleProducts.length === 0) {
-      console.log("No flash sale products found, trying fallback...");
-      const { response: fallback } = await listProducts({
-        countryCode: DEFAULT_COUNTRY,
-        regionId: region.id,
-        queryParams: { limit: 10 },
-      });
-      flashSaleProducts = fallback.products || [];
-      console.log("Flash Sale Fallback Products:", flashSaleProducts);
+      console.warn("No products found for flash sale, even after fallback.");
     }
-  } catch (e: any) {
-    console.error("listProducts(flash sale) failed:", {
-      message: e.message,
-      stack: e.stack,
-      regionId: region.id,
-      countryCode: DEFAULT_COUNTRY,
-      queryParams: { limit: 10, tag_id: ["flash-sale"] },
-    });
-    flashSaleError = { message: e.message };
   }
 
-  // 5) Render
+  // 6) Render
   return (
     <Container>
       <div className="py-12">
@@ -144,7 +119,7 @@ export async function renderHomepage() {
         <NewArrivalsProductFeed
           products={newArrivalsProducts}
           isLoading={false}
-          error={newArrivalsError}
+          error={null}
           region={region}
         />
 
@@ -157,7 +132,7 @@ export async function renderHomepage() {
         <ProductsFlashSaleBlock
           products={flashSaleProducts}
           isLoading={false}
-          error={flashSaleError}
+          error={null}
           date={currentDate}
           variant="slider"
           region={region}
