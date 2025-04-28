@@ -1,38 +1,44 @@
-"use client";
+"use client"
 
-import React, { useState, Suspense } from "react";
-import { HttpTypes } from "@medusajs/types";
-import ImageGallery from "@modules/products/components/image-gallery";
-import ProductActions from "@modules/products/components/product-actions";
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta";
-import ProductTabs from "@modules/products/components/product-tabs";
-import RelatedProducts from "@modules/products/components/related-products";
-import ProductInfo from "@modules/products/templates/product-info";
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products";
-import Subscription from "@modules/common/components/subscription";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa";
-import { Transition } from "@headlessui/react";
-import { useTranslation } from "react-i18next";
-import { useSanitizeContent } from "@lib/sanitize-content";
+import React, { useState, forwardRef, Suspense } from "react"
+import Link from "next/link"
+import createDOMPurify from "dompurify"
 
-// Simple Breadcrumb component
-const Breadcrumb: React.FC<{ productTitle: string }> = ({ productTitle }) => (
-  <div className="text-xs text-gray-500 mb-2">
-    <a href="/" className="hover:underline">Home</a> /{" "}
-    <a href="/products" className="hover:underline">Products</a> /{" "}
-    <span className="text-gray-700">{productTitle}</span>
-  </div>
-);
+// On server render, window is undefined. Provide a mock to avoid errors during SSR.
+const _window = typeof window !== "undefined" ? window : ({} as any)
+const DOMPurify = createDOMPurify(_window)
+import { HttpTypes } from "@medusajs/types"
+import ImageGallery from "@modules/products/components/image-gallery"
+import ProductActions from "@modules/products/components/product-actions"
+import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
+import ProductTabs from "@modules/products/components/product-tabs"
+import RelatedProducts from "@modules/products/components/related-products"
+import ProductInfo from "@modules/products/templates/product-info"
+import ProductActionsWrapper from "./product-actions-wrapper"
+import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
+import { FaChevronUp, FaChevronDown } from "react-icons/fa"
+import { Transition } from "@headlessui/react"
+import type { StoreProductWithTags } from "types/global"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct & {
-    brand?: { name: string };
-    type?: HttpTypes.StoreProductType | null;
-  };
-  region: HttpTypes.StoreRegion;
-  countryCode: string;
-  relatedProducts?: HttpTypes.StoreProduct[];
-};
+    brand?: { name: string }
+    type?: HttpTypes.StoreProductType | null
+    handle: string
+    subtitle?: string | null
+    description?: string | null
+    // added fields used by ProductTabs
+    material?: string | null
+    origin_country?: string | null
+    metadata?: {
+      season?: string | null
+      gender?: string | null
+    }
+  }
+  region: HttpTypes.StoreRegion
+  countryCode: string
+  relatedProducts?: HttpTypes.StoreProduct[]
+}
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
   product,
@@ -40,78 +46,108 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   countryCode,
   relatedProducts = [],
 }) => {
-  const { t } = useTranslation("common");
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
-  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true);
-  const [selectedVariant, setSelectedVariant] =
-    useState<HttpTypes.StoreProductVariant>();
-  const content = useSanitizeContent({ description: product.description });
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true)
+  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true)
+  const toggleDescription = () => setIsDescriptionOpen((o) => !o)
+  const toggleSpecifications = () => setIsSpecificationOpen((o) => !o)
 
-  const toggleDescription = () =>
-    setIsDescriptionOpen((open) => !open);
-  const toggleSpecifications = () =>
-    setIsSpecificationOpen((open) => !open);
+  const TransitionWrapper = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
+    ({ children }, ref) => <div ref={ref}>{children}</div>
+  )
+  TransitionWrapper.displayName = "TransitionWrapper"
+
+  const productForInfo: StoreProductWithTags & {
+    brand?: { name: string }
+    type?: HttpTypes.StoreProductType | null
+  } = {
+    ...product,
+    tags: product.tags?.map((t) => ({ value: t.value })) ?? undefined,
+    variants: product.variants ?? null,
+  }
+
+  // Sanitize HTML, preserving lists, paragraphs, headings, basic formatting
+  // Sanitize HTML, preserving lists, paragraphs, headings, basic formatting
+  const sanitizeHtml = (html: string) => {
+    if (DOMPurify && typeof DOMPurify.sanitize === "function") {
+      try {
+        return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+      } catch {
+        return html;
+      }
+    }
+    return html;
+  }
+
+  // Detect if subtitle contains block-level markup (e.g., lists)
+  const subtitleHasBlocks = Boolean(
+    product.subtitle && /<(ul|ol|li|p|h[1-6])/.test(product.subtitle)
+  )
+
+  // Combine subtitle and description for rendering, if subtitle has blocks
+  const combinedDescHtml = subtitleHasBlocks
+    ? `${product.subtitle ?? ""}${product.description ?? ""}`
+    : product.description ?? ""
 
   return (
-    <div className="mx-auto max-w-[1920px] px-4 md:px-4 lg:px-6">
-      {/* Breadcrumbs moved to top left */}
-      <div className="pt-7">
-        <Breadcrumb productTitle={product.title} />
+    <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
+      {/* Breadcrumb */}
+      <div className="pt-8">
+        <div className="flex items-center chawkbazarBreadcrumb">
+          <ol className="flex items-center w-full overflow-hidden">
+            <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
+              <Link href="/">Home</Link>
+            </li>
+            <li className="text-base text-body mt-0.5">/</li>
+            <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
+              <Link href="/products" className="capitalize">products</Link>
+            </li>
+            <li className="text-base text-body mt-0.5">/</li>
+            <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
+              <Link href={`/products/${product.handle}`} className="capitalize">
+                {product.title.toLowerCase()}
+              </Link>
+            </li>
+          </ol>
+        </div>
       </div>
 
-      {/* === First row: Gallery + Main Details === */}
-      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14">
-        {/* Gallery */}
+      {/* Gallery + Main Details */}
+      <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14 pt-7">
         <div className="col-span-5">
           <ImageGallery images={product.images || []} />
         </div>
-
-        {/* Product info, title, actions */}
         <div className="col-span-4 pt-8 lg:pt-0">
           <div className="pb-7 mb-7 border-b border-gray-300">
-            <ProductInfo product={product} variant={selectedVariant} />
-            <p className="text-body text-center mt-8 text-base lg:text-base leading-6 lg:leading-8 uppercase tracking-wide">
-              {t("text-free-shipping", "FREE SHIPPING & EASY RETURNS")}
+            <ProductInfo product={productForInfo} />
+            <p className="text-body text-center mt-8 text-base lg:text-base leading-6 lg:leading-8">
+              FREE SHIPPING &amp; EASY RETURNS
             </p>
           </div>
-
-          <div className="flex items-center py-8 space-x-4 border-b border-gray-300">
+          <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
             <Suspense
-              fallback={
-                <ProductActions disabled product={product} region={region} />
-              }
+              fallback={<ProductActions disabled product={product} region={region} />}
             >
-              <ProductActions
-                product={product}
-                region={region}
-                onVariantChange={setSelectedVariant}
-              />
+              <ProductActionsWrapper product={product} region={region} />
             </Suspense>
             <ProductOnboardingCta />
           </div>
         </div>
       </div>
 
-      {/* === Second row: Specifications & Description === */}
+      {/* Specifications & Description */}
       <div className="grid grid-cols-1 lg:grid-cols-9 gap-x-10 xl:gap-x-14 pt-7 pb-10 lg:pb-14 2xl:pb-20 items-start">
-        {/* Specifications (left on desktop) */}
+        {/* Specifications */}
         <div className="col-span-5 order-2 lg:order-1">
           <div className="pb-7 mb-7 pt-7 md:pt-0 border-b border-gray-300">
             <button
               className="relative inline-flex items-center justify-between w-full font-semibold text-heading text-lg"
               onClick={toggleSpecifications}
             >
-              {t("text-specifications")}
-              {isSpecificationOpen ? (
-                <FaChevronUp className="text-base" />
-              ) : (
-                <FaChevronDown className="text-base" />
-              )}
+              Specifications
+              {isSpecificationOpen ? <FaChevronUp className="text-base" /> : <FaChevronDown className="text-base" />}
             </button>
           </div>
-
           <Transition
-            as="div"
             show={isSpecificationOpen}
             enter="transition-all duration-300 ease-in-out"
             enterFrom="max-h-0 opacity-0"
@@ -120,28 +156,24 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             leaveFrom="max-h-screen opacity-100"
             leaveTo="max-h-0 opacity-0"
           >
-            <ProductTabs product={product} />
+            <TransitionWrapper>
+              <ProductTabs product={product} />
+            </TransitionWrapper>
           </Transition>
         </div>
 
-        {/* Description (right on desktop) */}
+        {/* Description */}
         <div className="col-span-5 md:col-span-4 pt-8 lg:pt-0 order-1 lg:order-2">
           <div className="pb-7 mb-7 border-b border-gray-300">
             <button
               className="relative inline-flex items-center justify-between w-full font-semibold text-heading text-lg"
               onClick={toggleDescription}
             >
-              {t("text-description")}
-              {isDescriptionOpen ? (
-                <FaChevronUp className="text-base" />
-              ) : (
-                <FaChevronDown className="text-base" />
-              )}
+              Description
+              {isDescriptionOpen ? <FaChevronUp className="text-base" /> : <FaChevronDown className="text-base" />}
             </button>
           </div>
-
           <Transition
-            as="div"
             show={isDescriptionOpen}
             enter="transition-all duration-300 ease-in-out"
             enterFrom="max-h-0 opacity-0"
@@ -150,34 +182,30 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             leaveFrom="max-h-screen opacity-100"
             leaveTo="max-h-0 opacity-0"
           >
-            {content && (
-              <div
-                className="desc-pdp my-5 text-body text-sm lg:text-base leading-6 lg:leading-8"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
-            )}
+            <TransitionWrapper>
+              <div className="desc-pdp my-5 text-body text-sm lg:text-base leading-6 lg:leading-8 font-normal [&_ul]:list-disc [&_ul]:list-inside [&_ul]:pl-5 [&_ul>li]:mb-2 [&_strong]:font-semibold">
+                {/* Only render subtitle as bold text if no block-level markup in subtitle */}
+                {!subtitleHasBlocks && product.subtitle != null && (
+                  <div className="font-semibold mb-2">{product.subtitle}</div>
+                )}
+                {/* Render combined HTML for block-level or regular description */}
+                <div
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(combinedDescHtml) }}
+                />
+              </div>
+            </TransitionWrapper>
           </Transition>
         </div>
       </div>
 
-      {/* Related products + subscription */}
-      <div className="my-10 small:my-16">
+      {/* Related Products */}
+      <div className="content-container my-16 small:my-32" data-testid="related-products-container">
         <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts
-            product={product}
-            region={region}
-            countryCode={countryCode}
-            relatedProducts={relatedProducts}
-            sectionHeading="text-related-products"
-          />
+          <RelatedProducts product={product} region={region} countryCode={countryCode} relatedProducts={relatedProducts} />
         </Suspense>
       </div>
-
-      <div className="my-10 small:my-16 text-center">
-        <Subscription />
-      </div>
     </div>
-  );
-};
+  )
+}
 
-export default ProductTemplate;
+export default ProductTemplate

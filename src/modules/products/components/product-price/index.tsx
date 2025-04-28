@@ -1,49 +1,135 @@
-// src/modules/products/components/product-price.tsx
-import { clx } from "@medusajs/ui";
-import { getProductPrice } from "@lib/util/get-product-price";
-import { HttpTypes } from "@medusajs/types";
+// src/components/ProductPrice.tsx
 
-type ProductPriceProps = {
-  product: HttpTypes.StoreProduct;
-  variant?: HttpTypes.StoreProductVariant;
-};
+import { clx } from "@medusajs/ui"
+import type {
+  ProductPriceProps,
+  VariantPrice,
+  StoreVariantWithPrices,
+  PriceEntry,
+} from "../../../../types/global"
 
-export default function ProductPrice({ product, variant }: ProductPriceProps) {
-  const { cheapestPrice, variantPrice } = getProductPrice({
-    product,
-    variantId: variant?.id,
-  });
+export default function ProductPrice({
+  product,
+  variant,
+}: ProductPriceProps) {
+  // format helper (amount is now already in dollars)
+  const formatPrice = (amount: number, currency: string) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(amount)
 
-  const selectedPrice = variant ? variantPrice : cheapestPrice;
+  // compute price data without dividing by 100
+  const getPriceData = (): VariantPrice | undefined => {
+    let priceAmount: number | undefined
+    let currencyCode = "USD"
+    let msrp: number | undefined
+    let isSale = false
+    let discountPercentage: string | undefined
 
-  if (!selectedPrice) {
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />;
+    if (variant?.prices?.length) {
+      const p = variant.prices[0]
+      priceAmount = p.amount    // no more /100
+      currencyCode = p.currency_code
+      msrp =
+        variant.metadata?.msrp !== undefined
+          ? variant.metadata.msrp
+          : undefined
+    } else {
+      const all = product.variants ?? []
+      const priced = all.filter(
+        (v): v is StoreVariantWithPrices & { prices: PriceEntry[] } =>
+          Array.isArray(v.prices) && v.prices.length > 0
+      )
+      if (!priced.length) return undefined
+
+      let cheapest = priced[0]
+      priced.forEach((v) => {
+        if (v.prices[0].amount < cheapest.prices[0].amount) {
+          cheapest = v
+        }
+      })
+
+      priceAmount = cheapest.prices[0].amount
+      currencyCode = cheapest.prices[0].currency_code
+      msrp =
+        cheapest.metadata?.msrp !== undefined
+          ? cheapest.metadata.msrp
+          : undefined
+    }
+
+    // sale logic
+    if (
+      priceAmount !== undefined &&
+      msrp !== undefined &&
+      priceAmount < msrp
+    ) {
+      isSale = true
+      const pct = ((msrp - priceAmount) / msrp) * 100
+      discountPercentage = Math.round(pct).toString()
+    } else if (
+      priceAmount !== undefined &&
+      product.tags?.some((t) => t.value.includes("SALE"))
+    ) {
+      const saleTag = product.tags.find((t) =>
+        t.value.match(/SALE(\d+)/)
+      )
+      const m = saleTag?.value.match(/SALE(\d+)/)
+      if (m) {
+        isSale = true
+        discountPercentage = m[1]
+        msrp = priceAmount / (1 - parseInt(m[1], 10) / 100)
+      }
+    }
+
+    if (priceAmount === undefined) return undefined
+
+    return {
+      calculated_price: formatPrice(priceAmount, currencyCode),
+      original_price: msrp ? formatPrice(msrp, currencyCode) : "",
+      price_type: isSale ? "sale" : "default",
+      percentage_diff: discountPercentage ?? "",
+      calculated_price_number: priceAmount,
+      original_price_number: msrp ?? 0,
+      currency_code: currencyCode,
+    }
+  }
+
+  const data = getPriceData()
+  if (!data) {
+    return (
+      <div className="text-gray-500 text-base font-semibold">
+        Price unavailable
+      </div>
+    )
   }
 
   return (
-    <div className="flex items-center">
-      <span
+    <div className="flex items-center mt-5 space-x-2">
+      {/* Current price */}
+      <div
         className={clx(
           "text-base font-semibold md:text-xl lg:text-2xl",
-          {
-            "text-red-500": selectedPrice.price_type === "sale",
-            "text-heading": selectedPrice.price_type !== "sale",
-          }
+          data.price_type === "sale"
+            ? "text-red-500"
+            : "text-gray-900"
         )}
         data-testid="product-price"
-        data-value={selectedPrice.calculated_price_number}
+        data-value={data.calculated_price_number}
       >
-        {selectedPrice.calculated_price}
-      </span>
-      {selectedPrice.price_type === "sale" && (
+        {data.calculated_price}
+      </div>
+
+      {/* Original price, only on sale */}
+      {data.price_type === "sale" && data.original_price && (
         <del
-          className="font-segoe line-through text-gray-400 text-sm md:text-lg ltr:pl-2.5 rtl:pr-2.5"
+          className="font-segoe line-through text-gray-400 text-sm md:text-lg"
           data-testid="original-product-price"
-          data-value={selectedPrice.original_price_number}
+          data-value={data.original_price_number}
         >
-          {selectedPrice.original_price}
+          {data.original_price}
         </del>
       )}
     </div>
-  );
+  )
 }

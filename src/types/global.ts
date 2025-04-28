@@ -1,46 +1,73 @@
-import { HttpTypes, StorePrice } from "@medusajs/types";
+// src/types/global.ts
 
-// Extend StoreProductParams and StoreCollectionParams
-declare module "@medusajs/types" {
-  interface StoreProductParams {
-    tags?: string[];
-    region_id?: string; // Already supported in products.ts
-  }
-  interface StoreCollectionParams {
-    region_id?: string; // ← Add this
-  }
+import type { HttpTypes, StorePrice } from "@medusajs/types"
+
+/**
+ * A single region-aware price record.
+ */
+export interface PriceEntry extends StorePrice {
+  min_quantity: number | null
+  max_quantity: number | null
+  rules: Record<string, any>
 }
 
-export type FeaturedProduct = {
-  id: string;
-  title: string;
-  handle: string;
-  thumbnail?: string;
-};
+/**
+ * Exactly the Medusa variant + our extras.
+ */
+export interface StoreVariantWithPrices
+  extends HttpTypes.StoreProductVariant
+{
+  prices?: PriceEntry[]
+  metadata?: { msrp?: number; [k: string]: any } | null
+}
 
-export type VariantPrice = {
-  calculated_price_number: number;
-  calculated_price: string;
-  original_price_number: number;
-  original_price: string;
-  currency_code: string;
-  price_type: string;
-  percentage_diff: string;
-};
+/**
+ * The product you actually work with in <ProductPrice>:
+ *  - tags become objects
+ *  - variants become our extended StoreVariantWithPrices[]
+ */
+export interface StoreProductWithTags
+  extends Omit<HttpTypes.StoreProduct, "tags" | "variants">
+{
+  tags?: Array<{ value: string }>
+  variants?: StoreVariantWithPrices[] | null
+}
 
+/**
+ * Props for your <ProductPrice> component
+ */
+export interface ProductPriceProps {
+  product: StoreProductWithTags
+  variant?: StoreVariantWithPrices
+}
+
+/**
+ * The shape returned by getPriceData()
+ */
+export interface VariantPrice {
+  calculated_price_number: number
+  calculated_price: string
+  original_price_number: number
+  original_price: string
+  currency_code: string
+  price_type: "sale" | "default"
+  percentage_diff: string
+}
+
+/* Optional helper types, left here in case you need them elsewhere */
 export type StoreFreeShippingPrice = StorePrice & {
-  target_reached: boolean;
-  target_remaining: number;
-  remaining_percentage: number;
-};
+  target_reached: boolean
+  target_remaining: number
+  remaining_percentage: number
+}
 
-export type Filters = {
-  category?: string[];      // checkbox can select multiple
-  brand?: string[];
-  collection?: string[];
-  grouped_color?: string[];
-  gender?: string[];
-  season?: string[];
-  price?: string[];
-  tags?: string[];         // PriceFilter might emit a single-range string like "300-500"
-};
+export interface Filters {
+  category?: string[]
+  brand?: string[]
+  collection?: string[]
+  grouped_color?: string[]
+  gender?: string[]
+  season?: string[]
+  price?: string[]
+  tags?: string[]
+}
