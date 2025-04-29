@@ -1,8 +1,11 @@
 "use client"; // Mark this as a client component
 
 import { Card, CardHeader, CardBody, Button } from "@nextui-org/react";
-import { redirect } from "next/navigation";
 import Divider from "@modules/common/components/divider"; // Import Divider component for consistency
+import User from "@modules/common/icons/user"; // Import icons for action cards
+import MapPin from "@modules/common/icons/map-pin";
+import Package from "@modules/common/icons/package";
+import { useRouter } from "next/navigation"; // Import useRouter for client-side navigation
 
 interface AccountContentProps {
   customer: any; // Replace 'any' with the actual type of customer if you have a type definition
@@ -11,86 +14,117 @@ interface AccountContentProps {
 }
 
 export default function AccountContent({ customer, orders, completeness }: AccountContentProps) {
+  const router = useRouter(); // Initialize useRouter for navigation
+
   return (
-    <div className="w-full space-y-12">
+    <div className="w-full">
       {/* Header Section */}
       <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Account Overview</h1>
-        <p className="text-base-regular">
-          View your account details, recent orders, and more. Manage your profile, addresses, and orders from the sidebar.
+        <h1 className="text-2xl font-semibold text-gray-900">Account Overview</h1>
+        <p className="text-base text-gray-700">
+          Welcome to your account dashboard, {customer.first_name}. Manage your account details below.
         </p>
       </div>
 
-      {/* Greeting + Stats */}
-      <Card className="shadow-md border border-gray-200 rounded-xl">
-        <CardHeader className="space-y-2 p-6">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Hello, {customer.first_name}
-          </h2>
-          <p className="text-base text-gray-500">Signed in as: {customer.email}</p>
-        </CardHeader>
-        <CardBody className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 bg-blue-50 rounded-lg text-center border border-blue-100">
-              <p className="text-5xl font-bold text-blue-600">{completeness}%</p>
-              <p className="mt-4 text-base text-gray-700">Profile Completed</p>
-            </div>
-            <div className="p-6 bg-blue-50 rounded-lg text-center border border-blue-100">
-              <p className="text-5xl font-bold text-blue-600">{customer.addresses?.length || 0}</p>
-              <p className="mt-4 text-base text-gray-700">Saved Addresses</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Greeting */}
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">
+          Hello, {customer.first_name}
+        </h2>
+        <p className="text-base text-gray-500 mt-1">Signed in as: {customer.email}</p>
+      </div>
 
-      <Divider />
+      <Divider className="my-8" />
 
-      {/* Recent Orders */}
-      <Card className="shadow-md border border-gray-200 rounded-xl">
-        <CardHeader className="flex items-center justify-between p-6">
-          <h3 className="text-2xl font-semibold text-gray-900">Recent Orders</h3>
-          {orders.length > 0 && (
+      {/* Action Cards */}
+      <div className="space-y-6">
+        {/* Your Orders */}
+        <Card className="shadow-none border border-gray-200 rounded-lg">
+          <CardBody className="flex flex-col sm:flex-row items-center gap-6 p-6">
+            {/* Icon */}
+            <div className="w-32 h-32 flex items-center justify-center">
+              <Package className="w-16 h-16 text-gray-500" />
+            </div>
+
+            {/* Details */}
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-gray-900">Your Orders</h3>
+              <p className="text-base text-gray-700 mt-2">
+                View and manage your recent orders.
+              </p>
+            </div>
+
+            {/* Action Button */}
             <Button
               color="primary"
-              variant="light"
+              variant="solid"
               size="md"
-              onClick={() => redirect("/account/orders")} // Updated to match AccountNav’s route
+              className="bg-black text-white rounded-md px-6 py-2"
+              onClick={() => router.push("/account/dashboard/orders")} // Use router.push instead of redirect
             >
-              View all
+              View Orders
             </Button>
-          )}
-        </CardHeader>
-        <CardBody className="p-6">
-          {orders.length === 0 ? (
-            <p className="text-center text-gray-500 py-8 text-base">No recent orders</p>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="py-4 px-6 text-gray-700 font-semibold text-base">Order #</th>
-                  <th className="py-4 px-6 text-gray-700 font-semibold text-base">Date</th>
-                  <th className="py-4 px-6 text-gray-700 font-semibold text-base">Total</th>
-                  <th className="py-4 px-6 text-gray-700 font-semibold text-base">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.slice(0, 5).map((o) => (
-                  <tr key={o.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-6">{o.id.substring(0, 8)}</td>
-                    <td className="py-4 px-6">{new Date(o.created_at).toLocaleDateString()}</td>
-                    <td className="py-4 px-6">
-                      {o.currency_code.toUpperCase()} {o.total.toFixed(2)}
-                    </td>
-                    <td className="py-4 px-6 capitalize">{o.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
 
-      {/* Note: The CTA is already rendered by AccountLayout, so we don’t need to include it here */}
+        {/* Your Addresses */}
+        <Card className="shadow-none border border-gray-200 rounded-lg">
+          <CardBody className="flex flex-col sm:flex-row items-center gap-6 p-6">
+            {/* Icon */}
+            <div className="w-32 h-32 flex items-center justify-center">
+              <MapPin className="w-16 h-16 text-gray-500" />
+            </div>
+
+            {/* Details */}
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-gray-900">Your Addresses</h3>
+              <p className="text-base text-gray-700 mt-2">
+                Manage your shipping addresses ({customer.addresses?.length || 0}).
+              </p>
+            </div>
+
+            {/* Action Button */}
+            <Button
+              color="primary"
+              variant="solid"
+              size="md"
+              className="bg-black text-white rounded-md px-6 py-2"
+              onClick={() => router.push("/account/dashboard/addresses")} // Use router.push instead of redirect
+            >
+              Manage Addresses
+            </Button>
+          </CardBody>
+        </Card>
+
+        {/* Your Profile */}
+        <Card className="shadow-none border border-gray-200 rounded-lg">
+          <CardBody className="flex flex-col sm:flex-row items-center gap-6 p-6">
+            {/* Icon */}
+            <div className="w-32 h-32 flex items-center justify-center">
+              <User className="w-16 h-16 text-gray-500" />
+            </div>
+
+            {/* Details */}
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-gray-900">Your Profile</h3>
+              <p className="text-base text-gray-700 mt-2">
+                Update your profile information.
+              </p>
+            </div>
+
+            {/* Action Button */}
+            <Button
+              color="primary"
+              variant="solid"
+              size="md"
+              className="bg-black text-white rounded-md px-6 py-2"
+              onClick={() => router.push("/account/dashboard/profile")} // Use router.push instead of redirect
+            >
+              Update Profile
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

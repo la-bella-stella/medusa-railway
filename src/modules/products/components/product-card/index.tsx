@@ -6,7 +6,8 @@ import { FC, useState } from "react";
 import { HttpTypes } from "@medusajs/types";
 import { useTranslation } from "react-i18next";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { getProductPrice } from "@lib/util/get-product-price";
+import ProductPrice from "@modules/products/components/product-price";
+import { StoreProductWithTags } from "../../../../types/global";
 
 interface Brand {
   id: string;
@@ -31,25 +32,20 @@ const ProductCard: FC<ProductProps> = ({
   region = null,
 }) => {
   const { t } = useTranslation("common");
-  const { cheapestPrice } = getProductPrice({ product, region });
 
-  if (!cheapestPrice) {
-    console.warn("No cheapestPrice for product:", {
-      id: product.id,
-      regionId: region?.id,
-      variants: product.variants?.length,
-    });
-  }
+  // Ensure region has a default value if null
+  const effectiveRegion: HttpTypes.StoreRegion = region ?? {
+    id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
+    currency_code: "USD",
+    name: "Default Region",
+  };
 
-  const {
-    calculated_price: currentPrice = "Price Unavailable",
-    original_price: maybeBase,
-    price_type,
-    percentage_diff: discount,
-  } = cheapestPrice || {};
+  // Transform product to match StoreProductWithTags type
+  const productForPrice: StoreProductWithTags = {
+    ...product,
+    tags: product.tags?.map((tag) => ({ value: tag.value })) ?? undefined,
+  };
 
-  const basePrice = maybeBase || currentPrice;
-  const isOnSale = price_type === "sale";
   const isVariable = (product.variants?.length ?? 0) > 1;
 
   const inventoryQuantity = product.variants?.reduce(
@@ -73,30 +69,64 @@ const ProductCard: FC<ProductProps> = ({
     >
       <div
         className={cn(
-          "relative w-full aspect-[3/4] overflow-hidden",
+          "card__media has-hover-image relative",
           imageContentClassName
         )}
       >
-        <Image
-          src={
-            imgError || !product.thumbnail
-              ? "/assets/placeholder/collection.svg"
-              : product.thumbnail
-          }
-          alt={product.title || t("text-product-image", "Product Image")}
-          fill
-          loading={imgLoading}
-          quality={100}
-          style={{ objectFit: "cover" }}
-          className="rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
-          onError={() => setImgError(true)}
-        />
+        <div className="media block relative" style={{ paddingTop: "100%" }}>
+          <Image
+            src={
+              imgError || !product.thumbnail
+                ? "/assets/placeholder/collection.svg"
+                : product.thumbnail
+            }
+            alt={product.title || t("text-product-image", "Product Image")}
+            fill
+            loading={imgLoading}
+            quality={100}
+            style={{ objectFit: "contain" }}
+            className="img-fit img-fit--contain card__main-image no-js-hidden rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
+            onError={() => setImgError(true)}
+            sizes="(min-width: 2108px) calc((1980px - 72px) / 4), (min-width: 1280px) calc((100vw - 200px) / 4), (min-width: 769px) calc((100vw - 136px) / 4), (min-width: 600px) calc((100vw - 112px) / 3), calc(100vw - 40px)"
+          />
+          <noscript>
+            <img
+              src={`${product.thumbnail}?width=460`}
+              loading={imgLoading}
+              className="img-fit img-fit--contain card__main-image"
+              width="900"
+              height="1200"
+              alt={product.title || t("text-product-image", "Product Image")}
+            />
+          </noscript>
 
-        {isOnSale && discount && (
-          <span className="absolute top-3 start-3 bg-red-500 text-white text-[11px] px-2.5 py-1.5 rounded-md leading-tight font-semibold">
-            {discount} {t("text-off", "off")}
-          </span>
-        )}
+          {/* Hover Image (using the first additional image if available) */}
+          {product.images && product.images.length > 1 && (
+            <>
+              <Image
+                src={product.images[1].url}
+                alt={product.title || t("text-product-image", "Product Image")}
+                fill
+                loading={imgLoading}
+                quality={100}
+                style={{ objectFit: "contain" }}
+                className="img-fit img-fit--contain card__hover-image no-js-hidden rounded-md transition-transform duration-300 ease-in-out opacity-0 group-hover:opacity-100"
+                sizes="(min-width: 2108px) calc((1980px - 72px) / 4), (min-width: 1280px) calc((100vw - 200px) / 4), (min-width: 769px) calc((100vw - 136px) / 4), (min-width: 600px) calc((100vw - 112px) / 3), calc(100vw - 40px)"
+              />
+              <noscript>
+                <img
+                  src={`${product.images[1].url}?width=460`}
+                  loading={imgLoading}
+                  className="img-fit img-fit--contain card__hover-image"
+                  width="900"
+                  height="1200"
+                  alt={product.title || t("text-product-image", "Product Image")}
+                />
+              </noscript>
+            </>
+          )}
+        </div>
+
         {inventoryQuantity === 0 && (
           <span className="absolute top-3 end-3 text-xs text-white bg-gray-600 px-2 py-1 rounded-md">
             {t("text-out-stock", "Out of Stock")}
@@ -104,42 +134,31 @@ const ProductCard: FC<ProductProps> = ({
         )}
       </div>
 
-      <div className="px-3 py-3 flex flex-col flex-grow w-full">
-        {brandName && (
-          <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
-            {brandName}
-          </div>
-        )}
+      <div className="card__info px-3 py-3 flex flex-col flex-grow w-full">
+        <div className="card__info-inner flex flex-col h-full w-full">
+          {brandName && (
+            <p className="card__vendor mb-0 text-sm text-gray-500 opacity-70">
+              {brandName}
+            </p>
+          )}
 
-        {product.type?.value && (
-          <div className="text-xs text-gray-500 uppercase mb-1 truncate w-full">
-            {product.type.value}
-          </div>
-        )}
+          {product.type?.value && (
+            <p className="card__vendor mb-0 text-sm text-gray-500 opacity-70">
+              {product.type.value}
+            </p>
+          )}
 
-        <h3 className="text-sm font-semibold text-gray-800 truncate mb-1.5 w-full">
-          {product.title}
-        </h3>
-
-        <div className="mt-2 flex items-center space-x-2 w-full">
-          {isVariable && (
-            <span className="text-sm font-bold text-gray-800 uppercase">
-              {t("text-from", "From")}
+          <p className="card__title font-bold mt-1 mb-0">
+            <span className="card-link text-current js-prod-link">
+              {product.title}
             </span>
-          )}
-          <span
-            className={cn(
-              "text-base font-semibold",
-              isOnSale ? "text-red-500" : "text-gray-800"
-            )}
-          >
-            {currentPrice}
-          </span>
-          {isOnSale && maybeBase && (
-            <del className="text-sm text-gray-400 font-normal">
-              {basePrice}
-            </del>
-          )}
+          </p>
+
+          <div className="flex grow items-end">
+            <div className="price price--bottom">
+              <ProductPrice product={productForPrice} region={effectiveRegion} />
+            </div>
+          </div>
         </div>
       </div>
     </LocalizedClientLink>
