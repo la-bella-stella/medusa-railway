@@ -89,7 +89,7 @@ export default function NewArrivalsProductFeed({
         >
           {isLoading && !products?.length
             ? Array.from({ length: 10 }).map((_, idx) => (
-                <SwiperSlide key={`new-arrivals-loader-${idx}`}>
+                <SwiperSlide key={`new-arrivals-loader-${idx}`} className="h-full">
                   <ProductCardGridLoader
                     uniqueKey={`new-arrivals-loader-${idx}`}
                     variant="gridSlim"
@@ -97,7 +97,7 @@ export default function NewArrivalsProductFeed({
                 </SwiperSlide>
               ))
             : products?.map((product) => (
-                <SwiperSlide key={`new-arrivals-product-${product.id}`}>
+                <SwiperSlide key={`new-arrivals-product-${product.id}`} className="h-full">
                   <ProductCard product={product} variant="gridSlim" region={region} />
                 </SwiperSlide>
               ))}

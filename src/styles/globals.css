@@ -305,3 +305,49 @@
     transform: rotate(360deg);
   }
 }
+
+/* Product Card Styles for Legacy Design */
+@layer components {
+  .card--product .card__info-container {
+    flex: 1;
+  }
+
+  .card__info-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+  }
+
+  .card__info-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  .card__vendor {
+    margin-bottom: 0;
+    font-size: 14px; /* Tailwind text-sm */
+    color: rgba(0, 0, 0, 0.7); /* Approximates text-theme-light (text-gray-500 opacity-70) */
+  }
+
+  .card__title {
+    font-weight: bold;
+    margin-top: 4px; /* Tailwind mt-1 */
+    margin-bottom: 0;
+  }
+
+  .card-link {
+    color: currentColor;
+  }
+
+  /* Override ProductPrice styling within ProductCard */
+  .card--product .inline-flex [data-testid="product-price"] {
+    @apply text-sm !important; /* Removed font-bold */
+  }
+
+  .card--product .inline-flex [data-testid="original-product-price"] {
+    @apply text-sm line-through text-gray-400 !important;
+  }
+}
