@@ -16,12 +16,12 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
     region: region,
   });
 
-  // Format helper (amount is in cents, convert to dollars)
+  // Format helper (amount is in dollars, no conversion needed)
   const formatPrice = (amount: number, currency: string) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
-    }).format(amount / 100); // Convert from cents to dollars
+    }).format(amount); // No division by 100, assuming amount is in dollars
 
   // Compute price data
   const getPriceData = (): VariantPrice | undefined => {
@@ -42,7 +42,7 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
         });
         return undefined;
       }
-      priceAmount = p.amount; // Amount in cents
+      priceAmount = p.amount; // Amount in dollars
       currencyCode = p.currency_code;
       msrp =
         variant.metadata?.msrp !== undefined ? variant.metadata.msrp : undefined;
@@ -88,7 +88,7 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
         return undefined;
       }
 
-      priceAmount = p.amount; // Amount in cents
+      priceAmount = p.amount; // Amount in dollars
       currencyCode = p.currency_code;
       msrp =
         cheapest.metadata?.msrp !== undefined ? cheapest.metadata.msrp : undefined;
@@ -122,7 +122,7 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
       original_price: msrp ? formatPrice(msrp, currencyCode) : "",
       price_type: isSale ? "sale" : "default",
       percentage_diff: discountPercentage ?? "",
-      calculated_price_number: priceAmount / 100, // Convert to dollars
+      calculated_price_number: priceAmount, // Already in dollars
       original_price_number: msrp ?? 0,
       currency_code: currencyCode,
     };
