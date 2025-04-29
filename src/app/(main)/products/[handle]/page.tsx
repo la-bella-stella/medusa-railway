@@ -1,4 +1,3 @@
-// src/app/(main)/products/[handle]/page.tsx
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listProducts, getProductByHandle } from "@lib/data/products";
@@ -46,7 +45,6 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
-  // 1. Fetch region
   let region = await getRegion().catch(() => null);
   if (!region) {
     region = {
@@ -56,11 +54,22 @@ export default async function ProductPage({ params }: { params: Params }) {
     } as HttpTypes.StoreRegion;
   }
 
-  // 2. Fetch product
   const product = await getProductByHandle(params.handle, region.id);
   if (!product) notFound();
 
-  // 3. Map to the extra fields ProductTemplate expects
+  console.log("ProductPage inventory:", {
+    handle: params.handle,
+    productId: product.id,
+    variants: product.variants
+      ? product.variants.map((v) => ({
+          id: v.id,
+          inventory_quantity: v.inventory_quantity,
+          manage_inventory: v.manage_inventory,
+          allow_backorder: v.allow_backorder,
+        }))
+      : "No variants available",
+  });
+
   const mappedProduct: HttpTypes.StoreProduct & {
     brand?: { name: string };
     type?: HttpTypes.StoreProductType | null;
@@ -72,17 +81,13 @@ export default async function ProductPage({ params }: { params: Params }) {
     metadata?: { season?: string | null; gender?: string | null };
   } = {
     ...product,
-    // brand comes from metadata.brand
     brand: product.metadata?.brand
       ? { name: String(product.metadata.brand) }
       : undefined,
-    // keep original type if present
     type: product.type ?? null,
-    // handle, subtitle, description
     handle: product.handle!,
     subtitle: product.subtitle ?? null,
     description: product.description ?? null,
-    // map your custom metafields
     material: (product.metadata?.materials as string) ?? null,
     origin_country: (product.metadata?.origin as string) ?? null,
     metadata: {
@@ -91,7 +96,6 @@ export default async function ProductPage({ params }: { params: Params }) {
     },
   };
 
-  // 4. Fetch related products
   const { response: relatedResponse } = await listProducts({
     countryCode: DEFAULT_COUNTRY,
     queryParams: { region_id: region.id, limit: 10 },

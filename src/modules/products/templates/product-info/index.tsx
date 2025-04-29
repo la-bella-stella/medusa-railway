@@ -10,12 +10,6 @@ import type {
 import type { HttpTypes } from "@medusajs/types";
 
 type ProductInfoProps = {
-  /**
-   * - our shared StoreProductWithTags already has:
-   *   • tags?: { value: string }[]
-   *   • variants?: StoreVariantWithPrices[] | null
-   * - we augment with brand & type here
-   */
   product: StoreProductWithTags & {
     brand?: { name: string };
     type?: HttpTypes.StoreProductType | null;
@@ -24,7 +18,6 @@ type ProductInfoProps = {
 };
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
-  // pick out size from variant.options (if present)
   const size = variant?.options
     ?.find((o) => o.option_id?.toLowerCase().includes("size"))
     ?.value;
@@ -32,6 +25,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
   const titleWithSize = size
     ? `${product.title} – Size ${size}`
     : product.title;
+
+  // Log inventory for debugging
+  console.log("ProductInfo inventory:", {
+    productId: product.id,
+    title: product.title,
+    variantId: variant?.id,
+    inventory_quantity: variant?.inventory_quantity ?? "Not available",
+    manage_inventory: variant?.manage_inventory,
+    allow_backorder: variant?.allow_backorder,
+  });
 
   return (
     <div className="flex flex-col gap-y-2">
@@ -47,7 +50,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
           </Link>
         </h1>
       ) : (
-        // spacer to preserve vertical rhythm when no brand
         <div className="mb-3.5" />
       )}
 
@@ -57,6 +59,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
 
       <div className="flex items-center mt-5 gap-x-2">
         <ProductPrice product={product} variant={variant} />
+      </div>
+
+      {/* Display inventory for testing */}
+      <div className="mt-2 text-sm text-gray-600">
+        <p>
+          Inventory:{" "}
+          {variant?.inventory_quantity != null
+            ? variant.inventory_quantity
+            : "Not available"}
+        </p>
       </div>
     </div>
   );

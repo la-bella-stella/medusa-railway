@@ -89,7 +89,7 @@ const ProductCard: FC<ProductProps> = ({
     );
     if (!p) return undefined;
 
-    priceAmount = p.amount;
+    priceAmount = p.amount; // Amount in dollars
     msrp = (cheapest.metadata as any)?.msrp !== undefined ? (cheapest.metadata as any).msrp : undefined;
 
     if (priceAmount !== undefined && msrp !== undefined && priceAmount < msrp) {
@@ -120,7 +120,7 @@ const ProductCard: FC<ProductProps> = ({
     <LocalizedClientLink
       href={`/products/${product.handle}`}
       className={cn(
-        "group bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1 card--product flex flex-col",
+        "group bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1 card--product flex flex-col h-full",
         className
       )}
       role="button"
@@ -128,7 +128,7 @@ const ProductCard: FC<ProductProps> = ({
     >
       <div
         className={cn(
-          "relative w-full aspect-[3/4] overflow-hidden",
+          "relative w-full aspect-[1/1] overflow-hidden",
           imageContentClassName
         )}
       >
@@ -153,7 +153,7 @@ const ProductCard: FC<ProductProps> = ({
             loading={imgLoading}
             className="img-fit img-fit--contain card__main-image"
             width="900"
-            height="1200"
+            height="900"
             alt={product.title || t("text-product-image", "Product Image")}
           />
         </noscript>
@@ -177,7 +177,7 @@ const ProductCard: FC<ProductProps> = ({
                 loading={imgLoading}
                 className="img-fit img-fit--contain card__hover-image"
                 width="900"
-                height="1200"
+                height="900"
                 alt={product.title || t("text-product-image", "Product Image")}
               />
             </noscript>
@@ -186,7 +186,7 @@ const ProductCard: FC<ProductProps> = ({
 
         {/* Sale Label */}
         {priceData?.price_type === "sale" && priceData.percentage_diff && (
-          <div className="absolute top-0 end-0">
+          <div className="absolute top-1 end-0"> {/* Adjusted top-0 to top-1 */}
             <div className="flex justify-end">
               <span className="flex items-center bg-red-500 text-white text-[11px] px-2.5 py-1.5 rounded-md leading-tight font-semibold">
                 <svg
@@ -216,7 +216,7 @@ const ProductCard: FC<ProductProps> = ({
         )}
 
         {inventoryQuantity === 0 && (
-          <span className="absolute top-0 start-0 text-xs text-white bg-gray-600 px-2 py-1 rounded-md">
+          <span className="absolute top-1 start-0 text-xs text-white bg-gray-600 px-2 py-1 rounded-md"> {/* Adjusted top-0 to top-1 */}
             {t("text-out-stock", "Out of Stock")}
           </span>
         )}

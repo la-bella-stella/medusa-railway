@@ -1,43 +1,42 @@
-"use client"
+"use client";
 
-import React, { useState, forwardRef, Suspense } from "react"
-import Link from "next/link"
-import createDOMPurify from "dompurify"
+import React, { useState, forwardRef, Suspense } from "react";
+import Link from "next/link";
+import createDOMPurify from "dompurify";
+import { HttpTypes } from "@medusajs/types";
+import ImageGallery from "@modules/products/components/image-gallery";
+import ProductActions from "@modules/products/components/product-actions";
+import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta";
+import ProductTabs from "@modules/products/components/product-tabs";
+import RelatedProducts from "@modules/products/components/related-products";
+import ProductInfo from "./product-info";
+import ProductActionsWrapper from "./product-actions-wrapper";
+import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products";
+import { FaChevronUp, FaChevronDown } from "react-icons/fa";
+import { Transition } from "@headlessui/react";
+import type { StoreProductWithTags } from "types/global";
 
-// On server render, window is undefined. Provide a mock to avoid errors during SSR.
-const _window = typeof window !== "undefined" ? window : ({} as any)
-const DOMPurify = createDOMPurify(_window)
-import { HttpTypes } from "@medusajs/types"
-import ImageGallery from "@modules/products/components/image-gallery"
-import ProductActions from "@modules/products/components/product-actions"
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
-import ProductTabs from "@modules/products/components/product-tabs"
-import RelatedProducts from "@modules/products/components/related-products"
-import ProductInfo from "@modules/products/templates/product-info"
-import ProductActionsWrapper from "./product-actions-wrapper"
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import { FaChevronUp, FaChevronDown } from "react-icons/fa"
-import { Transition } from "@headlessui/react"
-import type { StoreProductWithTags } from "types/global"
+const _window = typeof window !== "undefined" ? window : ({} as any);
+const DOMPurify = createDOMPurify(_window);
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct & {
-    brand?: { name: string }
-    type?: HttpTypes.StoreProductType | null
-    handle: string
-    subtitle?: string | null
-    description?: string | null
-    material?: string | null
-    origin_country?: string | null
+    brand?: { name: string };
+    type?: HttpTypes.StoreProductType | null;
+    handle: string;
+    subtitle?: string | null;
+    description?: string | null;
+    material?: string | null;
+    origin_country?: string | null;
     metadata?: {
-      season?: string | null
-      gender?: string | null
-    }
-  }
-  region: HttpTypes.StoreRegion
-  countryCode: string
-  relatedProducts?: HttpTypes.StoreProduct[]
-}
+      season?: string | null;
+      gender?: string | null;
+    };
+  };
+  region: HttpTypes.StoreRegion;
+  countryCode: string;
+  relatedProducts?: HttpTypes.StoreProduct[];
+};
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
   product,
@@ -45,26 +44,38 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   countryCode,
   relatedProducts = [],
 }) => {
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true)
-  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true)
-  const toggleDescription = () => setIsDescriptionOpen((o) => !o)
-  const toggleSpecifications = () => setIsSpecificationOpen((o) => !o)
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
+  const [isSpecificationOpen, setIsSpecificationOpen] = useState(true);
+  const toggleDescription = () => setIsDescriptionOpen((o) => !o);
+  const toggleSpecifications = () => setIsSpecificationOpen((o) => !o);
 
   const TransitionWrapper = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
     ({ children }, ref) => <div ref={ref}>{children}</div>
-  )
-  TransitionWrapper.displayName = "TransitionWrapper"
+  );
+  TransitionWrapper.displayName = "TransitionWrapper";
 
   const productForInfo: StoreProductWithTags & {
-    brand?: { name: string }
-    type?: HttpTypes.StoreProductType | null
+    brand?: { name: string };
+    type?: HttpTypes.StoreProductType | null;
   } = {
     ...product,
     tags: product.tags?.map((t) => ({ value: t.value })) ?? undefined,
     variants: product.variants ?? null,
-  }
+  };
 
-  // Sanitize HTML, preserving lists, paragraphs, headings, basic formatting
+  console.log("ProductTemplate inventory:", {
+    productId: product.id,
+    title: product.title,
+    variants: product.variants
+      ? product.variants.map((v) => ({
+          id: v.id,
+          inventory_quantity: v.inventory_quantity,
+          manage_inventory: v.manage_inventory,
+          allow_backorder: v.allow_backorder,
+        }))
+      : "No variants available",
+  });
+
   const sanitizeHtml = (html: string) => {
     if (DOMPurify && typeof DOMPurify.sanitize === "function") {
       try {
@@ -74,21 +85,18 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
       }
     }
     return html;
-  }
+  };
 
-  // Detect if subtitle contains block-level markup (e.g., lists)
   const subtitleHasBlocks = Boolean(
     product.subtitle && /<(ul|ol|li|p|h[1-6])/.test(product.subtitle)
-  )
+  );
 
-  // Combine subtitle and description for rendering, if subtitle has blocks
   const combinedDescHtml = subtitleHasBlocks
     ? `${product.subtitle ?? ""}${product.description ?? ""}`
-    : product.description ?? ""
+    : product.description ?? "";
 
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
-      {/* Breadcrumb */}
       <div className="pt-12">
         <div className="flex items-center chawkbazarBreadcrumb">
           <ol className="flex items-center w-full overflow-hidden">
@@ -109,7 +117,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div>
       </div>
 
-      {/* Gallery + Main Details */}
       <div className="items-start block grid-cols-9 lg:grid gap-x-10 xl:gap-x-14 pt-10">
         <div className="col-span-5">
           <ImageGallery images={product.images || []} />
@@ -118,7 +125,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <div className="pb-7 mb-7 border-b border-gray-300">
             <ProductInfo product={productForInfo} />
             <p className="text-body text-center mt-8 text-base lg:text-base leading-6 lg:leading-8">
-              FREE SHIPPING &amp; EASY RETURNS
+              FREE SHIPPING & EASY RETURNS
             </p>
           </div>
           <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
@@ -132,9 +139,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div>
       </div>
 
-      {/* Specifications & Description */}
       <div className="grid grid-cols-1 lg:grid-cols-9 gap-x-10 xl:gap-x-14 pt-10 pb-10 lg:pb-14 2xl:pb-20 items-start">
-        {/* Specifications */}
         <div className="col-span-5 order-2 lg:order-1">
           <div className="pb-7 mb-7 pt-7 md:pt-0 border-b border-gray-300">
             <button
@@ -160,7 +165,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           </Transition>
         </div>
 
-        {/* Description */}
         <div className="col-span-5 md:col-span-4 pt-8 lg:pt-0 order-1 lg:order-2">
           <div className="pb-7 mb-7 border-b border-gray-300">
             <button
@@ -182,11 +186,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           >
             <TransitionWrapper>
               <div className="desc-pdp my-5 text-body text-sm lg:text-base leading-6 lg:leading-8 font-normal [&_ul]:list-disc [&_ul]:list-inside [&_ul]:pl-5 [&_ul>li]:mb-2 [&_strong]:font-semibold">
-                {/* Only render subtitle as bold text if no block-level markup in subtitle */}
                 {!subtitleHasBlocks && product.subtitle != null && (
                   <div className="font-semibold mb-2">{product.subtitle}</div>
                 )}
-                {/* Render combined HTML for block-level or regular description */}
                 <div
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(combinedDescHtml) }}
                 />
@@ -196,14 +198,13 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div>
       </div>
 
-      {/* Related Products */}
       <div className="content-container my-16 small:my-32" data-testid="related-products-container">
         <Suspense fallback={<SkeletonRelatedProducts />}>
           <RelatedProducts product={product} region={region} countryCode={countryCode} relatedProducts={relatedProducts} />
         </Suspense>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductTemplate
+export default ProductTemplate;

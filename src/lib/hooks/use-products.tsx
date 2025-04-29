@@ -1,4 +1,3 @@
-// src/lib/hooks/use-products.tsx
 "use client";
 
 import {
@@ -8,20 +7,19 @@ import {
   UseInfiniteQueryResult,
 } from "@tanstack/react-query";
 import { HttpTypes } from "@medusajs/types";
-import { getAuthHeaders, getCacheOptions } from "@lib/data/cookies";
-import { retrieveRegion } from "@lib/data/regions";
 import { getTagIdByValue, listProducts } from "@lib/data/products";
+import { retrieveRegion } from "@lib/data/regions";
 
-// --- Extend StoreProduct to include an optional `brand` relation ---
 export type StoreProductWithBrand = HttpTypes.StoreProduct & {
   brand?: {
     id: string;
     name: string;
     [key: string]: any;
   };
+  variantId?: string;
+  variants?: HttpTypes.StoreProductVariant[] | null;
 };
 
-// Metadata shape for the grouped_color filter
 export interface ProductMetadata {
   grouped_color?: string;
   [key: string]: any;
@@ -29,23 +27,22 @@ export interface ProductMetadata {
 
 export interface UseProductsParams {
   text?: string;
-  category?: string; // comma-sep list of category IDs
-  collection?: string; // comma-sep list of collection IDs
-  brand?: string; // comma-sep list of brand IDs (will be ignored)
-  type?: string; // comma-sep list of type IDs (will be ignored)
+  category?: string;
+  collection?: string;
+  type?: string;
   orderBy?: string;
   sortedBy?: string;
-  gender?: string; // comma-sep list of gender tag values
-  grouped_color?: string; // comma-sep list of color values
-  season?: string; // comma-sep list of season tag values
-  tags?: string; // comma-sep list of other tag values
+  gender?: string;
+  grouped_color?: string;
+  season?: string;
+  tags?: string;
   min_price?: string;
   max_price?: string;
   limit?: number;
   page?: number;
   regionId?: string;
-  countryCode?: string; // Added to align with listProducts
-  infinite?: boolean; // Enable infinite query
+  countryCode?: string;
+  infinite?: boolean;
 }
 
 export interface ProductResponse {
@@ -81,12 +78,12 @@ export function useProducts({
   grouped_color,
   season,
   tags,
-  limit = 4,
+  limit = 12,
   page = 1,
   regionId,
   countryCode,
   infinite = false,
-}: UseProductsParams): UseInfiniteQueryResult<InfiniteProductResponse, Error> | UseQueryResult<ProductResponse, Error> {
+}: UseProductsParams): any {
   const queryKey = [
     "products",
     text,
@@ -115,15 +112,9 @@ export function useProducts({
       ...(tags?.split(",").map((v) => v.trim()) ?? []),
     ];
     const tagIds: string[] = [];
-    try {
-      for (const v of allTagVals) {
-        const id = await getTagIdByValue(v);
-        if (id) tagIds.push(id);
-      }
-    } catch (err) {
-      const error = err as Error;
-      console.error("Error fetching tag IDs:", error.message);
-      // Continue without tag IDs if fetching fails
+    for (const v of allTagVals) {
+      const id = await getTagIdByValue(v);
+      if (id) tagIds.push(id);
     }
 
     let order: string | undefined;
@@ -131,7 +122,7 @@ export function useProducts({
       order = orderBy === "desc" ? `-${sortedBy}` : sortedBy;
     }
 
-    const query: Record<string, any> = {
+    const q: Record<string, any> = {
       q: text,
       category_id: categoryIds,
       collection_id: collectionIds,
@@ -140,31 +131,30 @@ export function useProducts({
       limit,
       offset: (pageParam - 1) * limit,
     };
-    Object.keys(query).forEach((k) => query[k] == null && delete query[k]);
+    Object.keys(q).forEach((k) => q[k] == null && delete q[k]);
 
-    // Log query parameters for debugging
-    console.log("Product query params:", query);
+    console.log("useProducts query params:", q);
 
-    let res;
-    try {
-      res = await listProducts({
-        pageParam,
-        queryParams: query,
-        regionId,
-        countryCode,
-      });
-    } catch (err) {
-      const error = err as Error;
-      console.error("Product fetch error:", error.message);
-      throw new Error(`Failed to fetch products: ${error.message || "Unknown error"}`);
-    }
+    const res = await listProducts({
+      pageParam,
+      queryParams: q,
+      regionId,
+      countryCode,
+    });
 
-    // Log raw API response for debugging
-    console.log("Product API response:", {
+    console.log("useProducts API response:", {
       count: res.response.count,
-      products: res.response.products.map((p: HttpTypes.StoreProduct) => ({
+      products: res.response.products.map((p) => ({
         id: p.id,
         title: p.title,
+        variants: p.variants
+          ? p.variants.map((v) => ({
+              id: v.id,
+              inventory_quantity: v.inventory_quantity,
+              manage_inventory: v.manage_inventory,
+              allow_backorder: v.allow_backorder,
+            }))
+          : "No variants available",
       })),
     });
 
@@ -172,18 +162,18 @@ export function useProducts({
     if (regionId) {
       try {
         region = await retrieveRegion(regionId);
-      } catch (err) {
-        const error = err as Error;
-        console.error("retrieveRegion error:", error.message);
+      } catch {
         region = null;
       }
     }
 
-    let filtered = res.response.products as StoreProductWithBrand[];
+    let filtered = (res.response.products as StoreProductWithBrand[]).map((p) => ({
+      ...p,
+      variantId: p.variants && p.variants.length > 0 ? p.variants[0].id : undefined,
+    }));
+
     if (grouped_color) {
-      const colors = grouped_color
-        .split(",")
-        .map((c) => c.trim().toLowerCase());
+      const colors = grouped_color.split(",").map((c) => c.trim().toLowerCase());
       filtered = filtered.filter((p) => {
         const col = ((p.metadata || {}) as ProductMetadata).grouped_color;
         return typeof col === "string" && colors.includes(col.toLowerCase());
@@ -195,7 +185,7 @@ export function useProducts({
       total: res.response.count,
       region,
       paginatorInfo: {
-        total: filtered.length,
+        total: res.response.count,
         currentPage: pageParam,
         lastPage: Math.ceil(res.response.count / limit),
       },

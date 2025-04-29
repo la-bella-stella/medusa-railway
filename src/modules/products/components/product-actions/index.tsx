@@ -1,4 +1,3 @@
-// src/modules/products/components/product-actions.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
@@ -79,6 +78,18 @@ export default function ProductActions({
   useEffect(() => {
     onVariantChange?.(selectedVariant);
   }, [selectedVariant, onVariantChange]);
+
+  // Log inventory for debugging
+  useEffect(() => {
+    console.log("ProductActions inventory:", {
+      productId: product.id,
+      title: product.title,
+      variantId: selectedVariant?.id,
+      inventory_quantity: selectedVariant?.inventory_quantity ?? "Not available",
+      manage_inventory: selectedVariant?.manage_inventory,
+      allow_backorder: selectedVariant?.allow_backorder,
+    });
+  }, [product.id, product.title, selectedVariant]);
 
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((prev) => ({
@@ -170,6 +181,16 @@ export default function ProductActions({
               <Divider />
             </div>
           )}
+        </div>
+
+        {/* Display inventory for testing */}
+        <div className="text-sm text-gray-600 mb-3">
+          <p>
+            Inventory:{" "}
+            {selectedVariant?.inventory_quantity != null
+              ? selectedVariant.inventory_quantity
+              : "Not available"}
+          </p>
         </div>
 
         <div className="flex items-center py-3 space-x-2 border-b border-gray-200">

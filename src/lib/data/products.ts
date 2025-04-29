@@ -5,7 +5,7 @@ import { sortProducts } from "@lib/util/sort-products";
 import { HttpTypes } from "@medusajs/types";
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products";
 import { getAuthHeaders, getCacheOptions } from "./cookies";
-import { getRegion, retrieveRegion } from "./regions";
+import { getRegion, retrieveRegion } from "@lib/data/regions";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
@@ -27,7 +27,7 @@ export type ListProductsParams = {
  */
 export async function getTagIdByValue(value: string): Promise<string | null> {
   try {
-    const { product_tags } = await sdk.client.fetch<{
+    const response = await sdk.client.fetch<{
       product_tags: { id: string; value: string }[];
     }>("/store/product-tags", {
       method: "GET",
@@ -35,14 +35,12 @@ export async function getTagIdByValue(value: string): Promise<string | null> {
       headers: await getAuthHeaders(),
       next: await getCacheOptions("product-tags"),
     });
-    const tag = product_tags.find((t) => t.value.toLowerCase() === value.toLowerCase());
-    if (!tag) {
-      console.warn(`No tag found for value: "${value}"`);
-      return null;
-    }
-    return tag.id;
+    const tag = response.product_tags.find(
+      (t) => t.value.toLowerCase() === value.toLowerCase()
+    );
+    return tag ? tag.id : null;
   } catch (e: any) {
-    console.error("Failed to fetch tag ID for value:", value, { message: e.message });
+    console.error("Failed to fetch tag ID for value:", value, e);
     return null;
   }
 }
@@ -50,39 +48,82 @@ export async function getTagIdByValue(value: string): Promise<string | null> {
 /**
  * Fetches a single product by handle.
  */
-export const getProductByHandle = cache(async function (
-  handle: string,
-  regionId: string
-): Promise<HttpTypes.StoreProduct | undefined> {
-  try {
-    const { products } = await sdk.store.product.list(
-      {
+export const getProductByHandle = cache(
+  async (
+    handle: string,
+    regionId: string
+  ): Promise<HttpTypes.StoreProduct | undefined> => {
+    try {
+      const response = await sdk.store.product.list(
+        {
+          handle,
+          region_id: regionId,
+          fields:
+            "*variants.calculated_price,*variants.prices,*variants.options,+variants.inventory_quantity,+variants.allow_backorder,+variants.manage_inventory,+metadata,+tags",
+        },
+        {
+          next: { tags: ["products"] },
+          cache: "no-store",
+        }
+      );
+      const product = response.products[0];
+
+      // Log raw API response for debugging
+      console.log("getProductByHandle raw response:", {
         handle,
-        region_id: regionId,
-        fields: "*variants.calculated_price,*variants.prices,+variants.inventory_quantity,+metadata,+tags",
-      },
-      { next: { tags: ["products"] }, cache: "no-store" }
-    );
-    return products[0];
-  } catch (e: any) {
-    console.error("getProductByHandle failed:", { handle, regionId, message: e.message });
-    return undefined;
+        regionId,
+        response: {
+          products: response.products.map((p) => ({
+            id: p.id,
+            title: p.title,
+            variants: p.variants
+              ? p.variants.map((v) => ({
+                  id: v.id,
+                  inventory_quantity: v.inventory_quantity,
+                  manage_inventory: v.manage_inventory,
+                  allow_backorder: v.allow_backorder,
+                }))
+              : "No variants available",
+          })),
+        },
+      });
+
+      if (product) {
+        console.log("getProductByHandle inventory:", {
+          handle,
+          regionId,
+          inventory: product.variants
+            ? product.variants.map((v) => ({
+                id: v.id,
+                inventory_quantity: v.inventory_quantity,
+                manage_inventory: v.manage_inventory,
+                allow_backorder: v.allow_backorder,
+              }))
+            : "No variants available",
+        });
+      } else {
+        console.warn("getProductByHandle: No product found for handle:", handle);
+      }
+      return product;
+    } catch (e: any) {
+      console.error("getProductByHandle failed:", handle, regionId, e);
+      return undefined;
+    }
   }
-});
+);
 
 /**
  * Fetches a list of products with pagination and filtering.
  */
-export async function listProducts({
-  pageParam = 1,
-  queryParams = {},
-  countryCode,
-  regionId,
-}: ListProductsParams): Promise<{
+export async function listProducts(
+  params: ListProductsParams
+): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number };
   nextPage: number | null;
-  queryParams?: typeof queryParams;
+  queryParams?: typeof params.queryParams;
 }> {
+  let { pageParam = 1, queryParams = {}, countryCode, regionId } = params;
+
   if (!countryCode && !regionId) {
     const cookieStore = await cookies();
     countryCode =
@@ -91,147 +132,160 @@ export async function listProducts({
       "us";
   }
 
-  let region: HttpTypes.StoreRegion | null | undefined = null;
-  try {
-    if (regionId) {
-      if (regionId === "reg_01JSW66RFBTQRDR1PX0A3MQJP8") {
-        region = {
-          id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
-          currency_code: "USD",
-          name: "Default Region",
-        } as HttpTypes.StoreRegion;
-      } else {
-        region = await retrieveRegion(regionId);
-      }
-    } else if (countryCode) {
-      region = await getRegion(countryCode);
-    }
+  const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
+  let region: HttpTypes.StoreRegion;
 
-    if (!region) {
-      console.warn(`Could not resolve region for countryCode=${countryCode} regionId=${regionId}. Falling back to default region.`);
+  if (regionId) {
+    if (regionId === DEFAULT_REGION_ID) {
       region = {
-        id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
+        id: DEFAULT_REGION_ID,
         currency_code: "USD",
         name: "Default Region",
-      } as HttpTypes.StoreRegion;
+      };
+    } else {
+      try {
+        region = await retrieveRegion(regionId);
+      } catch (e: any) {
+        console.warn("Failed to retrieve region, falling back:", e);
+        region = {
+          id: DEFAULT_REGION_ID,
+          currency_code: "USD",
+          name: "Default Region",
+        };
+      }
     }
-  } catch (e: any) {
-    console.error("Region resolution failed:", {
-      message: e.message,
-      countryCode,
-      regionId,
-    });
-    region = {
-      id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
-      currency_code: "USD",
-      name: "Default Region",
-    } as HttpTypes.StoreRegion;
+  } else {
+    const fetched = await getRegion(countryCode!);
+    region =
+      fetched ?? {
+        id: DEFAULT_REGION_ID,
+        currency_code: "USD",
+        name: "Default Region",
+      };
   }
 
-  const limit = queryParams.limit ?? 12;
-  const _page = Math.max(pageParam, 1);
-  const offset = _page === 1 ? 0 : (_page - 1) * limit;
+  console.log("Resolved region for listProducts:", region);
 
-  const query: { [key: string]: any } = {
+  const limit = queryParams.limit ?? 12;
+  const offset = (pageParam - 1) * limit;
+  const defaultFields =
+    "*variants.calculated_price,*variants.prices,*variants.options,+variants.inventory_quantity,+variants.allow_backorder,+variants.manage_inventory,+metadata,+tags";
+  const fields = queryParams.fields ?? defaultFields;
+
+  const query: Record<string, any> = {
     limit,
     offset,
     region_id: region.id,
     ...queryParams,
-    fields:
-      queryParams.fields ??
-      "*variants.calculated_price,*variants.prices,+variants.inventory_quantity,+metadata,+tags",
+    fields,
   };
 
-  if (query.tag_id && Array.isArray(query.tag_id)) {
-    const tagIds = [];
-    for (const tag of query.tag_id) {
-      const tagId = await getTagIdByValue(tag);
-      if (tagId) {
-        tagIds.push(tagId);
-      }
-    }
-    if (tagIds.length > 0) {
-      query["tag_id[]"] = tagIds;
-    } else {
-      console.warn("No valid tag IDs found for tag values:", query.tag_id);
-      delete query.tag_id;
-    }
+  if (Array.isArray(query.tag_id)) {
+    const ids = await Promise.all(
+      query.tag_id.map(async (t: string) => await getTagIdByValue(t))
+    );
+    const valid = ids.filter(Boolean);
+    if (valid.length) query["tag_id[]"] = valid;
+    delete query.tag_id;
   }
-
-  if (query.id && Array.isArray(query.id)) {
+  if (Array.isArray(query.id)) {
     query["id[]"] = query.id;
     delete query.id;
   }
 
   try {
-    const { products, count } = await sdk.store.product.list(query, {
+    const response = await sdk.store.product.list(query, {
       next: { tags: ["products"] },
       cache: "no-store",
     });
+
+    // Log raw API response for debugging
+    console.log("listProducts raw response:", {
+      count: response.count,
+      products: response.products.map((p) => ({
+        id: p.id,
+        title: p.title,
+        variants: p.variants
+          ? p.variants.map((v) => ({
+              id: v.id,
+              inventory_quantity: v.inventory_quantity,
+              manage_inventory: v.manage_inventory,
+              allow_backorder: v.allow_backorder,
+            }))
+          : "No variants available",
+      })),
+    });
+
+    const { products, count } = response;
+
+    console.log("listProducts inventory response:", {
+      count,
+      products: products.map((p) => ({
+        id: p.id,
+        title: p.title,
+        variants: p.variants
+          ? p.variants.map((v) => ({
+              id: v.id,
+              inventory_quantity: v.inventory_quantity,
+              manage_inventory: v.manage_inventory,
+              allow_backorder: v.allow_backorder,
+            }))
+          : "No variants available",
+      })),
+    });
+
+    if (
+      !products.every((p) =>
+        p.variants ? p.variants.every((v) => typeof v.inventory_quantity === "number") : true
+      )
+    ) {
+      console.warn("Some products or variants are missing inventory_quantity");
+    }
+
     return {
       response: { products, count },
       nextPage: count > offset + limit ? pageParam + 1 : null,
       queryParams,
     };
   } catch (e: any) {
-    console.error("Failed to fetch products:", {
-      message: e.message,
-      status: e.status || e.response?.status || "N/A",
-    });
-    return {
-      response: { products: [], count: 0 },
-      nextPage: null,
-      queryParams,
-    };
+    console.error("listProducts failed:", query, e);
+    return { response: { products: [], count: 0 }, nextPage: null, queryParams };
   }
 }
 
 /**
  * Fetches and sorts products with pagination.
  */
-export async function listProductsWithSort({
-  page = 1,
-  queryParams,
-  sortBy = "created_at",
-  countryCode,
-}: {
-  page?: number;
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams;
-  sortBy?: SortOptions;
-  countryCode: string;
-}): Promise<{
+export async function listProductsWithSort(
+  opts: {
+    page?: number;
+    queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams;
+    sortBy?: SortOptions;
+    countryCode: string;
+  }
+): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number };
   nextPage: number | null;
-  queryParams?: typeof queryParams;
+  queryParams?: typeof opts.queryParams;
 }> {
-  const limit = queryParams?.limit ?? 12;
+  const page = opts.page ?? 1;
+  const limit = opts.queryParams?.limit ?? 12;
 
-  try {
-    const {
-      response: { products: allProducts, count },
-    } = await listProducts({
-      pageParam: 1,
-      queryParams: { ...(queryParams ?? {}), limit: 100 },
-      countryCode,
-    });
+  const {
+    response: { products: all, count },
+  } = await listProducts({
+    pageParam: 1,
+    queryParams: { ...opts.queryParams, limit: 100 },
+    countryCode: opts.countryCode,
+  });
 
-    const sorted = sortProducts(allProducts, sortBy);
-    const pageIndex = page > 0 ? page - 1 : 0;
-    const start = pageIndex * limit;
-    const paginated = sorted.slice(start, start + limit);
-    const nextPage = count > (pageIndex + 1) * limit ? page + 1 : null;
+  const sorted = sortProducts(all, opts.sortBy ?? "created_at");
+  const start = (page - 1) * limit;
+  const paginated = sorted.slice(start, start + limit);
 
-    return {
-      response: { products: paginated, count },
-      nextPage,
-      queryParams,
-    };
-  } catch (e: any) {
-    console.error("Failed to fetch sorted products:", { message: e.message });
-    return {
-      response: { products: [], count: 0 },
-      nextPage: null,
-      queryParams,
-    };
-  }
+  return {
+    response: { products: paginated, count },
+    nextPage: count > page * limit ? page + 1 : null,
+    queryParams: opts.queryParams,
+  };
 }
