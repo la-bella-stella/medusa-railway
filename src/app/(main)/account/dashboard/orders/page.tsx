@@ -1,21 +1,30 @@
-import { Metadata } from "next"
+import { Metadata } from "next";
+import OrderOverview from "@modules/account/components/order-overview";
+import { notFound } from "next/navigation";
+import { listOrders } from "@lib/data/orders";
+import Divider from "@modules/common/components/divider";
+import TransferRequestForm from "@modules/account/components/transfer-request-form";
 
-import OrderOverview from "@modules/account/components/order-overview"
-import { notFound } from "next/navigation"
-import { listOrders } from "@lib/data/orders"
-import Divider from "@modules/common/components/divider"
-import TransferRequestForm from "@modules/account/components/transfer-request-form"
+// Force each request to be server-rendered (no static prerender)
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Orders",
   description: "Overview of your previous orders.",
-}
+};
 
 export default async function Orders() {
-  const orders = await listOrders()
+  let orders;
+  try {
+    orders = await listOrders();
+  } catch (err) {
+    // If the API call fails (e.g. unauthorized), show 404 or redirect to login
+    console.error("Failed to fetch orders:", err);
+    notFound();
+  }
 
   if (!orders) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -27,10 +36,12 @@ export default async function Orders() {
           returns or exchanges for your orders if needed.
         </p>
       </div>
+
       <div>
         <OrderOverview orders={orders} />
-     
+        <Divider className="my-8" />
+        <TransferRequestForm />
       </div>
     </div>
-  )
+  );
 }
