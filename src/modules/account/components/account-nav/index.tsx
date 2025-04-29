@@ -13,19 +13,21 @@ import { HttpTypes } from "@medusajs/types";
 import { signout } from "@lib/data/customer";
 
 const AccountNav = ({ customer }: { customer: HttpTypes.StoreCustomer | null }) => {
-  const route = usePathname();
+  const route = usePathname()!;
   const { countryCode } = useParams() as { countryCode: string };
+  const base = `/${countryCode}/account/dashboard`;
 
   const handleLogout = async () => {
-    await signout(countryCode);
+    await signout();
   };
 
   return (
     <div>
+      {/* MOBILE */}
       <div className="small:hidden" data-testid="mobile-account-nav">
-        {route !== `/${countryCode}/account/dashboard` ? (
+        {route !== base ? (
           <LocalizedClientLink
-            href="/account/dashboard"
+            href={base}
             className="flex items-center gap-x-2 text-small-regular py-2"
             data-testid="account-main-link"
           >
@@ -43,7 +45,7 @@ const AccountNav = ({ customer }: { customer: HttpTypes.StoreCustomer | null }) 
               <ul>
                 <li>
                   <LocalizedClientLink
-                    href="/account/dashboard/profile"
+                    href={`${base}/profile`}
                     className="flex items-center justify-between py-4 border-b px-8"
                     data-testid="profile-link"
                   >
@@ -58,7 +60,7 @@ const AccountNav = ({ customer }: { customer: HttpTypes.StoreCustomer | null }) 
                 </li>
                 <li>
                   <LocalizedClientLink
-                    href="/account/dashboard/addresses"
+                    href={`${base}/addresses`}
                     className="flex items-center justify-between py-4 border-b px-8"
                     data-testid="addresses-link"
                   >
@@ -73,7 +75,7 @@ const AccountNav = ({ customer }: { customer: HttpTypes.StoreCustomer | null }) 
                 </li>
                 <li>
                   <LocalizedClientLink
-                    href="/account/dashboard/orders"
+                    href={`${base}/orders`}
                     className="flex items-center justify-between py-4 border-b px-8"
                     data-testid="orders-link"
                   >
@@ -103,56 +105,60 @@ const AccountNav = ({ customer }: { customer: HttpTypes.StoreCustomer | null }) 
           </>
         )}
       </div>
+
+      {/* DESKTOP */}
       <div className="hidden small:block" data-testid="account-nav">
-        <div>
-          <div className="pb-4">
-            <h3 className="text-base-semi">Account</h3>
-          </div>
-          <div className="text-base-regular">
-            <ul className="flex mb-0 justify-start items-start flex-col gap-y-4">
-              <li>
-                <AccountNavLink
-                  href="/account/dashboard"
-                  route={route!}
-                  data-testid="overview-link"
-                >
-                  Overview
-                </AccountNavLink>
-              </li>
-              <li>
-                <AccountNavLink
-                  href="/account/dashboard/profile"
-                  route={route!}
-                  data-testid="profile-link"
-                >
-                  Profile
-                </AccountNavLink>
-              </li>
-              <li>
-                <AccountNavLink
-                  href="/account/dashboard/addresses"
-                  route={route!}
-                  data-testid="addresses-link"
-                >
-                  Addresses
-                </AccountNavLink>
-              </li>
-              <li>
-                <AccountNavLink
-                  href="/account/dashboard/orders"
-                  route={route!}
-                  data-testid="orders-link"
-                >
-                  Orders
-                </AccountNavLink>
-              </li>
-              <li className="text-grey-700">
-                <button type="button" onClick={handleLogout} data-testid="logout-button">
-                  Log out
-                </button>
-              </li>
-            </ul>
-          </div>
+        <div className="pb-4">
+          <h3 className="text-base-semi">Account</h3>
+        </div>
+        <div className="text-base-regular">
+          <ul className="flex flex-col gap-y-4 mb-0">
+            <li>
+              <AccountNavLink
+                href={base}
+                route={route}
+                data-testid="overview-link"
+              >
+                Overview
+              </AccountNavLink>
+            </li>
+            <li>
+              <AccountNavLink
+                href={`${base}/profile`}
+                route={route}
+                data-testid="profile-link"
+              >
+                Profile
+              </AccountNavLink>
+            </li>
+            <li>
+              <AccountNavLink
+                href={`${base}/addresses`}
+                route={route}
+                data-testid="addresses-link"
+              >
+                Addresses
+              </AccountNavLink>
+            </li>
+            <li>
+              <AccountNavLink
+                href={`${base}/orders`}
+                route={route}
+                data-testid="orders-link"
+              >
+                Orders
+              </AccountNavLink>
+            </li>
+            <li className="text-grey-700">
+              <button
+                type="button"
+                onClick={handleLogout}
+                data-testid="logout-button"
+              >
+                Log out
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -172,9 +178,9 @@ const AccountNavLink = ({
   children,
   "data-testid": dataTestId,
 }: AccountNavLinkProps) => {
-  const { countryCode }: { countryCode: string } = useParams();
+  const { countryCode } = useParams() as { countryCode: string };
+  const active = route === href;
 
-  const active = route.split(countryCode)[1] === href;
   return (
     <LocalizedClientLink
       href={href}
