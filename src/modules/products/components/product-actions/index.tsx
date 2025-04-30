@@ -11,11 +11,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useWindowSize from "react-use/lib/useWindowSize";
-import Counter from "@modules/common/components/counter";
-import MobileActions from "./mobile-actions";
 import { useUI } from "@lib/context/ui-context";
-import OptionSelect from "./option-select";
 import { getProductPrice } from "@lib/util/get-product-price";
+import OptionSelect from "./option-select";
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct;
@@ -214,7 +212,6 @@ export default function ProductActions({
     setIsAdding(true);
 
     try {
-      // Log parameters before calling addToCart
       console.log("Calling addToCart with:", {
         variantId: selectedVariant.id,
         quantity,
@@ -240,19 +237,14 @@ export default function ProductActions({
       });
 
       openSidebar({ view: "CART_SIDEBAR" });
-      
     } catch (error: any) {
-      // Parse Medusa error for specific messages
       const errorMessage = error.message || t("error-adding-to-cart", "Failed to add item to cart");
       let userMessage = errorMessage;
 
-      // Handle common Medusa errors
       if (error.message?.includes("Variant")) {
         userMessage = t("variant-unavailable", "Selected variant is not available");
         if (error.message.includes("do not have a price")) {
           userMessage = t("no-price", "Selected variant has no price defined");
-          // Suggest a refresh to handle potential data inconsistency
-          
         }
       } else if (error.message?.includes("region")) {
         userMessage = t("invalid-region", "Selected region is not supported");
@@ -285,97 +277,111 @@ export default function ProductActions({
     }
   };
 
+  const buttonClasses = `text-[13px] md:text-sm leading-4 inline-flex items-center transition ease-in-out duration-300 font-semibold font-body text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none focus:bg-opacity-80 h-11 md:h-12 px-5 bg-heading text-white py-2 transform-none normal-case hover:text-white hover:bg-gray-600 hover:shadow-cart w-full md:w-6/12 xl:w-full ${
+    !inStock || !isValidVariant || !selectedVariant || !hasValidPrice || disabled || isAdding
+      ? "bg-opacity-50 hover:bg-opacity-50 cursor-not-allowed hover:cursor-not-allowed"
+      : ""
+  }`;
+
   return (
-    <>
-      <div className="flex flex-col gap-y-2" ref={actionsRef}>
-        <div>
-          {(product.variants?.length ?? 0) > 0 && (
-            <div className="flex flex-col gap-y-3 pb-2 border-b border-gray-200 pt-4">
-              {(product.options || []).map((option) => (
-                <OptionSelect
-                  key={option.id}
-                  option={option}
-                  current={options[option.id]}
-                  updateOption={setOptionValue}
-                  title={option.title || ""}
-                  disabled={!!disabled || isAdding}
-                  data-testid={`option-${option.id}`}
+    <div className="flex flex-col gap-y-2" ref={actionsRef}>
+      <div className="pb-3 border-b border-gray-300 pt-7">
+        {(product.variants?.length ?? 0) > 0 && (
+          <div className="flex flex-col gap-y-3">
+            {(product.options || []).map((option) => (
+              <OptionSelect
+                key={option.id}
+                option={option}
+                current={options[option.id]}
+                updateOption={setOptionValue}
+                title={option.title || ""}
+                disabled={!!disabled || isAdding}
+                data-testid={`option-${option.id}`}
+              />
+            ))}
+            <Divider />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
+        {(product.variants?.length === 0 || selectedVariant) && (
+          <div className="group flex items-center justify-between rounded-md overflow-hidden flex-shrink-0 border h-11 md:h-12 border-gray-300">
+            <button
+              className="flex items-center justify-center flex-shrink-0 h-full transition ease-in-out duration-300 focus:outline-none w-10 md:w-12 text-heading ltr:border-r rtl:border-l border-gray-300 hover:text-white hover:bg-heading"
+              onClick={() => setQuantity((prev) => (prev !== 1 ? prev - 1 : 1))}
+              disabled={quantity === 1 || !inStock || disabled || isAdding}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12px"
+                height="2px"
+                viewBox="0 0 12 1.5"
+              >
+                <rect
+                  data-name="Rectangle 970"
+                  width="12px"
+                  height="2px"
+                  fill="currentColor"
                 />
-              ))}
-              <Divider />
-            </div>
-          )}
-        </div>
-
-        {/* Display inventory for testing */}
-        <div className="text-sm text-gray-600 mb-3">
-          <p>
-            Inventory:{" "}
-            {selectedVariant?.inventory_quantity != null
-              ? selectedVariant.inventory_quantity
-              : "Not available"}
-          </p>
-        </div>
-
-        <div className="flex items-center py-3 space-x-2 border-b border-gray-200">
-          {(product.variants?.length === 0 || selectedVariant) && (
-            <Counter
-              quantity={quantity}
-              onIncrement={() => setQuantity((prev) => prev + 1)}
-              onDecrement={() =>
-                setQuantity((prev) => (prev !== 1 ? prev - 1 : 1))
-              }
-              disableDecrement={quantity === 1 || !inStock}
-              disableIncrement={
+              </svg>
+            </button>
+            <span className="font-semibold flex items-center justify-center h-full transition-colors duration-250 ease-in-out cursor-default flex-shrink-0 text-base text-heading w-12 md:w-20 xl:w-24">
+              {quantity}
+            </span>
+            <button
+              className="flex items-center justify-center h-full flex-shrink-0 transition ease-in-out duration-300 focus:outline-none w-10 md:w-12 text-heading ltr:border-l rtl:border-r border-gray-300 hover:text-white hover:bg-heading"
+              onClick={() => setQuantity((prev) => prev + 1)}
+              disabled={
                 !inStock ||
                 (selectedVariant?.inventory_quantity != null &&
-                  quantity >= selectedVariant.inventory_quantity)
+                  quantity >= selectedVariant.inventory_quantity) ||
+                disabled ||
+                isAdding
               }
-            />
-          )}
-          <Button
-            onClick={handleAddToCart}
-            disabled={
-              !inStock ||
-              !selectedVariant ||
-              !!disabled ||
-              isAdding ||
-              !isValidVariant ||
-              !hasValidPrice
-            }
-            variant="primary"
-            className={`w-full bg-black text-white py-2 rounded-full uppercase font-semibold text-xs tracking-wide transition-all duration-200 ${
-              !inStock || !isValidVariant || !selectedVariant || !hasValidPrice
-                ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
-                : "hover:bg-gray-900"
-            }`}
-            isLoading={isAdding}
-            data-testid="add-product-button"
-          >
-            <span className="py-1">
-              {!selectedVariant && !Object.keys(options).length
-                ? t("select-variant", "Select variant")
-                : !inStock || !isValidVariant
-                ? t("out-of-stock", "Out of stock")
-                : !hasValidPrice
-                ? t("no-price", "No price available")
-                : t("add-to-cart", "Add to cart")}
-            </span>
-          </Button>
-        </div>
-
-        <MobileActions
-          product={product}
-          variant={selectedVariant}
-          options={options}
-          updateOptions={setOptionValue}
-          inStock={inStock}
-          handleAddToCart={handleAddToCart}
-          isAdding={isAdding}
-          show={!inView}
-          optionsDisabled={!!disabled || isAdding}
-        />
+            >
+              <svg
+                data-name="plus (2)"
+                xmlns="http://www.w3.org/2000/svg"
+                width="12px"
+                height="12px"
+                viewBox="0 0 12 12"
+              >
+                <g data-name="Group 5367">
+                  <path
+                    data-name="Path 17138"
+                    d="M6.749,5.251V0h-1.5V5.251H0v1.5H5.251V12h1.5V6.749H12v-1.5Z"
+                    fill="currentColor"
+                  />
+                </g>
+              </svg>
+            </button>
+          </div>
+        )}
+        <Button
+          onClick={handleAddToCart}
+          disabled={
+            !inStock ||
+            !selectedVariant ||
+            !!disabled ||
+            isAdding ||
+            !isValidVariant ||
+            !hasValidPrice
+          }
+          className={buttonClasses}
+          isLoading={isAdding}
+          data-testid="add-product-button"
+        >
+          <span className="py-2">
+            {!selectedVariant && !Object.keys(options).length
+              ? t("select-variant", "Select variant")
+              : !inStock || !isValidVariant
+              ? t("out-of-stock", "Out of stock")
+              : !hasValidPrice
+              ? t("no-price", "No price available")
+              : t("text-add-to-cart", "Add to cart")}
+          </span>
+        </Button>
       </div>
-    </>
+    </div>
   );
 }

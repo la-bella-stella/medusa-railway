@@ -6,7 +6,7 @@ import ProductPrice from "@modules/products/components/product-price";
 import type {
   StoreProductWithTags,
   StoreVariantWithPrices,
-} from "../../../../types/global";
+} from "types/global";
 import type { HttpTypes } from "@medusajs/types";
 
 type ProductInfoProps = {
@@ -26,16 +26,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
     ? `${product.title} – Size ${size}`
     : product.title;
 
-  // Log inventory for debugging
-  console.log("ProductInfo inventory:", {
-    productId: product.id,
-    title: product.title,
-    variantId: variant?.id,
-    inventory_quantity: variant?.inventory_quantity ?? "Not available",
-    manage_inventory: variant?.manage_inventory,
-    allow_backorder: variant?.allow_backorder,
-  });
-
   return (
     <div className="flex flex-col gap-y-2">
       {product.brand?.name ? (
@@ -52,23 +42,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
       ) : (
         <div className="mb-3.5" />
       )}
-
       <h2 className="text-heading text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold hover:text-black mb-3.5">
         {titleWithSize}
       </h2>
-
-      <div className="flex items-center mt-5 gap-x-2">
+      <div className="flex items-center mt-5">
         <ProductPrice product={product} variant={variant} />
-      </div>
-
-      {/* Display inventory for testing */}
-      <div className="mt-2 text-sm text-gray-600">
-        <p>
-          Inventory:{" "}
-          {variant?.inventory_quantity != null
-            ? variant.inventory_quantity
-            : "Not available"}
-        </p>
       </div>
     </div>
   );
