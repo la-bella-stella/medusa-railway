@@ -55,7 +55,10 @@ export async function retrieveCart(cartId?: string) {
       cartId: id,
       message: e instanceof Error ? e.message : "Unknown error fetching cart",
       status: e && typeof e === "object" && "status" in e ? e.status : "N/A",
-      response: e && typeof e === "object" && "response" in e ? JSON.stringify(e.response) : "No response",
+      response:
+        e && typeof e === "object" && "response" in e
+          ? JSON.stringify(e.response)
+          : "No response",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -100,18 +103,16 @@ export async function getOrSetCart(countryCode: string) {
 
   if (cart.region_id !== region.id) {
     try {
-      await sdk.store.cart.update(
-        cart.id,
-        { region_id: region.id },
-        {},
-        headers
-      );
+      await sdk.store.cart.update(cart.id, { region_id: region.id }, {}, headers);
       revalidateTag(await getCacheTag("carts"));
     } catch (e: unknown) {
       const errorDetails = {
         cartId: cart.id,
         regionId: region.id,
-        message: e instanceof Error ? e.message : "Unknown error updating cart region",
+        message:
+          e instanceof Error
+            ? e.message
+            : "Unknown error updating cart region",
         stack: e instanceof Error ? e.stack : undefined,
         rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
       };
@@ -132,17 +133,14 @@ export async function getOrSetCart(countryCode: string) {
 export async function updateCart(data: HttpTypes.StoreUpdateCart) {
   const cartId = await getCartId();
   if (!cartId) {
-    throw new Error("No existing cart found, please create one before updating");
+    throw new Error(
+      "No existing cart found, please create one before updating"
+    );
   }
   const headers = await getAuthHeaders();
 
   try {
-    const { cart } = await sdk.store.cart.update(
-      cartId,
-      data,
-      {},
-      headers
-    );
+    const { cart } = await sdk.store.cart.update(cartId, data, {}, headers);
     if (cart && cart.currency_code) {
       cart.currency_code = cart.currency_code.toUpperCase(); // Normalize to USD
     }
@@ -196,7 +194,8 @@ export async function addToCart({
     const errorDetails = {
       cartId: cart.id,
       variantId,
-      message: e instanceof Error ? e.message : "Unknown error adding to cart",
+      message:
+        e instanceof Error ? e.message : "Unknown error adding to cart",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -238,7 +237,10 @@ export async function updateLineItem({
     const errorDetails = {
       cartId,
       lineId,
-      message: e instanceof Error ? e.message : "Unknown error updating line item",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error updating line item",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -268,7 +270,10 @@ export async function deleteLineItem(lineId: string) {
     const errorDetails = {
       cartId,
       lineId,
-      message: e instanceof Error ? e.message : "Unknown error deleting line item",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error deleting line item",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -300,11 +305,17 @@ export async function setShippingMethod({
     const errorDetails = {
       cartId,
       shippingMethodId,
-      message: e instanceof Error ? e.message : "Unknown error setting shipping method",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error setting shipping method",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
-    console.error("setShippingMethod: Failed to set shipping method", errorDetails);
+    console.error(
+      "setShippingMethod: Failed to set shipping method",
+      errorDetails
+    );
     throw medusaError(e);
   }
 }
@@ -329,11 +340,17 @@ export async function initiatePaymentSession(
   } catch (e: unknown) {
     const errorDetails = {
       cartId: cart.id,
-      message: e instanceof Error ? e.message : "Unknown error initiating payment session",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error initiating payment session",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
-    console.error("initiatePaymentSession: Failed to initiate payment session", errorDetails);
+    console.error(
+      "initiatePaymentSession: Failed to initiate payment session",
+      errorDetails
+    );
     throw medusaError(e);
   }
 }
@@ -354,11 +371,17 @@ export async function applyPromotions(codes: string[]) {
   } catch (e: unknown) {
     const errorDetails = {
       cartId,
-      message: e instanceof Error ? e.message : "Unknown error applying promotions",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error applying promotions",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
-    console.error("applyPromotions: Failed to apply promotions", errorDetails);
+    console.error(
+      "applyPromotions: Failed to apply promotions",
+      errorDetails
+    );
     throw medusaError(e);
   }
 }
@@ -375,11 +398,17 @@ export async function submitPromotionForm(
     await applyPromotions([code]);
   } catch (e: unknown) {
     const errorDetails = {
-      message: e instanceof Error ? e.message : "Unknown error submitting promotion form",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error submitting promotion form",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
-    console.error("submitPromotionForm: Failed to submit promotion form", errorDetails);
+    console.error(
+      "submitPromotionForm: Failed to submit promotion form",
+      errorDetails
+    );
     return errorDetails.message;
   }
 }
@@ -387,7 +416,10 @@ export async function submitPromotionForm(
 /**
  * Set shipping & billing addresses, then redirect to delivery step.
  */
-export async function setAddresses(currentState: unknown, formData: FormData) {
+export async function setAddresses(
+  currentState: unknown,
+  formData: FormData
+) {
   if (!formData) {
     return "No form data found when setting addresses";
   }
@@ -401,7 +433,11 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       company: formData.get("shipping_address.company"),
       postal_code: formData.get("shipping_address.postal_code"),
       city: formData.get("shipping_address.city"),
-      country_code: formData.get("shipping_address.country_code")?.toString().toUpperCase(), // Normalize country code
+      country_code:
+        formData
+          .get("shipping_address.country_code")
+          ?.toString()
+          .toUpperCase() || "",
       province: formData.get("shipping_address.province"),
       phone: formData.get("shipping_address.phone"),
     },
@@ -420,7 +456,11 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       company: formData.get("billing_address.company"),
       postal_code: formData.get("billing_address.postal_code"),
       city: formData.get("billing_address.city"),
-      country_code: formData.get("billing_address.country_code")?.toString().toUpperCase(), // Normalize country code
+      country_code:
+        formData
+          .get("billing_address.country_code")
+          ?.toString()
+          .toUpperCase() || "",
       province: formData.get("billing_address.province"),
       phone: formData.get("billing_address.phone"),
     };
@@ -432,7 +472,10 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     redirect(`/checkout?step=delivery`);
   } catch (e: unknown) {
     const errorDetails = {
-      message: e instanceof Error ? e.message : "Unknown error setting addresses",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error setting addresses",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -452,8 +495,7 @@ export async function placeOrder(cartId?: string) {
   const headers = await getAuthHeaders();
 
   try {
-    const cartRes = await sdk.store.cart
-      .complete(id, {}, headers)
+    const cartRes = await sdk.store.cart.complete(id, {}, headers)
       .then(async (res) => {
         revalidateTag(await getCacheTag("carts"));
         return res;
@@ -463,7 +505,6 @@ export async function placeOrder(cartId?: string) {
     if (cartRes?.type === "order") {
       revalidateTag(await getCacheTag("orders"));
       removeCartId();
-
       // DROP the countryCode prefix on order confirmation
       redirect(`/order/${cartRes.order.id}/confirmed`);
     }
@@ -472,7 +513,10 @@ export async function placeOrder(cartId?: string) {
   } catch (e: unknown) {
     const errorDetails = {
       cartId: id,
-      message: e instanceof Error ? e.message : "Unknown error placing order",
+      message:
+        e instanceof Error
+          ? e.message
+          : "Unknown error placing order",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
     };
@@ -484,7 +528,10 @@ export async function placeOrder(cartId?: string) {
 /**
  * Update region (e.g. on language switch), then reload same path.
  */
-export async function updateRegion(countryCode: string, currentPath: string) {
+export async function updateRegion(
+  countryCode: string,
+  currentPath: string
+) {
   const cartId = await getCartId();
   const region = await getRegion(countryCode);
   if (!region) {
@@ -496,7 +543,6 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   }
   revalidateTag(await getCacheTag("regions"));
   revalidateTag(await getCacheTag("products"));
-
   // DROP the countryCode segment entirely
   redirect(currentPath);
 }
@@ -507,34 +553,23 @@ export async function updateRegion(countryCode: string, currentPath: string) {
 export async function listCartOptions() {
   const cartId = await getCartId();
   if (!cartId) {
-    console.warn("listCartOptions: No cart ID provided or found in cookies");
+    console.warn(
+      "listCartOptions: No cart ID provided or found in cookies"
+    );
     return []; // Return empty array for missing cartId
   }
 
-  const headers = await getAuthHeaders();
-  const next = await getCacheOptions("shippingOptions");
-
   try {
-    const response = await sdk.client.fetch<{
-      shipping_options: HttpTypes.StoreCartShippingOption[];
-    }>("/store/shipping-options", {
-      query: { cart_id: cartId },
-      headers,
-      next,
-      cache: "force-cache",
-    });
-    const { shipping_options } = response;
-    return shipping_options || []; // Ensure non-null array
+    const { shipping_options } =
+      await sdk.store.fulfillment.listCartOptions({
+        cart_id: cartId,
+      });
+    return shipping_options || [];
   } catch (e: unknown) {
-    const errorDetails = {
-      cartId,
-      message: e instanceof Error ? e.message : "Unknown error fetching shipping options",
-      status: e && typeof e === "object" && "status" in e ? String(e.status) : "N/A",
-      response: e && typeof e === "object" && "response" in e ? JSON.stringify(e.response) : "No response",
-      stack: e instanceof Error ? e.stack : undefined,
-      rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
-    };
-    console.error("listCartOptions: Failed to fetch shipping options", errorDetails);
+    console.error(
+      "listCartOptions: Failed to fetch shipping options",
+      e
+    );
     return []; // Return empty array to avoid breaking downstream components
   }
 }

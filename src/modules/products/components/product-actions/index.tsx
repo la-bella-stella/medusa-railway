@@ -240,7 +240,7 @@ export default function ProductActions({
       });
 
       openSidebar({ view: "CART_SIDEBAR" });
-      router.refresh();
+      
     } catch (error: any) {
       // Parse Medusa error for specific messages
       const errorMessage = error.message || t("error-adding-to-cart", "Failed to add item to cart");
@@ -252,7 +252,7 @@ export default function ProductActions({
         if (error.message.includes("do not have a price")) {
           userMessage = t("no-price", "Selected variant has no price defined");
           // Suggest a refresh to handle potential data inconsistency
-          router.refresh();
+          
         }
       } else if (error.message?.includes("region")) {
         userMessage = t("invalid-region", "Selected region is not supported");

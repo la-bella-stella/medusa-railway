@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import { getBaseURL } from "@lib/util/env";
 import { Metadata } from "next";
 import "styles/globals.css";
@@ -21,6 +22,7 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
   let cart = null;
   let shippingOptions: StoreCartShippingOption[] = [];
 
+  // load customer
   try {
     customer = await retrieveCustomer();
     console.log("RootLayout: retrieveCustomer result:", {
@@ -28,14 +30,14 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
       email: customer?.email,
     });
   } catch (e: unknown) {
-    const errorDetails = {
+    console.error("RootLayout: retrieveCustomer failed:", {
       message: e instanceof Error ? e.message : "Unknown error",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
-    };
-    console.error("RootLayout: retrieveCustomer failed:", errorDetails);
+    });
   }
 
+  // load cart & shipping options
   try {
     const cartIdAttempted = await getCartId();
     cart = await retrieveCart();
@@ -47,23 +49,21 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
         variantId: item.variant_id,
         quantity: item.quantity,
       })),
+      shippingAddress: cart?.shipping_address,
     });
-    if (cart) {
-      shippingOptions = (await listCartOptions()) || [];
-      console.log("RootLayout: listCartOptions result:", {
-        cartId: cart.id,
-        shippingOptionsCount: shippingOptions.length,
-      });
+
+    // ← only fetch shipping options once the cart has a shipping_address
+    if (cart && cart.shipping_address) {
+      shippingOptions = await listCartOptions();
     }
   } catch (e: unknown) {
-    const errorDetails = {
+    console.error("RootLayout: retrieveCart failed:", {
       message: e instanceof Error ? e.message : "Unknown error",
       stack: e instanceof Error ? e.stack : undefined,
       rawError: JSON.stringify(e, Object.getOwnPropertyNames(e)),
-      cartIdAttempted,
-    };
-    console.error("RootLayout: retrieveCart failed:", errorDetails);
-    cart = null; // Fallback to null
+      cartIdAttempted: await getCartId(),
+    });
+    cart = null;
   }
 
   return (
