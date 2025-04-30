@@ -1,5 +1,6 @@
-// src/app/page.tsx
+// src/app/(main)/page.tsx
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { renderHomepage } from "@lib/homepage";
 
 export const metadata: Metadata = {
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  return renderHomepage();
+  const homepage = await renderHomepage();
+  return (
+    <Suspense fallback={<div>Loading your homepage...</div>}>
+      {homepage}
+    </Suspense>
+  );
 }

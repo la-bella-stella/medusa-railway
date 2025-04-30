@@ -3,13 +3,13 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { HttpTypes } from "@medusajs/types";
 import { useTranslation } from "react-i18next";
-import { IoClose } from "react-icons/io5";
 import { convertToLocale } from "@lib/util/money";
 import classNames from "classnames";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
+import { OverlayScrollbars } from "overlayscrollbars";
+import type { OverlayScrollbars as OverlayScrollbarsInstance } from "overlayscrollbars";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { Table } from "@medusajs/ui";
 import { useUI } from "@lib/context/ui-context";
 
 const CartItem = dynamic(() => import("@modules/cart/components/item"), {
@@ -31,7 +31,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const { openSidebar, closeSidebar } = useUI();
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<NodeJS.Timeout>();
+  const osInstance = useRef<OverlayScrollbarsInstance | null>(null);
 
   const totalItems = useMemo(
     () => cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0,
@@ -61,13 +63,30 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     }, 5000);
   };
 
-  // ⬇️ only open when sidebar is closed AND we have items
   useEffect(() => {
     if (!isOpen && totalItems > 0 && !pathname.includes("/cart")) {
       openSidebar({ view: "CART_SIDEBAR" });
       startCloseTimer();
     }
   }, [isOpen, totalItems, pathname, openSidebar]);
+
+  useEffect(() => {
+    if (scrollRef.current && !osInstance.current) {
+      osInstance.current = OverlayScrollbars(scrollRef.current, {
+        scrollbars: {
+          visibility: "hidden",
+          autoHide: "leave",
+        },
+      });
+    }
+
+    return () => {
+      if (osInstance.current) {
+        osInstance.current.destroy();
+        osInstance.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -91,7 +110,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     <div
       ref={sidebarRef}
       className={classNames(
-        "flex flex-col justify-between w-full h-full cart-drawer-main transition-transform duration-300",
+        "flex flex-col justify-between w-full h-full cart-drawer-main transition-transform duration-300 shadow-lg rounded-l-lg",
         {
           "translate-x-0": isOpen,
           "translate-x-full": !isOpen,
@@ -99,43 +118,48 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
       )}
     >
       {/* Header */}
-      <div className="flex w-full justify-between items-center px-5 md:px-7 py-4 border-b border-gray-100 relative">
+      <div className="w-full flex justify-between items-center relative ltr:pl-5 rtl:pr-5 ltr:md:pl-7 rtl:md:pr-7 py-0.5 border-b border-gray-100">
         <h2 className="m-0 text-xl font-bold md:text-2xl text-heading">
           {t("text-shopping-cart")}
         </h2>
         <button
           aria-label="close"
-          className="flex items-center justify-center px-4 text-2xl text-gray-500 hover:opacity-60 focus:outline-none transition-opacity"
+          className="flex items-center justify-center px-4 py-6 text-2xl text-gray-500 transition-opacity md:px-6 lg:py-8 focus:outline-none hover:opacity-60"
           onClick={() => {
             onClose();
             closeSidebar();
           }}
         >
-          <IoClose className="text-black" />
+          <svg
+            stroke="currentColor"
+            fill="currentColor"
+            strokeWidth="0"
+            viewBox="0 0 512 512"
+            className="text-black mt-1 md:mt-0.5"
+            height="1em"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M289.94 256l95-95A24 24 0 00351 127l-95 95-95-95a24 24 0 00-34 34l95 95-95 95a24 24 0 1034 34l95-95 95 95a24 24 0 0034-34z"></path>
+          </svg>
         </button>
       </div>
 
       {/* Body */}
       {!isEmpty ? (
-        <div className="flex-grow w-full overflow-y-auto max-h-[402px] no-scrollbar px-5 md:px-7">
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>{t("text-product")}</Table.HeaderCell>
-                <Table.HeaderCell>{t("text-quantity")}</Table.HeaderCell>
-                <Table.HeaderCell>{t("text-price")}</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {sortedItems.map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  currencyCode={cart?.currency_code?.toUpperCase() || "USD"}
-                />
-              ))}
-            </Table.Body>
-          </Table>
+        <div
+          ref={scrollRef}
+          className="os-theme-thin flex-grow w-full cart-scrollbar"
+        >
+          <div className="w-full px-5 md:px-7">
+            {sortedItems.map((item) => (
+              <CartItem
+                key={item.id}
+                item={item}
+                currencyCode={cart?.currency_code?.toUpperCase() || "USD"}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div
@@ -164,40 +188,26 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
       )}
 
       {/* Footer */}
-      <div className="flex flex-col px-5 md:px-7 pt-2 pb-5 md:pb-7">
-        {!isEmpty && (
-          <div className="flex items-center justify-between mb-4 text-small-regular">
-            <span className="font-semibold text-ui-fg-base">
-              Subtotal <span className="font-normal">(excl. taxes)</span>
-            </span>
-            <span
-              className="text-large-semi"
-              data-testid="cart-subtotal"
-              data-value={cart?.subtotal}
-            >
-              {cartSubtotal}
-            </span>
-          </div>
-        )}
-        <LocalizedClientLink
-          href={isEmpty ? "/" : "/checkout"}
-          passHref
+      <div className="flex flex-col px-5 pt-2 pb-5 md:px-7 md:pb-7">
+        <a
           className={classNames(
-            "w-full flex items-center justify-center px-5 py-3 text-white bg-heading rounded-md text-sm sm:text-base transition duration-300 hover:bg-gray-600 focus:outline-none",
+            "w-full px-5 py-3 md:py-4 flex items-center justify-center bg-black rounded-md text-sm sm:text-base text-white focus:outline-none transition duration-300 hover:bg-gray-600",
             {
               "cursor-not-allowed bg-gray-400 hover:bg-gray-400": isEmpty,
             }
           )}
+          href={isEmpty ? "/" : "/checkout"}
         >
-          <span className="py-0.5 -mt-0.5 w-full ltr:pr-5 rtl:pl-5">
+          <span className="w-full ltr:pr-5 rtl:pl-5 -mt-0.5 py-0.5">
             {t("text-proceed-to-checkout")}
           </span>
           {!isEmpty && (
-            <span className="flex-shrink-0 rtl:flex ltr:ml-auto rtl:mr-auto py-0.5 -mt-0.5 ltr:pl-5 rtl:pr-5 border-white ltr:border-l rtl:border-r">
+            <span className="ltr:ml-auto rtl:mr-auto flex-shrink-0 -mt-0.5 py-0.5 rtl:flex">
+              <span className="ltr:border-l rtl:border-r border-white ltr:pr-5 rtl:pl-5 py-0.5"></span>
               {cartSubtotal}
             </span>
           )}
-        </LocalizedClientLink>
+        </a>
       </div>
     </div>
   );
