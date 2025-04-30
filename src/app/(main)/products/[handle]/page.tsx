@@ -8,9 +8,10 @@ import { HttpTypes } from "@medusajs/types";
 const DEFAULT_COUNTRY = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us";
 const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
 
-type Params = { handle: string };
+type Params = Promise<{ handle: string }>;
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-export async function generateStaticParams(): Promise<Params[]> {
+export async function generateStaticParams(): Promise<{ handle: string }[]> {
   try {
     const { response } = await listProducts({
       countryCode: DEFAULT_COUNTRY,
@@ -29,9 +30,10 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
+  const { handle } = await params; // Await params
   const region = await getRegion();
   const regionId = region?.id || DEFAULT_REGION_ID;
-  const product = await getProductByHandle(params.handle, regionId);
+  const product = await getProductByHandle(handle, regionId);
   if (!product) notFound();
   return {
     title: `${product.title} | Your Store Name`,
@@ -44,7 +46,16 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: { params: Params }) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const { handle } = await params; // Await params
+  const { countryCode } = await searchParams; // Await searchParams
+
   let region = await getRegion().catch(() => null);
   if (!region) {
     region = {
@@ -54,11 +65,11 @@ export default async function ProductPage({ params }: { params: Params }) {
     } as HttpTypes.StoreRegion;
   }
 
-  const product = await getProductByHandle(params.handle, region.id);
+  const product = await getProductByHandle(handle, region.id);
   if (!product) notFound();
 
   console.log("ProductPage inventory:", {
-    handle: params.handle,
+    handle,
     productId: product.id,
     variants: product.variants
       ? product.variants.map((v) => ({
@@ -97,7 +108,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   };
 
   const { response: relatedResponse } = await listProducts({
-    countryCode: DEFAULT_COUNTRY,
+    countryCode: countryCode as string || DEFAULT_COUNTRY,
     queryParams: { region_id: region.id, limit: 10 },
   });
   const relatedProducts = relatedResponse.products.filter(
@@ -111,7 +122,7 @@ export default async function ProductPage({ params }: { params: Params }) {
     <ProductTemplate
       product={mappedProduct}
       region={region}
-      countryCode={DEFAULT_COUNTRY}
+      countryCode={countryCode as string || DEFAULT_COUNTRY}
       relatedProducts={relatedProducts}
     />
   );
