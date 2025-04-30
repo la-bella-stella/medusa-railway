@@ -1,4 +1,3 @@
-// src/modules/layout/components/cart-sidebar/index.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -10,6 +9,8 @@ import classNames from "classnames";
 import { usePathname } from "next/navigation";
 import CartItem from "@modules/cart/components/item";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { Table } from "@medusajs/ui";
+import { useUI } from "@lib/context/ui-context";
 
 interface CartSidebarProps {
   cart: HttpTypes.StoreCart | null;
@@ -19,6 +20,8 @@ interface CartSidebarProps {
 
 const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
   const { t } = useTranslation("common");
+  const { openSidebar, closeSidebar } = useUI();
+  const [isLoading, setIsLoading] = useState(false);
   const isEmpty = !cart?.items || cart.items.length === 0;
   const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(undefined);
   const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
@@ -28,18 +31,19 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
 
   const cartSubtotal = convertToLocale({
     amount: cart?.subtotal || 0,
-    currency_code: cart?.currency_code || "USD",
+    currency_code: cart?.currency_code?.toUpperCase() || "USD", // Normalize to USD
   });
 
   const timedOpen = () => {
     console.log("Timed open triggered");
-    onClose();
-
-    const timer = setTimeout(onClose, 5000);
+    if (isLoading) return; // Prevent closing while loading
+    const timer = setTimeout(() => {
+      onClose();
+      closeSidebar(); // Close sidebar via useUI
+    }, 10000); // Increased to 10 seconds for slower connections
     setActiveTimer(timer);
   };
 
-  // Clean up the timer when the component unmounts
   useEffect(() => {
     return () => {
       if (activeTimer) {
@@ -48,15 +52,20 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
     };
   }, [activeTimer]);
 
-  // Open cart sidebar when modifying the cart items, but only if we're not on the cart page
   useEffect(() => {
     if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
-      timedOpen();
+      setIsLoading(true);
+      openSidebar({ view: "CART_SIDEBAR" }); // Open sidebar
+      setTimeout(() => {
+        setIsLoading(false);
+        if (!isEmpty) {
+          timedOpen(); // Only start timer if cart is not empty
+        }
+      }, 1500); // Increased delay to 1.5 seconds for cart data
     }
     itemRef.current = totalItems;
-  }, [totalItems, pathname]);
+  }, [totalItems, pathname, openSidebar, isEmpty]);
 
-  // Handle click-outside-to-close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -65,6 +74,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
         !sidebarRef.current.contains(event.target as Node)
       ) {
         onClose();
+        closeSidebar(); // Close sidebar via useUI
       }
     };
 
@@ -72,37 +82,58 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeSidebar]);
 
   return (
-    <div className="flex flex-col justify-between w-full h-full cart-drawer-main">
+    <div
+      className={`flex flex-col justify-between w-full h-full cart-drawer-main transition-transform duration-300 ${
+        isOpen ? "translate-x-0" : "translate-x-full"
+      }`}
+      ref={sidebarRef}
+    >
       <div className="w-full flex justify-between items-center relative px-5 md:px-7 py-4 border-b border-gray-100">
         <h2 className="m-0 text-xl font-bold md:text-2xl text-heading">
           {t("text-shopping-cart")}
         </h2>
         <button
           className="flex items-center justify-center px-4 text-2xl text-gray-500 transition-opacity focus:outline-none hover:opacity-60"
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            closeSidebar(); // Close sidebar via useUI
+          }}
           aria-label="close"
         >
           <IoClose className="text-black" />
         </button>
       </div>
-      {!isEmpty ? (
-        <div className="flex-grow w-full overflow-y-scroll max-h-[402px] no-scrollbar">
-          <div className="w-full px-5 md:px-7">
-            {cart?.items
-              ?.sort((a, b) => {
-                return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1;
-              })
-              .map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  currencyCode={cart?.currency_code || "USD"}
-                />
-              ))}
-          </div>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center px-5 pt-8 pb-5 md:px-7">
+          <p className="text-lg text-gray-500">{t("text-loading")}</p>
+        </div>
+      ) : !isEmpty ? (
+        <div className="flex-grow w-full overflow-y-scroll max-h-[402px] no-scrollbar px-5 md:px-7">
+          <Table>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>{t("text-product")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("text-quantity")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("text-price")}</Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {cart?.items
+                ?.sort((a, b) => {
+                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1;
+                })
+                .map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    currencyCode={cart?.currency_code?.toUpperCase() || "USD"}
+                  />
+                ))}
+            </Table.Body>
+          </Table>
         </div>
       ) : (
         <div

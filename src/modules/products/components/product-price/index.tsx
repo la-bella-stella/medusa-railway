@@ -11,25 +11,29 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
   const formatPrice = (amount: number, currency: string) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency,
+      currency: currency.toUpperCase(), // Normalize to uppercase
     }).format(amount);
 
   const getPriceData = (): VariantPrice | undefined => {
     let priceAmount: number | undefined;
-    let currencyCode = region?.currency_code ?? "USD";
+    let currencyCode = (region?.currency_code ?? "USD").toUpperCase(); // Default to USD uppercase
     let msrp: number | undefined;
     let isSale = false;
     let discountPercentage: string | undefined;
 
+    const findPrice = (prices: PriceEntry[], code: string) =>
+      prices.find((price) => price.currency_code.toUpperCase() === code.toUpperCase());
+
     if (variant?.prices?.length) {
-      const p = variant.prices.find(
-        (price: PriceEntry) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
-      );
+      let p = findPrice(variant.prices, currencyCode); // Try uppercase first
+      if (!p) {
+        p = findPrice(variant.prices, currencyCode.toLowerCase()); // Fallback to lowercase
+      }
       if (!p) {
         return undefined;
       }
       priceAmount = p.amount;
-      currencyCode = p.currency_code;
+      currencyCode = p.currency_code.toUpperCase();
       msrp =
         variant.metadata?.msrp && typeof variant.metadata.msrp === "number"
           ? variant.metadata.msrp
@@ -47,9 +51,10 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
       let cheapest: StoreVariantWithPrices | undefined;
       let lowestPrice = Number.MAX_SAFE_INTEGER;
       priced.forEach((v: StoreVariantWithPrices) => {
-        const price = v.prices.find(
-          (p: PriceEntry) => p.currency_code.toLowerCase() === currencyCode.toLowerCase()
-        );
+        let price = findPrice(v.prices, currencyCode); // Try uppercase first
+        if (!price) {
+          price = findPrice(v.prices, currencyCode.toLowerCase()); // Fallback to lowercase
+        }
         if (price && price.amount < lowestPrice) {
           lowestPrice = price.amount;
           cheapest = v;
@@ -60,15 +65,16 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
         return undefined;
       }
 
-      const p = cheapest.prices.find(
-        (price: PriceEntry) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
-      );
+      let p = findPrice(cheapest.prices, currencyCode); // Try uppercase first
+      if (!p) {
+        p = findPrice(cheapest.prices, currencyCode.toLowerCase()); // Fallback to lowercase
+      }
       if (!p) {
         return undefined;
       }
 
       priceAmount = p.amount;
-      currencyCode = p.currency_code;
+      currencyCode = p.currency_code.toUpperCase();
       msrp =
         cheapest.metadata?.msrp && typeof cheapest.metadata.msrp === "number"
           ? cheapest.metadata.msrp
