@@ -84,3 +84,13 @@ export type PriceEntry = {
   title?: string | null;
   raw_amount?: { value: string; precision: number };
 };
+
+export interface Filters {
+  category: string[];
+  brand: string[];
+  collection: string[];
+  grouped_color: string[];
+  gender: string[];
+  season: string[];
+  price: string[];
+}

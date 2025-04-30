@@ -1,4 +1,3 @@
-// src/modules/store/components/filter-sidebar.tsx
 "use client";
 
 import React from "react";
@@ -7,17 +6,14 @@ import StoreFilters from "@modules/store/components/store-filters";
 import { useUI } from "@lib/context/ui-context";
 import { useTranslation } from "react-i18next";
 import { IoArrowBack, IoArrowForward } from "react-icons/io5";
-import type { Filters } from "types/global";
+import { Filters } from "types/global";
 
 interface FilterSidebarProps {
   filters: Filters;
-  onChange: (next: Filters) => void;
+  onChange?: (next: Filters) => void;
 }
 
-export default function FilterSidebar({
-  filters,
-  onChange,
-}: FilterSidebarProps) {
+export default function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
   const { isSidebarOpen, sidebarView, sidebarData, closeSidebar } = useUI();
   const { t, i18n } = useTranslation("common");
   const dir = i18n.dir();
@@ -51,7 +47,7 @@ export default function FilterSidebar({
           {/* Filters */}
           <Scrollbar className="flex-grow overflow-auto">
             <div className="p-4">
-              <StoreFilters filters={filters} onChange={onChange} />
+              <StoreFilters filters={filters} onChange={onChange || (() => {})} />
             </div>
           </Scrollbar>
 

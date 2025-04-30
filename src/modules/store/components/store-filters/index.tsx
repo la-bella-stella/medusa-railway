@@ -16,18 +16,20 @@ import { useTags } from "@lib/hooks/use-tags";
 
 interface StoreFiltersProps {
   filters: Filters;
-  onChange: (next: Filters) => void;
+  onChange?: (next: Filters) => void;
+  className?: string;
 }
 
 export default function StoreFilters({
   filters,
-  onChange,
+  onChange = () => {},
+  className,
 }: StoreFiltersProps) {
   const { data: categories = [], isLoading: loadingCat } = useCategories();
-  const { data: brands = [],     isLoading: loadingBrand } = useBrands();
-  const { data: collections = [],isLoading: loadingColl } = useCollections();
-  const { data: colors = [],     isLoading: loadingColor } = useColors();
-  const { data: tags = [],       isLoading: loadingTags } = useTags();
+  const { data: brands = [], isLoading: loadingBrand } = useBrands();
+  const { data: collections = [], isLoading: loadingColl } = useCollections();
+  const { data: colors = [], isLoading: loadingColor } = useColors();
+  const { data: tags = [], isLoading: loadingTags } = useTags();
 
   // Derive gender & season from tags
   const genderTags = tags
@@ -48,7 +50,7 @@ export default function StoreFilters({
     onChange({ ...filters, [key]: next });
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <div className={`flex flex-col gap-y-4 ${className || ""}`}>
       {/* Category */}
       {categories.length > 0 && (
         <CategoryFilter
