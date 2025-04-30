@@ -19,7 +19,7 @@ export default async function Orders() {
     orders = await listOrders();
   } catch (err) {
     // If the API call fails (e.g. unauthorized), show 404 or redirect to login
-    console.error("Failed to fetch orders:", err);
+    
     notFound();
   }
 

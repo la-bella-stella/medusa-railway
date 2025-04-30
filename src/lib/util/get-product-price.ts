@@ -3,19 +3,7 @@ import { getPercentageDiff } from "./get-precentage-diff";
 import { convertToLocale } from "./money";
 
 export const getPricesForVariant = (variant: any, region?: HttpTypes.StoreRegion | null) => {
-  // Debug: Log variant and region
-  console.log("getPricesForVariant Debug:", {
-    variantId: variant?.id,
-    region: region,
-    variantPrices: variant?.prices,
-    variantCalculatedPrice: variant?.calculated_price,
-  });
-
   if (!variant?.prices || !region) {
-    console.warn("No prices or region for variant:", {
-      variantId: variant?.id,
-      regionId: region?.id,
-    });
     return null;
   }
 
@@ -24,14 +12,11 @@ export const getPricesForVariant = (variant: any, region?: HttpTypes.StoreRegion
   );
 
   if (!regionPrice) {
-    console.warn(
-      `No price found for currency ${region.currency_code} in variant ${variant.id}`
-    );
     return null;
   }
 
-  const calculatedAmount = regionPrice.amount / 100; // Convert from cents to dollars
-  const originalAmount = regionPrice.amount / 100; // Assuming no discounts; adjust if needed
+  const calculatedAmount = regionPrice.amount / 100;
+  const originalAmount = regionPrice.amount / 100;
 
   return {
     calculated_price_number: calculatedAmount,
@@ -45,7 +30,7 @@ export const getPricesForVariant = (variant: any, region?: HttpTypes.StoreRegion
       currency_code: region.currency_code,
     }),
     currency_code: region.currency_code,
-    price_type: "default", // Adjust if you have price list types
+    price_type: "default",
     percentage_diff: getPercentageDiff(originalAmount, calculatedAmount),
   };
 };
@@ -65,7 +50,6 @@ export function getProductPrice({
 
   const cheapestPrice = () => {
     if (!product || !product.variants?.length) {
-      console.warn("No variants for product:", { productId: product.id });
       return null;
     }
 
@@ -82,7 +66,6 @@ export function getProductPrice({
       })[0];
 
     if (!cheapestVariant) {
-      console.warn("No priced variants found for product:", { productId: product.id });
       return null;
     }
 
@@ -91,10 +74,6 @@ export function getProductPrice({
 
   const variantPrice = () => {
     if (!product || !variantId) {
-      console.warn("No product or variantId for variantPrice:", {
-        productId: product?.id,
-        variantId,
-      });
       return null;
     }
 
@@ -103,7 +82,6 @@ export function getProductPrice({
     );
 
     if (!variant) {
-      console.warn("Variant not found:", { variantId, productId: product.id });
       return null;
     }
 

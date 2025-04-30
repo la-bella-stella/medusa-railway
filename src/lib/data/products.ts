@@ -40,7 +40,6 @@ export async function getTagIdByValue(value: string): Promise<string | null> {
     );
     return tag ? tag.id : null;
   } catch (e: any) {
-    console.error("Failed to fetch tag ID for value:", value, e);
     return null;
   }
 }
@@ -68,31 +67,11 @@ export const getProductByHandle = cache(
       );
       const product = response.products[0];
 
-      // Log raw API response for debugging
-      console.log("getProductByHandle raw response:", {
-        handle,
-        regionId,
-        response: {
-          products: response.products.map((p) => ({
-            id: p.id,
-            title: p.title,
-            variants: p.variants
-              ? p.variants.map((v) => ({
-                  id: v.id,
-                  inventory_quantity: v.inventory_quantity,
-                  manage_inventory: v.manage_inventory,
-                  allow_backorder: v.allow_backorder,
-                }))
-              : "No variants available",
-          })),
-        },
-      });
-
       if (product) {
         console.log("getProductByHandle inventory:", {
           handle,
           regionId,
-          inventory: product.variants
+          variants: product.variants
             ? product.variants.map((v) => ({
                 id: v.id,
                 inventory_quantity: v.inventory_quantity,
@@ -106,7 +85,7 @@ export const getProductByHandle = cache(
       }
       return product;
     } catch (e: any) {
-      console.error("getProductByHandle failed:", handle, regionId, e);
+      console.error("getProductByHandle failed:", { handle, regionId, error: e.message });
       return undefined;
     }
   }
@@ -146,7 +125,7 @@ export async function listProducts(
       try {
         region = await retrieveRegion(regionId);
       } catch (e: any) {
-        console.warn("Failed to retrieve region, falling back:", e);
+        console.warn("Failed to retrieve region, falling back:", e.message);
         region = {
           id: DEFAULT_REGION_ID,
           currency_code: "USD",
@@ -163,8 +142,6 @@ export async function listProducts(
         name: "Default Region",
       };
   }
-
-  console.log("Resolved region for listProducts:", region);
 
   const limit = queryParams.limit ?? 12;
   const offset = (pageParam - 1) * limit;
@@ -199,26 +176,9 @@ export async function listProducts(
       cache: "no-store",
     });
 
-    // Log raw API response for debugging
-    console.log("listProducts raw response:", {
-      count: response.count,
-      products: response.products.map((p) => ({
-        id: p.id,
-        title: p.title,
-        variants: p.variants
-          ? p.variants.map((v) => ({
-              id: v.id,
-              inventory_quantity: v.inventory_quantity,
-              manage_inventory: v.manage_inventory,
-              allow_backorder: v.allow_backorder,
-            }))
-          : "No variants available",
-      })),
-    });
-
     const { products, count } = response;
 
-    console.log("listProducts inventory response:", {
+    console.log("listProducts inventory:", {
       count,
       products: products.map((p) => ({
         id: p.id,
@@ -248,7 +208,7 @@ export async function listProducts(
       queryParams,
     };
   } catch (e: any) {
-    console.error("listProducts failed:", query, e);
+    console.error("listProducts failed:", { query, error: e.message });
     return { response: { products: [], count: 0 }, nextPage: null, queryParams };
   }
 }

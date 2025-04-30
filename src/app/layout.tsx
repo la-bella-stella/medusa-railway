@@ -17,12 +17,36 @@ export const metadata: Metadata = {
 };
 
 async function RootLayout({ children }: { children: React.ReactNode }) {
-  const customer = await retrieveCustomer();
-  const cart = await retrieveCart();
-
+  let customer = null;
+  let cart = null;
   let shippingOptions: StoreCartShippingOption[] = [];
-  if (cart) {
-    shippingOptions = (await listCartOptions()) || [];
+
+  try {
+    customer = await retrieveCustomer();
+    console.log("RootLayout: retrieveCustomer result:", {
+      customerId: customer?.id,
+      email: customer?.email,
+    });
+  } catch (e) {
+    console.error("RootLayout: retrieveCustomer failed:", e);
+  }
+
+  try {
+    cart = await retrieveCart();
+    console.log("RootLayout: retrieveCart result:", {
+      cartId: cart?.id,
+      regionId: cart?.region_id,
+      currencyCode: cart?.currency_code,
+      items: cart?.items?.map((item) => ({
+        variantId: item.variant_id,
+        quantity: item.quantity,
+      })),
+    });
+    if (cart) {
+      shippingOptions = (await listCartOptions()) || [];
+    }
+  } catch (e) {
+    console.error("RootLayout: retrieveCart failed:", e);
   }
 
   return (
@@ -30,13 +54,10 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
       <body>
         <NextUIProviderWrapper>
           <Suspense fallback={<div>Loading...</div>}>
-            <ClientWrapper>
-              {/* Nav is now fixed at the top */}
+            <ClientWrapper cart={cart}>
               <div className="fixed inset-x-0 top-0 z-50">
                 <Nav />
               </div>
-
-              {/* Banners sit below the fixed Nav */}
               <div className="pt-16">
                 {customer && cart && (
                   <CartMismatchBanner customer={customer} cart={cart} />
@@ -49,12 +70,7 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
                   />
                 )}
               </div>
-
-              {/* Main content pushed down by 4rem (h-16) to clear the Nav */}
-              <main className="relative pt-16">
-                {children}
-              </main>
-
+              <main className="relative pt-16">{children}</main>
               <Footer />
             </ClientWrapper>
           </Suspense>

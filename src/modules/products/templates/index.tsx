@@ -14,7 +14,7 @@ import ProductActionsWrapper from "./product-actions-wrapper";
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { Transition } from "@headlessui/react";
-import type { StoreProductWithTags } from "types/global";
+import { StoreProductWithTags } from "types/global";
 
 const _window = typeof window !== "undefined" ? window : ({} as any);
 const DOMPurify = createDOMPurify(_window);
@@ -59,22 +59,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     type?: HttpTypes.StoreProductType | null;
   } = {
     ...product,
-    tags: product.tags?.map((t) => ({ value: t.value })) ?? undefined,
+    tags: product.tags ?? undefined,
     variants: product.variants ?? null,
   };
-
-  console.log("ProductTemplate inventory:", {
-    productId: product.id,
-    title: product.title,
-    variants: product.variants
-      ? product.variants.map((v) => ({
-          id: v.id,
-          inventory_quantity: v.inventory_quantity,
-          manage_inventory: v.manage_inventory,
-          allow_backorder: v.allow_backorder,
-        }))
-      : "No variants available",
-  });
 
   const sanitizeHtml = (html: string) => {
     if (DOMPurify && typeof DOMPurify.sanitize === "function") {

@@ -4,64 +4,51 @@ import type {
   VariantPrice,
   StoreVariantWithPrices,
   PriceEntry,
-} from "../../../../types/global";
+} from "types/global";
+import { HttpTypes } from "@medusajs/types";
 
 export default function ProductPrice({ product, variant, region }: ProductPriceProps) {
-  // Debug: Log product, variant, and region data
-  console.log("ProductPrice Debug:", {
-    productId: product.id,
-    variant: variant,
-    productVariants: product.variants,
-    productTags: product.tags,
-    region: region,
-  });
-
-  // Format helper (amount is in dollars, no conversion needed)
   const formatPrice = (amount: number, currency: string) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
-    }).format(amount); // No division by 100, assuming amount is in dollars
+    }).format(amount);
 
-  // Compute price data
   const getPriceData = (): VariantPrice | undefined => {
     let priceAmount: number | undefined;
-    let currencyCode = region?.currency_code ?? "USD"; // Use region's currency code, default to "USD"
+    let currencyCode = region?.currency_code ?? "USD";
     let msrp: number | undefined;
     let isSale = false;
     let discountPercentage: string | undefined;
 
     if (variant?.prices?.length) {
       const p = variant.prices.find(
-        (price) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
+        (price: PriceEntry) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
       );
       if (!p) {
-        console.warn("No price found for currency:", {
-          variantId: variant.id,
-          currency: currencyCode,
-        });
         return undefined;
       }
-      priceAmount = p.amount; // Amount in dollars
+      priceAmount = p.amount;
       currencyCode = p.currency_code;
       msrp =
-        variant.metadata?.msrp !== undefined ? variant.metadata.msrp : undefined;
+        variant.metadata?.msrp && typeof variant.metadata.msrp === "number"
+          ? variant.metadata.msrp
+          : undefined;
     } else {
       const all = product.variants ?? [];
       const priced = all.filter(
-        (v): v is StoreVariantWithPrices & { prices: PriceEntry[] } =>
+        (v: HttpTypes.StoreProductVariant): v is StoreVariantWithPrices =>
           Array.isArray(v.prices) && v.prices.length > 0
       );
       if (!priced.length) {
-        console.warn("No priced variants found for product:", { productId: product.id });
         return undefined;
       }
 
       let cheapest: StoreVariantWithPrices | undefined;
       let lowestPrice = Number.MAX_SAFE_INTEGER;
-      priced.forEach((v) => {
+      priced.forEach((v: StoreVariantWithPrices) => {
         const price = v.prices.find(
-          (p) => p.currency_code.toLowerCase() === currencyCode.toLowerCase()
+          (p: PriceEntry) => p.currency_code.toLowerCase() === currencyCode.toLowerCase()
         );
         if (price && price.amount < lowestPrice) {
           lowestPrice = price.amount;
@@ -70,40 +57,33 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
       });
 
       if (!cheapest || !cheapest.prices) {
-        console.warn("No variant found with price for currency:", {
-          productId: product.id,
-          currency: currencyCode,
-        });
         return undefined;
       }
 
       const p = cheapest.prices.find(
-        (price) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
+        (price: PriceEntry) => price.currency_code.toLowerCase() === currencyCode.toLowerCase()
       );
       if (!p) {
-        console.warn("No price found for currency after filtering:", {
-          productId: product.id,
-          currency: currencyCode,
-        });
         return undefined;
       }
 
-      priceAmount = p.amount; // Amount in dollars
+      priceAmount = p.amount;
       currencyCode = p.currency_code;
       msrp =
-        cheapest.metadata?.msrp !== undefined ? cheapest.metadata.msrp : undefined;
+        cheapest.metadata?.msrp && typeof cheapest.metadata.msrp === "number"
+          ? cheapest.metadata.msrp
+          : undefined;
     }
 
-    // Sale logic
     if (priceAmount !== undefined && msrp !== undefined && priceAmount < msrp) {
       isSale = true;
       const pct = ((msrp - priceAmount) / msrp) * 100;
       discountPercentage = Math.round(pct).toString();
     } else if (
       priceAmount !== undefined &&
-      product.tags?.some((t) => t.value.includes("SALE"))
+      product.tags?.some((t: HttpTypes.StoreProductTag) => t.value.includes("SALE"))
     ) {
-      const saleTag = product.tags.find((t) => t.value.match(/SALE(\d+)/));
+      const saleTag = product.tags.find((t: HttpTypes.StoreProductTag) => t.value.match(/SALE(\d+)/));
       const m = saleTag?.value.match(/SALE(\d+)/);
       if (m) {
         isSale = true;
@@ -113,7 +93,6 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
     }
 
     if (priceAmount === undefined) {
-      console.warn("Price amount undefined for product:", { productId: product.id });
       return undefined;
     }
 
@@ -122,7 +101,7 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
       original_price: msrp ? formatPrice(msrp, currencyCode) : "",
       price_type: isSale ? "sale" : "default",
       percentage_diff: discountPercentage ?? "",
-      calculated_price_number: priceAmount, // Already in dollars
+      calculated_price_number: priceAmount,
       original_price_number: msrp ?? 0,
       currency_code: currencyCode,
     };
@@ -139,7 +118,6 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
 
   return (
     <div className="flex items-center space-x-2">
-      {/* Current price */}
       <div
         className={clx(
           "text-base font-semibold md:text-xl lg:text-2xl",
@@ -151,7 +129,6 @@ export default function ProductPrice({ product, variant, region }: ProductPriceP
         {data.calculated_price}
       </div>
 
-      {/* Original price, only on sale */}
       {data.price_type === "sale" && data.original_price && (
         <del
           className="font-segoe line-through text-gray-400 text-sm md:text-lg"

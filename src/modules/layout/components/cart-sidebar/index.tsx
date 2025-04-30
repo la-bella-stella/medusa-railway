@@ -10,7 +10,6 @@ import classNames from "classnames";
 import { usePathname } from "next/navigation";
 import CartItem from "@modules/cart/components/item";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import { Table } from "@medusajs/ui";
 
 interface CartSidebarProps {
   cart: HttpTypes.StoreCart | null;
@@ -20,144 +19,146 @@ interface CartSidebarProps {
 
 const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
   const { t } = useTranslation("common");
-  const items = cart?.items ?? [];
-  const isEmpty = items.length === 0;
-  const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout>();
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const prevTotalRef = useRef<number>(totalItems);
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isEmpty = !cart?.items || cart.items.length === 0;
+  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(undefined);
+  const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const itemRef = useRef<number>(totalItems || 0);
   const pathname = usePathname();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
-  const subtotal = convertToLocale({
+  const cartSubtotal = convertToLocale({
     amount: cart?.subtotal || 0,
     currency_code: cart?.currency_code || "USD",
   });
 
-  // Auto-close 5s after change when not on /cart
+  const timedOpen = () => {
+    console.log("Timed open triggered");
+    onClose();
+
+    const timer = setTimeout(onClose, 5000);
+    setActiveTimer(timer);
+  };
+
+  // Clean up the timer when the component unmounts
   useEffect(() => {
-    if (prevTotalRef.current !== totalItems && !pathname.includes("/cart")) {
-      onClose();
-      const tmo = setTimeout(onClose, 5000);
-      setAutoCloseTimer(tmo);
+    return () => {
+      if (activeTimer) {
+        clearTimeout(activeTimer);
+      }
+    };
+  }, [activeTimer]);
+
+  // Open cart sidebar when modifying the cart items, but only if we're not on the cart page
+  useEffect(() => {
+    if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
+      timedOpen();
     }
-    prevTotalRef.current = totalItems;
-  }, [totalItems, pathname, onClose]);
+    itemRef.current = totalItems;
+  }, [totalItems, pathname]);
 
-  // Clear on unmount
+  // Handle click-outside-to-close
   useEffect(() => {
-    return () => autoCloseTimer && clearTimeout(autoCloseTimer);
-  }, [autoCloseTimer]);
-
-  // Click outside to close
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         isOpen &&
         sidebarRef.current &&
-        !sidebarRef.current.contains(e.target as Node)
+        !sidebarRef.current.contains(event.target as Node)
       ) {
         onClose();
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isOpen, onClose]);
 
-  // Prevent clicks inside the sidebar from propagating to the document
-  const handleSidebarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-  };
-
   return (
-    <div
-      ref={sidebarRef}
-      onClick={handleSidebarClick}
-      className="flex flex-col w-full h-full bg-white cart-drawer-main"
-    >
-      {/* HEADER */}
-      <div className="px-5 md:px-7 pt-5 pb-3 border-b border-gray-200">
-        {/* Top row */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold uppercase tracking-wide">Your Cart</h2>
-          <div className="flex items-center space-x-4">
-            <LocalizedClientLink href="/cart" className="underline text-sm">
-              View cart
-            </LocalizedClientLink>
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent propagation to the click-outside handler
-                onClose();
-              }}
-              aria-label="Close cart"
-              className="text-2xl text-gray-600 hover:text-gray-800 focus:outline-none"
-            >
-              <IoClose />
-            </button>
-          </div>
-        </div>
-        {/* Sub-row */}
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
-          <LocalizedClientLink href="#" className="underline">
-            Add order note
-          </LocalizedClientLink>
-          <div>
-            Taxes and{" "}
-            <LocalizedClientLink href="/shipping" className="underline">
-              shipping
-            </LocalizedClientLink>{" "}
-            calculated at checkout.
-          </div>
-        </div>
+    <div className="flex flex-col justify-between w-full h-full cart-drawer-main">
+      <div className="w-full flex justify-between items-center relative px-5 md:px-7 py-4 border-b border-gray-100">
+        <h2 className="m-0 text-xl font-bold md:text-2xl text-heading">
+          {t("text-shopping-cart")}
+        </h2>
+        <button
+          className="flex items-center justify-center px-4 text-2xl text-gray-500 transition-opacity focus:outline-none hover:opacity-60"
+          onClick={onClose}
+          aria-label="close"
+        >
+          <IoClose className="text-black" />
+        </button>
       </div>
+      {!isEmpty ? (
+        <div className="flex-grow w-full overflow-y-scroll max-h-[402px] no-scrollbar">
+          <div className="w-full px-5 md:px-7">
+            {cart?.items
+              ?.sort((a, b) => {
+                return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1;
+              })
+              .map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  currencyCode={cart?.currency_code || "USD"}
+                />
+              ))}
+          </div>
+        </div>
+      ) : (
+        <div
+          className="flex flex-col items-center justify-center px-5 pt-8 pb-5 md:px-7 transition-opacity duration-200 ease-in-out"
+          style={{ opacity: isOpen ? 1 : 0 }}
+        >
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gray-400 mb-4"
+          >
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <path d="M3 6h18" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <h3 className="text-lg font-bold text-heading">
+            {t("text-empty-cart")}
+          </h3>
+        </div>
+      )}
 
-      {/* CHECKOUT BUTTON */}
-      <div className="px-5 md:px-7 py-4 border-b border-gray-200">
+      <div className="flex flex-col px-5 pt-2 pb-5 md:px-7 md:pb-7">
+        {!isEmpty && (
+          <div className="flex items-center justify-between text-small-regular mb-4">
+            <span className="text-ui-fg-base font-semibold">
+              Subtotal <span className="font-normal">(excl. taxes)</span>
+            </span>
+            <span className="text-large-semi" data-testid="cart-subtotal" data-value={cart?.subtotal}>
+              {cartSubtotal}
+            </span>
+          </div>
+        )}
         <LocalizedClientLink
           href={isEmpty ? "/" : "/checkout"}
+          passHref
           className={classNames(
-            "w-full flex items-center justify-center py-3 text-center rounded-md text-white font-semibold transition",
+            "w-full px-5 py-3 flex items-center justify-center bg-heading rounded-md text-sm sm:text-base text-white focus:outline-none transition duration-300 hover:bg-gray-600",
             {
-              "bg-black hover:bg-gray-800": !isEmpty,
-              "bg-gray-400 cursor-not-allowed": isEmpty,
+              "cursor-not-allowed bg-gray-400 hover:bg-gray-400": isEmpty,
             }
           )}
         >
-          <span className="mr-2">🛒</span>
-          Checkout – {subtotal}
+          <span className="w-full ltr:pr-5 rtl:pl-5 -mt-0.5 py-0.5">
+            {t("text-proceed-to-checkout")}
+          </span>
+          <span className="ltr:ml-auto rtl:mr-auto flex-shrink-0 -mt-0.5 py-0.5 rtl:flex">
+            <span className="ltr:border-l rtl:border-r border-white ltr:pr-5 rtl:pl-5 py-0.5" />
+            {cartSubtotal}
+          </span>
         </LocalizedClientLink>
-      </div>
-
-      {/* ITEMS LIST */}
-      <div className="flex-grow overflow-y-auto no-scrollbar px-5 md:px-7 py-4">
-        {isEmpty ? (
-          <div className="text-center text-gray-500 py-20">
-            {t("text-empty-cart")}
-          </div>
-        ) : (
-          <Table>
-            <Table.Body>
-              {items
-                .sort((a, b) =>
-                  (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                )
-                .map((item) => (
-                  <CartItem
-                    key={item.id}
-                    item={item}
-                    currencyCode={cart?.currency_code || "USD"}
-                  />
-                ))}
-            </Table.Body>
-          </Table>
-        )}
-      </div>
-
-      {/* OPTIONAL “You may also like” */}
-      <div className="px-5 md:px-7 py-4 border-t border-gray-200">
-        <h3 className="text-sm font-semibold mb-2">You may also like…</h3>
-        <div className="h-24 bg-gray-100 rounded flex items-center justify-center text-gray-400">
-          Recommendations
-        </div>
       </div>
     </div>
   );

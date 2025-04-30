@@ -15,6 +15,7 @@ import classNames from "classnames";
 import HeaderMenu from "@modules/layout/components/header-menu";
 import Alert from "@modules/common/components/alert";
 import CountdownTimer from "@modules/common/components/countdown-timer";
+import CartSidebar from "@modules/layout/components/cart-sidebar";
 import { useUI } from "@lib/context/ui-context";
 import {
   RESPONSIVE_WIDTH,
@@ -44,7 +45,7 @@ export default function DesktopNav({
   const { t } = useTranslation("common");
   const { width } = useWindowSize();
   const router = useRouter();
-  const { openSidebar } = useUI();
+  const { openSidebar, closeSidebar, sidebarView } = useUI();
 
   const totalItems = cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
 
@@ -64,6 +65,11 @@ export default function DesktopNav({
   // When countdown completes
   const onUnderComplete = useCallback(() => setUnderStart(true), [setUnderStart]);
   const onShopComplete = useCallback(() => setShopStart(true), [setShopStart]);
+
+  // Cart sidebar control
+  const isCartOpen = sidebarView === "CART_SIDEBAR";
+  const openCart = () => openSidebar({ view: "CART_SIDEBAR" });
+  const closeCart = () => closeSidebar();
 
   return (
     <div
@@ -107,18 +113,18 @@ export default function DesktopNav({
         <div className="flex items-center space-x-6">
           <LanguageSwitcher />
 
-          {/* ← Updated login path ↓ */}
           <LocalizedClientLink
-        href={isAuthenticated ? "/account" : "/account/login"}
-        className="flex items-center justify-center w-6 h-6 focus:outline-none"
-        aria-label="user-button"
-        >
-        <UserIcon className="w-full h-full text-gray-600" />
-        </LocalizedClientLink>
+            href={isAuthenticated ? "/account" : "/account/login"}
+            className="flex items-center justify-center w-6 h-6 focus:outline-none"
+            aria-label="user-button"
+          >
+            <UserIcon className="w-full h-full text-gray-600" />
+          </LocalizedClientLink>
 
           <button
-            onClick={() => openSidebar({ view: "CART_SIDEBAR" })}
-            className="relative"
+            onClick={openCart}
+            className="relative focus:outline-none"
+            aria-label="cart-button"
           >
             <CartIcon className="w-8 h-8 text-gray-600" />
             {totalItems > 0 && (
@@ -134,6 +140,28 @@ export default function DesktopNav({
       <div className="hidden lg:flex flex-col content-container px-4 lg:px-6">
         <HeaderMenu data={menu} />
       </div>
+
+      {/* Cart Sidebar */}
+      {isCartOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
+            onClick={closeCart}
+          />
+          <div
+            className="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
+            style={{
+              transform: isCartOpen ? "translateX(0)" : "translateX(100%)",
+            }}
+          >
+            <CartSidebar
+              cart={cart}
+              isOpen={isCartOpen}
+              onClose={closeCart}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
