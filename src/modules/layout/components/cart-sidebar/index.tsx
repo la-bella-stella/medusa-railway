@@ -1,16 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { HttpTypes } from "@medusajs/types";
 import { useTranslation } from "react-i18next";
 import { IoClose } from "react-icons/io5";
 import { convertToLocale } from "@lib/util/money";
 import classNames from "classnames";
 import { usePathname } from "next/navigation";
-import CartItem from "@modules/cart/components/item";
+import dynamic from "next/dynamic";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import { Table } from "@medusajs/ui";
 import { useUI } from "@lib/context/ui-context";
+
+const CartItem = dynamic(() => import("@modules/cart/components/item"), {
+  ssr: false,
+});
 
 interface CartSidebarProps {
   cart: HttpTypes.StoreCart | null;
@@ -18,100 +22,102 @@ interface CartSidebarProps {
   onClose: () => void;
 }
 
-const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
+const CartSidebar: React.FC<CartSidebarProps> = ({
+  cart,
+  isOpen,
+  onClose,
+}) => {
   const { t } = useTranslation("common");
   const { openSidebar, closeSidebar } = useUI();
-  const [isLoading, setIsLoading] = useState(false);
-  const isEmpty = !cart?.items || cart.items.length === 0;
-  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(undefined);
-  const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
-  const itemRef = useRef<number>(totalItems || 0);
   const pathname = usePathname();
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<NodeJS.Timeout>();
+
+  const totalItems = useMemo(
+    () => cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0,
+    [cart?.items]
+  );
+
+  const sortedItems = useMemo(() => {
+    return [...(cart?.items || [])].sort((a, b) => {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tb - ta;
+    });
+  }, [cart?.items]);
+
+  const isEmpty = sortedItems.length === 0;
 
   const cartSubtotal = convertToLocale({
     amount: cart?.subtotal || 0,
-    currency_code: cart?.currency_code?.toUpperCase() || "USD", // Normalize to USD
+    currency_code: cart?.currency_code?.toUpperCase() || "USD",
   });
 
-  const timedOpen = () => {
-    console.log("Timed open triggered");
-    if (isLoading) return; // Prevent closing while loading
-    const timer = setTimeout(() => {
+  const startCloseTimer = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
       onClose();
-      closeSidebar(); // Close sidebar via useUI
-    }, 10000); // Increased to 10 seconds for slower connections
-    setActiveTimer(timer);
+      closeSidebar();
+    }, 5000);
   };
 
+  // ⬇️ only open when sidebar is closed AND we have items
   useEffect(() => {
-    return () => {
-      if (activeTimer) {
-        clearTimeout(activeTimer);
-      }
-    };
-  }, [activeTimer]);
-
-  useEffect(() => {
-    if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
-      setIsLoading(true);
-      openSidebar({ view: "CART_SIDEBAR" }); // Open sidebar
-      setTimeout(() => {
-        setIsLoading(false);
-        if (!isEmpty) {
-          timedOpen(); // Only start timer if cart is not empty
-        }
-      }, 1500); // Increased delay to 1.5 seconds for cart data
+    if (!isOpen && totalItems > 0 && !pathname.includes("/cart")) {
+      openSidebar({ view: "CART_SIDEBAR" });
+      startCloseTimer();
     }
-    itemRef.current = totalItems;
-  }, [totalItems, pathname, openSidebar, isEmpty]);
+  }, [isOpen, totalItems, pathname, openSidebar]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         isOpen &&
         sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
+        !sidebarRef.current.contains(e.target as Node)
       ) {
         onClose();
-        closeSidebar(); // Close sidebar via useUI
+        closeSidebar();
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      if (closeTimer.current) clearTimeout(closeTimer.current);
     };
   }, [isOpen, onClose, closeSidebar]);
 
   return (
     <div
-      className={`flex flex-col justify-between w-full h-full cart-drawer-main transition-transform duration-300 ${
-        isOpen ? "translate-x-0" : "translate-x-full"
-      }`}
       ref={sidebarRef}
+      className={classNames(
+        "flex flex-col justify-between w-full h-full cart-drawer-main transition-transform duration-300",
+        {
+          "translate-x-0": isOpen,
+          "translate-x-full": !isOpen,
+        }
+      )}
     >
-      <div className="w-full flex justify-between items-center relative px-5 md:px-7 py-4 border-b border-gray-100">
+      {/* Header */}
+      <div className="flex w-full justify-between items-center px-5 md:px-7 py-4 border-b border-gray-100 relative">
         <h2 className="m-0 text-xl font-bold md:text-2xl text-heading">
           {t("text-shopping-cart")}
         </h2>
         <button
-          className="flex items-center justify-center px-4 text-2xl text-gray-500 transition-opacity focus:outline-none hover:opacity-60"
+          aria-label="close"
+          className="flex items-center justify-center px-4 text-2xl text-gray-500 hover:opacity-60 focus:outline-none transition-opacity"
           onClick={() => {
             onClose();
-            closeSidebar(); // Close sidebar via useUI
+            closeSidebar();
           }}
-          aria-label="close"
         >
           <IoClose className="text-black" />
         </button>
       </div>
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center px-5 pt-8 pb-5 md:px-7">
-          <p className="text-lg text-gray-500">{t("text-loading")}</p>
-        </div>
-      ) : !isEmpty ? (
-        <div className="flex-grow w-full overflow-y-scroll max-h-[402px] no-scrollbar px-5 md:px-7">
+
+      {/* Body */}
+      {!isEmpty ? (
+        <div className="flex-grow w-full overflow-y-auto max-h-[402px] no-scrollbar px-5 md:px-7">
           <Table>
             <Table.Header>
               <Table.Row>
@@ -121,23 +127,19 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {cart?.items
-                ?.sort((a, b) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1;
-                })
-                .map((item) => (
-                  <CartItem
-                    key={item.id}
-                    item={item}
-                    currencyCode={cart?.currency_code?.toUpperCase() || "USD"}
-                  />
-                ))}
+              {sortedItems.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  currencyCode={cart?.currency_code?.toUpperCase() || "USD"}
+                />
+              ))}
             </Table.Body>
           </Table>
         </div>
       ) : (
         <div
-          className="flex flex-col items-center justify-center px-5 pt-8 pb-5 md:px-7 transition-opacity duration-200 ease-in-out"
+          className="flex flex-col items-center justify-center px-5 md:px-7 pt-8 pb-5 transition-opacity duration-200 ease-in-out"
           style={{ opacity: isOpen ? 1 : 0 }}
         >
           <svg
@@ -161,13 +163,18 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
         </div>
       )}
 
-      <div className="flex flex-col px-5 pt-2 pb-5 md:px-7 md:pb-7">
+      {/* Footer */}
+      <div className="flex flex-col px-5 md:px-7 pt-2 pb-5 md:pb-7">
         {!isEmpty && (
-          <div className="flex items-center justify-between text-small-regular mb-4">
-            <span className="text-ui-fg-base font-semibold">
+          <div className="flex items-center justify-between mb-4 text-small-regular">
+            <span className="font-semibold text-ui-fg-base">
               Subtotal <span className="font-normal">(excl. taxes)</span>
             </span>
-            <span className="text-large-semi" data-testid="cart-subtotal" data-value={cart?.subtotal}>
+            <span
+              className="text-large-semi"
+              data-testid="cart-subtotal"
+              data-value={cart?.subtotal}
+            >
               {cartSubtotal}
             </span>
           </div>
@@ -176,23 +183,24 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ cart, isOpen, onClose }) => {
           href={isEmpty ? "/" : "/checkout"}
           passHref
           className={classNames(
-            "w-full px-5 py-3 flex items-center justify-center bg-heading rounded-md text-sm sm:text-base text-white focus:outline-none transition duration-300 hover:bg-gray-600",
+            "w-full flex items-center justify-center px-5 py-3 text-white bg-heading rounded-md text-sm sm:text-base transition duration-300 hover:bg-gray-600 focus:outline-none",
             {
               "cursor-not-allowed bg-gray-400 hover:bg-gray-400": isEmpty,
             }
           )}
         >
-          <span className="w-full ltr:pr-5 rtl:pl-5 -mt-0.5 py-0.5">
+          <span className="py-0.5 -mt-0.5 w-full ltr:pr-5 rtl:pl-5">
             {t("text-proceed-to-checkout")}
           </span>
-          <span className="ltr:ml-auto rtl:mr-auto flex-shrink-0 -mt-0.5 py-0.5 rtl:flex">
-            <span className="ltr:border-l rtl:border-r border-white ltr:pr-5 rtl:pl-5 py-0.5" />
-            {cartSubtotal}
-          </span>
+          {!isEmpty && (
+            <span className="flex-shrink-0 rtl:flex ltr:ml-auto rtl:mr-auto py-0.5 -mt-0.5 ltr:pl-5 rtl:pr-5 border-white ltr:border-l rtl:border-r">
+              {cartSubtotal}
+            </span>
+          )}
         </LocalizedClientLink>
       </div>
     </div>
   );
 };
 
-export default CartSidebar;
+export default React.memo(CartSidebar);
