@@ -5,7 +5,6 @@ import { addToCart } from "@lib/data/cart";
 import { useIntersection } from "@lib/hooks/use-in-view";
 import { HttpTypes } from "@medusajs/types";
 import { Button } from "@medusajs/ui";
-import Divider from "@modules/common/components/divider";
 import { isEqual } from "lodash";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -48,7 +47,6 @@ export default function ProductActions({
   const countryCode = useMemo(() => {
     if (countryCodeParam) return countryCodeParam;
     const defaultCountry = region?.countries?.[0]?.iso_2 || "us";
-    console.log("Using fallback countryCode:", defaultCountry);
     return defaultCountry;
   }, [countryCodeParam, region]);
 
@@ -82,45 +80,12 @@ export default function ProductActions({
       return isEqual(variantOptions, options);
     });
 
-    console.log("Selected variant:", {
-      variantId: variant?.id,
-      title: variant?.title,
-      options,
-      variantOptions: variant ? optionsAsKeymap(variant.options) : null,
-      inventory_quantity: variant?.inventory_quantity,
-      manage_inventory: variant?.manage_inventory,
-      allow_backorder: variant?.allow_backorder,
-      prices: variant?.prices,
-    });
-
     return variant;
   }, [product.variants, options]);
 
   useEffect(() => {
     onVariantChange?.(selectedVariant);
   }, [selectedVariant, onVariantChange]);
-
-  // Log inventory, region, and variants for debugging
-  useEffect(() => {
-    console.log("ProductActions context:", {
-      productId: product.id,
-      title: product.title,
-      variantId: selectedVariant?.id,
-      inventory_quantity: selectedVariant?.inventory_quantity ?? "Not available",
-      manage_inventory: selectedVariant?.manage_inventory,
-      allow_backorder: selectedVariant?.allow_backorder,
-      countryCode,
-      regionId: region?.id,
-      regionCurrency: region?.currency_code,
-      regionCountries: region?.countries?.map((c) => c.iso_2),
-      availableVariants: product.variants?.map((v) => ({
-        id: v.id,
-        title: v.title,
-        inventory_quantity: v.inventory_quantity,
-        prices: v.prices,
-      })),
-    });
-  }, [product.id, product.title, product.variants, selectedVariant, countryCode, region]);
 
   const setOptionValue = (optionId: string, value: string) => {
     setOptions((prev) => ({
@@ -153,12 +118,6 @@ export default function ProductActions({
   const hasValidPrice = useMemo(() => {
     if (!selectedVariant?.id) return false;
     const priceData = getProductPrice({ product, variantId: selectedVariant.id, region });
-    console.log("Variant price check:", {
-      variantId: selectedVariant.id,
-      variantPrice: priceData.variantPrice,
-      regionCurrency: region?.currency_code,
-      prices: selectedVariant?.prices || [],
-    });
     return !!priceData.variantPrice;
   }, [selectedVariant, product, region]);
 
@@ -168,57 +127,32 @@ export default function ProductActions({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id || !isValidVariant) {
       toast.error(t("select-variant", "Please select a valid variant"));
-      console.warn("Invalid variant selection:", { options, selectedVariant });
       return;
     }
 
     if (!inStock) {
       toast.error(t("out-of-stock", "Selected item is out of stock"));
-      console.warn("Out of stock:", {
-        variantId: selectedVariant.id,
-        inventory_quantity: selectedVariant.inventory_quantity,
-        quantity,
-      });
       return;
     }
 
     if (!countryCode) {
       toast.error(t("error-country-code", "Unable to determine region"));
-      console.error("Country code unavailable", {
-        countryCodeParam,
-        regionId: region?.id,
-        regionCountries: region?.countries,
-      });
       return;
     }
 
     if (quantity <= 0) {
       toast.error(t("invalid-quantity", "Quantity must be greater than 0"));
-      console.warn("Invalid quantity:", { quantity });
       return;
     }
 
     if (!hasValidPrice) {
       toast.error(t("no-price", "Selected variant has no price defined"));
-      console.warn("No price for variant:", {
-        variantId: selectedVariant.id,
-        prices: selectedVariant?.prices || [],
-        regionCurrency: region?.currency_code,
-        priceData: getProductPrice({ product, variantId: selectedVariant.id, region }),
-      });
       return;
     }
 
     setIsAdding(true);
 
     try {
-      console.log("Calling addToCart with:", {
-        variantId: selectedVariant.id,
-        quantity,
-        countryCode,
-        regionId: region?.id,
-      });
-
       await addToCart({
         variantId: selectedVariant.id,
         quantity,
@@ -253,25 +187,6 @@ export default function ProductActions({
       }
 
       toast.error(userMessage);
-      console.error("Failed to add item to cart:", {
-        errorMessage: error.message,
-        errorDetails: {
-          status: error.status,
-          code: error.code,
-          response: error.response?.data || error.response,
-          type: error.type,
-        },
-        stack: error.stack,
-        variantId: selectedVariant.id,
-        quantity,
-        countryCode,
-        regionId: region?.id,
-        productId: product.id,
-        availableVariants: product.variants?.map((v) => v.id),
-        prices: selectedVariant?.prices || [],
-        regionCurrency: region?.currency_code,
-        priceData: getProductPrice({ product, variantId: selectedVariant.id, region }),
-      });
     } finally {
       setIsAdding(false);
     }
@@ -299,11 +214,10 @@ export default function ProductActions({
                 data-testid={`option-${option.id}`}
               />
             ))}
-            <Divider />
           </div>
         )}
       </div>
-      <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
+      <div className="flex items-center py-8 space-x-4 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
         {(product.variants?.length === 0 || selectedVariant) && (
           <div className="group flex items-center justify-between rounded-md overflow-hidden flex-shrink-0 border h-11 md:h-12 border-gray-300">
             <button

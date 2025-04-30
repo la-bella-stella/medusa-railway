@@ -33,11 +33,11 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
       <h3 className="font-semibold capitalize text-base md:text-lg text-heading mb-2.5">
         {title}
       </h3>
-      <ul className="colors flex flex-wrap ltr:-mr-3 rtl:-ml-3" data-testid={dataTestId}>
+      <ul className="colors flex flex-wrap ltr:-mr-10 rtl:-ml-10 gap-4" data-testid={dataTestId}>
         {option.values.map((v) => {
           const isSelected = v.value === current;
           const liClasses = clx(
-            "cursor-pointer rounded border min-w-[36px] md:min-w-[44px] min-h-[36px] md:min-h-[44px] p-1 mb-2 md:mb-3 ltr:mr-2 rtl:ml-2 ltr:md:mr-3 rtl:md:ml-3 flex justify-center items-center text-heading text-xs md:text-sm uppercase font-semibold transition duration-200 ease-in-out",
+            "cursor-pointer rounded border min-w-[36px] md:min-w-[44px] min-h-[36px] md:min-h-[44px] p-1 mb-2 md:mb-3 ltr:mr-8! rtl:ml-8! ltr:md:mr-10! rtl:md:ml-10! flex justify-center items-center text-heading text-xs md:text-sm uppercase font-semibold transition duration-200 ease-in-out debug-border",
             {
               "border-black": isSelected,
               "border-gray-100": !isSelected,

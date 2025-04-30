@@ -122,9 +122,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               <ProductActionsWrapper product={product} region={region} />
             </Suspense>
           </div>
-          <div className="flex items-center py-8 space-x-4 border-b border-gray-300 rtl:md:pl-32 rtl:lg:pl-12 rtl:2xl:pl-32 rtl:3xl:pl-48">
-            <ProductOnboardingCta />
-          </div>
         </div>
       </div>
 
