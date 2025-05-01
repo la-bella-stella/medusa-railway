@@ -2,16 +2,15 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
-interface CustomFieldValue {
+interface Value {
   id: string;
   value: string;
 }
 
 interface CustomFieldFilterProps {
   label: string;
-  values: CustomFieldValue[];
+  values: Value[];
   isLoading: boolean;
   selected: string[];
   onChange: (next: string[]) => void;
@@ -33,39 +32,51 @@ export default function CustomFieldFilter({
 
   const visible = isExpanded ? values : values.slice(0, 5);
 
-  const toggle = (val: string) => {
-    if (selected.includes(val)) {
-      onChange(selected.filter((v) => v !== val));
+  const toggle = (id: string) => {
+    if (selected.includes(id)) {
+      onChange(selected.filter((v) => v !== id));
     } else {
-      onChange([...selected, val]);
+      onChange([...selected, id]);
     }
   };
 
   return (
-    <div className="border-t border-gray-200 py-4">
+    <div>
       <div
         className="flex items-center justify-between cursor-pointer mb-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="text-lg font-semibold">{label}</h3>
-        {isExpanded ? <FaChevronUp size={16} /> : <FaChevronDown size={16} />}
+        <h3 className="text-heading text-sm md:text-base font-semibold">
+          {label}
+        </h3>
+        <svg
+          stroke="currentColor"
+          fill="currentColor"
+          strokeWidth="0"
+          viewBox="0 0 448 512"
+          height="16"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M207.029 381.476L12.686 187.132c-9.373-9.373-9.373-24.569 0-33.941l22.667-22.667c9.357-9.357 24.522-9.375 33.901-.04L224 284.505l154.745-154.021c9.379-9.335 24.544-9.317 33.901.04l22.667 22.667c9.373 9.373 9.373 24.569 0 33.941L240.971 381.476c-9.373 9.372-24.569 9.372-33.942 0z"></path>
+        </svg>
       </div>
       <div className="mt-2">
-        {visible.map((item) => (
-          <label key={item.id} className="block py-1">
+        {visible.map((v) => (
+          <label key={v.id} className="block py-1">
             <input
               type="checkbox"
               className="mr-2"
-              checked={selected.includes(item.value)}
-              onChange={() => toggle(item.value)}
+              checked={selected.includes(v.id)}
+              onChange={() => toggle(v.id)}
             />
-            {item.value}
+            {v.value}
           </label>
         ))}
         {values.length > 5 && (
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
             className="text-blue-500 mt-2"
+            onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded
               ? t("text-show-less", "Show Less")

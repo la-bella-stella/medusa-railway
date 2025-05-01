@@ -128,7 +128,7 @@ const ProductCard: FC<ProductProps> = ({
     >
       <div
         className={cn(
-          "relative w-full aspect-[1/1] overflow-hidden",
+          "relative w-full aspect-[3/4] overflow-hidden",
           imageContentClassName
         )}
       >
@@ -186,7 +186,7 @@ const ProductCard: FC<ProductProps> = ({
 
         {/* Sale Label */}
         {priceData?.price_type === "sale" && priceData.percentage_diff && (
-          <div className="absolute top-1 end-0"> {/* Adjusted top-0 to top-1 */}
+          <div className="absolute top-1 end-0">
             <div className="flex justify-end">
               <span className="flex items-center bg-red-500 text-white text-[11px] px-2.5 py-1.5 rounded-md leading-tight font-semibold">
                 <svg
@@ -216,7 +216,7 @@ const ProductCard: FC<ProductProps> = ({
         )}
 
         {inventoryQuantity === 0 && (
-          <span className="absolute top-1 start-0 text-xs text-white bg-gray-600 px-2 py-1 rounded-md"> {/* Adjusted top-0 to top-1 */}
+          <span className="absolute top-1 start-0 text-xs text-white bg-gray-600 px-2 py-1 rounded-md">
             {t("text-out-stock", "Out of Stock")}
           </span>
         )}

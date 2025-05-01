@@ -94,3 +94,14 @@ export interface Filters {
   season: string[];
   price: string[];
 }
+
+export interface Filters {
+  category: string[];
+  brand: string[];
+  collection: string[];
+  grouped_color: string[];
+  gender: string[];
+  season: string[];
+  price: string[];
+  tags: string[];
+}
