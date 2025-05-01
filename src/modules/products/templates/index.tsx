@@ -84,17 +84,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
-      <div className="pt-12">
+      <div className="md:pt-12">
         <div className="flex items-center chawkbazarBreadcrumb">
           <ol className="flex items-center w-full overflow-hidden">
             <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
               <Link href="/">Home</Link>
             </li>
-            <li className="text-base text-body mt-0.5">/</li>
             <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
               <Link href="/products" className="capitalize">products</Link>
             </li>
-            <li className="text-base text-body mt-0.5">/</li>
             <li className="text-sm text-body px-2.5 transition duration-200 ease-in first:pl-0 last:pr-0 hover:text-heading">
               <Link href={`/products/${product.handle}`} className="capitalize">
                 {product.title.toLowerCase()}

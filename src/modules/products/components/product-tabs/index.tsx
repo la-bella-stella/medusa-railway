@@ -48,7 +48,7 @@ const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
                   {value}
                 </Link>
               ) : (
-                <span className="text-right">{value}</span>
+                <span className="text-right text-gray-500">{value}</span>
               )}
             </li>
           ) : null

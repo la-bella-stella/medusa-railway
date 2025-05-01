@@ -97,7 +97,7 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Main content */}
-            <main className="relative pt-16">{children}</main>
+            <main className="relative pt-8 md:pt-16">{children}</main>
 
             {/* Footer */}
             <Footer />
