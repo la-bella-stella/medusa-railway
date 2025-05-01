@@ -25,7 +25,7 @@ const Subscription: React.FC<Props> = ({
   return (
     <div
       className={cn(
-        "flex flex-col justify-center xl:justify-between items-center rounded-lg bg-gray-200 py-10 md:py-14 lg:py-16",
+        "flex flex-col justify-center xl:justify-between items-center md:items-start rounded-lg bg-gray-200 py-10 md:py-14 lg:py-16",
         className,
         variant === "default" && "xl:flex-row"
       )}
