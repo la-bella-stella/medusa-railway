@@ -2,7 +2,7 @@
 
 import { Text } from "@medusajs/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { FaFacebookF, FaInstagram } from "react-icons/fa"
+import { FaFacebookF, FaInstagram, FaStripe } from "react-icons/fa"
 import { useTranslation } from "react-i18next"
 
 const footerDictionary = {
@@ -112,7 +112,7 @@ export default function Footer() {
               © {new Date().getFullYear()} {t(footerDictionary.copyright)}
             </Text>
             <div className="mb-2 md:mb-0">
-              <span className="text-gray-300 text-sm">{t(footerDictionary.stripe)}</span>
+              <FaStripe className="text-gray-300 text-lg md:text-xl lg:text-2xl" />
             </div>
           </div>
         </div>
