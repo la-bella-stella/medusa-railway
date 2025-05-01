@@ -1,4 +1,3 @@
-// src/modules/layout/components/header-menu/index.tsx
 import React, { useState } from "react";
 import { usePopper } from "react-popper";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
@@ -41,7 +40,7 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
           message={t("text-maintenance-mode-title")}
           variant="info"
           className="fixed top-0 left-0 z-40 w-full bg-white border-b border-gray-200"
-          childClassName="flex justify-center items-center w-full gap-4 text-sm font-semibold text-gray-700 py-2"
+          childClassName="flex justify-center items-center w-full gap-4 text-sm text-gray-700 py-2"
         >
           <CountdownTimer
             date={new Date("2025-07-11T05:00:00")}
@@ -68,14 +67,20 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
               referenceElement,
               popperElement,
               {
-                placement: "bottom-start",
+                placement: "bottom",
                 modifiers: [
-                  { name: "offset", options: { offset: [0, 25] } },
+                  { name: "offset", options: { offset: [0, 10] } },
                   {
                     name: "preventOverflow",
                     options: {
                       rootBoundary: "viewport",
                       padding: 16,
+                    },
+                  },
+                  {
+                    name: "flip",
+                    options: {
+                      fallbackPlacements: ["top", "bottom"],
                     },
                   },
                 ],
@@ -87,7 +92,7 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
                 <LocalizedClientLink
                   href={item.path}
                   className={classNames(
-                    "relative inline-flex items-center py-2 transition-colors",
+                    "relative inline-flex items-center py-2 transition-colors font-normal",
                     {
                       "text-red-500 hover:text-red-600":
                         index === data.length - 1,
@@ -95,15 +100,15 @@ const HeaderMenu: React.FC<MenuProps> = ({ data, className }) => {
                   )}
                   ref={setReferenceElement}
                 >
-                  {t(item.label.trim())} {/* Trim whitespace */}
+                  {t(item.label.trim())}
                 </LocalizedClientLink>
 
                 {item.columns && (
                   <div
                     ref={setPopperElement}
-                    style={styles.popper}
+                    style={{ ...styles.popper, minWidth: "200px" }}
                     {...attributes.popper}
-                    className="megaMenu opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+                    className="megaMenu opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
                   >
                     <MegaMenu columns={item.columns} image={item.image} />
                   </div>

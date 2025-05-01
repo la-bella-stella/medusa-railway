@@ -1,4 +1,3 @@
-// src/modules/common/components/subscription/mailchimp-form.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -15,6 +14,7 @@ interface CustomFormProps {
   message: string | Error | null;
   onValidated: any;
   layout: "subscribe" | "newsletter";
+  className?: string;
 }
 
 const CustomForm: React.FC<CustomFormProps> = ({
@@ -22,8 +22,8 @@ const CustomForm: React.FC<CustomFormProps> = ({
   message,
   onValidated,
   layout,
+  className,
 }) => {
-  // we only need the 'common' namespace here; we'll pull the placeholder from 'forms'
   const { t } = useTranslation("common");
   const [email, setEmail] = useState("");
   const [, setSuccessMessage] = useAtom(subscribeAtomSuccessfully);
@@ -42,19 +42,21 @@ const CustomForm: React.FC<CustomFormProps> = ({
     <form
       onSubmit={handleSubmit}
       className={cn(
-        "flex flex-row gap-2 w-full sm:w-96 md:w-[545px] z-10 relative items-center",
-        layout === "newsletter" && "pt-8 sm:pt-10 md:pt-14 mb-1 sm:mb-0"
+        "flex flex-row gap-2 w-full sm:w-96 md:w-[400px] z-10 relative items-center",
+        layout === "newsletter" && "flex-col sm:flex-row pt-4 sm:pt-0",
+        className
       )}
     >
       <input
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        /* pull placeholder from the 'forms' namespace explicitly */
         placeholder={t("placeholder-email-subscribe", { ns: "forms" })}
         className={cn(
-          "flex-1 px-4 lg:px-7 h-12 lg:h-14 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-600 text-center ltr:sm:text-left rtl:sm:text-right bg-white",
-          layout === "newsletter" && "text-center bg-gray-50"
+          "flex-1 px-4 h-12 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder-gray-400 text-sm bg-white",
+          layout === "newsletter"
+            ? "w-full text-center"
+            : "text-center ltr:sm:text-left rtl:sm:text-right"
         )}
         required
         disabled={status === "sending"}
@@ -62,20 +64,16 @@ const CustomForm: React.FC<CustomFormProps> = ({
 
       <Button
         className={cn(
-          "px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition w-auto",
+          "h-12 px-4 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition text-sm font-medium",
           layout === "newsletter"
-            ? "w-full h-12 lg:h-14 mt-3 sm:mt-4"
-            : "ltr:sm:ml-2 rtl:sm:mr-2 md:h-full flex-shrink-0"
+            ? "w-full sm:w-auto mt-2 sm:mt-0"
+            : "ltr:sm:ml-2 rtl:sm:mr-2"
         )}
         disabled={status === "sending"}
       >
-        <span className={layout === "newsletter" ? "lg:py-0.5" : "lg:py-0.5"}>
-          {status === "sending"
-            /* subscribe-sending lives in forms.json */
-            ? t("subscribe-sending", { ns: "forms" })
-            /* button-subscribe lives in common.json */
-            : t("button-subscribe")}
-        </span>
+        {status === "sending"
+          ? t("subscribe-sending", { ns: "forms" })
+          : t("button-subscribe")}
       </Button>
     </form>
   );
@@ -83,10 +81,12 @@ const CustomForm: React.FC<CustomFormProps> = ({
 
 interface MailchimpFormProps {
   layout: "subscribe" | "newsletter";
+  className?: string;
 }
 
 const MailchimpForm: React.FC<MailchimpFormProps> = ({
   layout = "newsletter",
+  className,
 }) => {
   const url = process.env.NEXT_PUBLIC_MAILCHIMP_URL as string;
 
@@ -99,6 +99,7 @@ const MailchimpForm: React.FC<MailchimpFormProps> = ({
           message={message}
           layout={layout}
           onValidated={(formData: any) => subscribe(formData)}
+          className={className}
         />
       )}
     />

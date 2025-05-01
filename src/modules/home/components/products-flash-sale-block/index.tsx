@@ -26,7 +26,7 @@ interface ProductsProps {
 
 const breakpoints = {
   "1500": {
-    slidesPerView: 5,
+    slidesPerView: 4,
     spaceBetween: 28,
   },
   "1025": {

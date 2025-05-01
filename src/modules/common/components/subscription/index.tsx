@@ -1,4 +1,3 @@
-// src/modules/common/components/subscription/index.tsx
 "use client";
 import cn from "classnames";
 import { useTranslation } from "react-i18next";
@@ -26,23 +25,25 @@ const Subscription: React.FC<Props> = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col lg:flex-row justify-center lg:justify-between items-center rounded-lg bg-gray-200 py-10 md:py-14 lg:py-16",
-        className
+        "flex flex-col justify-center xl:justify-between items-center rounded-lg bg-gray-200 py-10 md:py-14 lg:py-16",
+        className,
+        variant === "default" && "xl:flex-row"
       )}
     >
       <div
         className={cn(
-          "flex flex-col items-center lg:items-start -mt-1.5 lg:-mt-2 xl:-mt-0.5 text-center lg:text-left",
+          "-mt-1.5 lg:-mt-2 xl:-mt-0.5 text-center",
+          dir === "rtl" ? "xl:text-right" : "xl:text-left",
           variant === "default" ? "mb-7 md:mb-8 lg:mb-9 xl:mb-0" : "mb-7 z-10 relative"
         )}
       >
         <Text
           variant="mediumHeading"
-          className="text-xl md:text-2xl lg:text-3xl xl:leading-10 font-bold mb-2 md:mb-2.5 lg:mb-3 xl:mb-3.5"
+          className="mb-2 md:mb-2.5 lg:mb-3 xl:mb-3.5"
         >
           {tCommon("text-subscribe-heading")}
         </Text>
-        <p className="text-body text-xs md:text-sm leading-6 md:leading-7 text-gray-600 mb-4">
+        <p className="text-body text-xs md:text-sm leading-6 md:leading-7 mb-4 md:mb-5 lg:mb-6">
           {tCommon("text-subscribe-description")}
         </p>
         {successMessage ? (
@@ -71,10 +72,10 @@ const Subscription: React.FC<Props> = ({
             </div>
           </div>
         ) : (
-          <MailchimpForm layout="subscribe" />
+          <MailchimpForm layout="subscribe" className="mt-2 md:mt-3 lg:mt-4" />
         )}
       </div>
-      {variant === "modern" && (
+      {variant === "modern" ? (
         <div
           style={{
             backgroundImage:
@@ -83,13 +84,15 @@ const Subscription: React.FC<Props> = ({
                 : "url(/assets/images/subscription-bg.png)",
           }}
           className={cn(
-            "hidden z-0 lg:block bg-no-repeat",
+            "hidden z-0 xl:block bg-no-repeat",
             dir === "rtl"
               ? "bg-left 2xl:-left-12 3xl:left-0"
               : "bg-right xl:-right-24 2xl:-right-20 3xl:right-0",
             "bg-contain xl:bg-cover 3xl:bg-contain absolute h-full w-full top-0"
           )}
         />
+      ) : (
+        ""
       )}
     </div>
   );

@@ -75,7 +75,7 @@ export default function DesktopNav({
     <div
       className={classNames(
         "w-full bg-white fixed top-0 left-0 z-20",
-        { "lg:h-28 pb-4": showAlert, "lg:h-24": !showAlert }
+        { "lg:h-28 pb-4": showAlert, "lg:h-26": !showAlert }
       )}
     >
       {/* Maintenance alert */}
@@ -98,7 +98,7 @@ export default function DesktopNav({
       <div className="hidden lg:flex content-container px-4 lg:px-6 items-center justify-between h-14">
         {/* Search */}
         <button onClick={() => {/* open your desktop search here if needed */}}>
-          <SearchIcon className="w-8 h-8 text-gray-600" />
+          <SearchIcon className="w-6 h-6 text-gray-600" />
         </button>
 
         {/* Logo */}
@@ -126,7 +126,7 @@ export default function DesktopNav({
             className="relative focus:outline-none"
             aria-label="cart-button"
           >
-            <CartIcon className="w-8 h-8 text-gray-600" />
+            <CartIcon className="w-6 h-6 text-gray-600" />
             {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                 {totalItems}
