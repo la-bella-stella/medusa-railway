@@ -125,6 +125,7 @@ const ProductsFlashSaleBlock: React.FC<ProductsProps> = ({
                   breakpoints={breakpoints}
                   buttonClassName="-mt-8 md:-mt-10"
                   autoplay={{ delay: 3500 }}
+                  showNavigation={false}
                   prevActivateId="flashSellSlidePrev"
                   nextActivateId="flashSellSlideNext"
                 >
