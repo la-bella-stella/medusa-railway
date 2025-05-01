@@ -1,3 +1,5 @@
+"use client";
+
 import { HttpTypes } from "@medusajs/types";
 import ProductCard from "@modules/products/components/product-card";
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products";
