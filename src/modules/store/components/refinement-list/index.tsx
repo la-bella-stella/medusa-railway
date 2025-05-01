@@ -1,3 +1,5 @@
+"use client"; // Add this directive
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { SortOptions } from "./sort-products";
 import { useState } from "react";
