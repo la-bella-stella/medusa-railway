@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import Image from "next/image";
 import Text from "@modules/common/components/text";
@@ -27,13 +28,7 @@ const HomeCollectionCard: React.FC<Props> = ({
   const { slug, image, title } = collection;
   const isFull = variant === "full";
 
-  // Render a loading state until translations are ready
   if (!ready) return <div>Loading...</div>;
-
-  // Compute padding-top % to enforce correct aspect ratio
-  const paddingTopPercent = !isFull
-    ? `${(imgHeight / imgWidth) * 100}%`
-    : undefined;
 
   return (
     <LocalizedClientLink
@@ -46,44 +41,26 @@ const HomeCollectionCard: React.FC<Props> = ({
         }
       )}
     >
-      {/* Image wrapper */}
-      <div
-        className={cn("relative", !isFull && "mx-auto")}
-        {...(!isFull
-          ? { style: { width: `${imgWidth}px` } }
-          : {})}
-      >
-        {!isFull ? (
-          // Aspect-ratio box for non-full variants
-          <div
-            className="relative w-full"
-            style={{ paddingTop: paddingTopPercent! }}
-          >
-            <Image
-              src={image ?? "/assets/placeholder/collection.svg"}
-              alt={t("text-card-thumbnail")}
-              fill
-              className="absolute top-0 left-0 w-full h-full bg-gray-300 object-cover sm:rounded-md transition duration-200 ease-in-out group-hover:opacity-90"
-              priority
-            />
-          </div>
-        ) : (
-          // Full variant just uses imgWidth/imgHeight directly
-          <Image
-            src={image ?? "/assets/placeholder/collection.svg"}
-            alt={t("text-card-thumbnail")}
-            width={imgWidth}
-            height={imgHeight}
-            className="bg-gray-300 object-cover w-full h-auto sm:rounded-md transition duration-200 ease-in-out group-hover:opacity-90"
-            priority
-          />
-        )}
+      <div className={cn("relative", isFull ? "" : "mx-auto")}>
+        <Image
+          src={image ?? "/assets/placeholder/collection.svg"}
+          alt={t("title") || t("text-card-thumbnail")}
+          width={imgWidth}
+          height={imgHeight}
+          className={cn(
+            "bg-gray-300 object-cover sm:rounded-md transition duration-200 ease-in-out group-hover:opacity-90",
+            {
+              "w-full h-auto": isFull,
+            }
+          )}
+          priority
+        />
+
         {variant === "trendy" && (
           <div className="absolute bottom-[-12px] right-[-12px] p-2" />
         )}
       </div>
 
-      {/* Text block */}
       <div className="home-collection-text-block mt-2">
         <Text
           variant="heading"
