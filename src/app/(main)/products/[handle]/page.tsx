@@ -1,7 +1,10 @@
+"use server";
+
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listProducts, getProductByHandle } from "@lib/data/products";
 import { getRegion } from "@lib/data/regions";
+import { retrieveCollection } from "@lib/data/collections"; // Import collection fetch
 import ProductTemplate from "@modules/products/templates";
 import { HttpTypes } from "@medusajs/types";
 
@@ -30,7 +33,7 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
-  const { handle } = await params; // Await params
+  const { handle } = await params;
   const region = await getRegion();
   const regionId = region?.id || DEFAULT_REGION_ID;
   const product = await getProductByHandle(handle, regionId);
@@ -53,8 +56,8 @@ export default async function ProductPage({
   params: Params;
   searchParams: SearchParams;
 }) {
-  const { handle } = await params; // Await params
-  const { countryCode } = await searchParams; // Await searchParams
+  const { handle } = await params;
+  const { countryCode } = await searchParams;
 
   let region = await getRegion().catch(() => null);
   if (!region) {
@@ -67,6 +70,22 @@ export default async function ProductPage({
 
   const product = await getProductByHandle(handle, region.id);
   if (!product) notFound();
+
+  // Fetch the associated collection as the brand
+  let brand: { name: string; handle: string } | undefined;
+  if (product.collection_id) {
+    try {
+      const collection = await retrieveCollection(product.collection_id);
+      if (collection) {
+        brand = {
+          name: collection.title,
+          handle: collection.handle!,
+        };
+      }
+    } catch (e) {
+      console.error(`Error fetching collection for product ${handle}:`, e);
+    }
+  }
 
   console.log("ProductPage inventory:", {
     handle,
@@ -82,7 +101,7 @@ export default async function ProductPage({
   });
 
   const mappedProduct: HttpTypes.StoreProduct & {
-    brand?: { name: string };
+    brand?: { name: string; handle: string };
     type?: HttpTypes.StoreProductType | null;
     handle: string;
     subtitle: string | null;
@@ -92,9 +111,7 @@ export default async function ProductPage({
     metadata?: { season?: string | null; gender?: string | null };
   } = {
     ...product,
-    brand: product.metadata?.brand
-      ? { name: String(product.metadata.brand) }
-      : undefined,
+    brand, // Use collection-based brand
     type: product.type ?? null,
     handle: product.handle!,
     subtitle: product.subtitle ?? null,

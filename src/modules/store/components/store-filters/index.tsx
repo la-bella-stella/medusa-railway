@@ -2,9 +2,8 @@
 
 import React from "react";
 import type { Filters } from "types/global";
-import BrandFilter from "@modules/store/components/brand-filter";
 import CategoryFilter from "@modules/store/components/category-filter";
-import CollectionFilter from "@modules/store/components/collection-filter";
+import CollectionFilter from "@modules/store/components/brand-filter";
 import GroupedColorFilter from "@modules/store/components/grouped-color-filter";
 import CustomFieldFilter from "@modules/store/components/custom-field-filter";
 import PriceFilter from "@modules/store/components/price-filter";
@@ -14,10 +13,11 @@ interface StoreFiltersProps {
   filters: Filters;
   onChange?: (next: Filters) => void;
   className?: string;
+  countryCode?: string;
   filterData?: {
     tags: any[];
     categories: HttpTypes.StoreProductCategory[];
-    collections: any[];
+    collections: { id: string; title: string; handle: string }[];
     brands: { id: string; name: string; slug: string }[];
     colors: { id: string; value: string; meta: string }[];
   };
@@ -27,6 +27,7 @@ export default function StoreFilters({
   filters,
   onChange = () => {},
   className,
+  countryCode = "us",
   filterData = {
     tags: [],
     categories: [],
@@ -35,7 +36,6 @@ export default function StoreFilters({
     colors: [],
   },
 }: StoreFiltersProps) {
-  // Derive gender, season, and size from tags
   const genderTags = filterData.tags
     .filter((t: any) =>
       ["men", "women"].some((g) => t.value.toLowerCase().includes(g))
@@ -56,13 +56,11 @@ export default function StoreFilters({
     )
     .map((t: any) => ({ id: t.id, value: t.value }));
 
-  // Helper to update one key in the filters object
   const update = (key: keyof Filters, next: string[]) =>
     onChange({ ...filters, [key]: next });
 
   return (
     <div className={`flex flex-col gap-y-4 ${className || ""}`}>
-      {/* Category */}
       {filterData.categories.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CategoryFilter
@@ -79,19 +77,6 @@ export default function StoreFilters({
         </div>
       )}
 
-      {/* Brand */}
-      {filterData.brands.length > 0 && (
-        <div className="block border-b border-gray-300 pb-7 mb-7">
-          <BrandFilter
-            brands={filterData.brands}
-            isLoading={false}
-            selected={filters.brand ?? []}
-            onChange={(next) => update("brand", next)}
-          />
-        </div>
-      )}
-
-      {/* Collection */}
       {filterData.collections.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CollectionFilter
@@ -99,11 +84,12 @@ export default function StoreFilters({
             isLoading={false}
             selected={filters.collection ?? []}
             onChange={(next) => update("collection", next)}
+            label="Brand"
+            countryCode={countryCode}
           />
         </div>
       )}
 
-      {/* Price */}
       <div className="block border-b border-gray-300 pb-7 mb-7">
         <PriceFilter
           selected={filters.price ?? []}
@@ -111,7 +97,6 @@ export default function StoreFilters({
         />
       </div>
 
-      {/* Color */}
       {filterData.colors.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <GroupedColorFilter
@@ -123,7 +108,6 @@ export default function StoreFilters({
         </div>
       )}
 
-      {/* Size */}
       {sizeTags.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CustomFieldFilter
@@ -136,7 +120,6 @@ export default function StoreFilters({
         </div>
       )}
 
-      {/* Gender */}
       {genderTags.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CustomFieldFilter
@@ -149,7 +132,6 @@ export default function StoreFilters({
         </div>
       )}
 
-      {/* Season */}
       {seasonTags.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CustomFieldFilter
@@ -162,7 +144,6 @@ export default function StoreFilters({
         </div>
       )}
 
-      {/* Tags */}
       {filterData.tags.length > 0 && (
         <div className="block border-b border-gray-300 pb-7 mb-7">
           <CustomFieldFilter

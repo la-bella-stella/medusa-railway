@@ -8,15 +8,16 @@ import ProductCard from "@modules/products/components/product-card";
 const PRODUCT_LIMIT = 12;
 
 export default function PaginatedProducts({
-  sortBy,       // optional sort key
+  sortBy,
   page: pageProp,
-  categoryId,   // kept for signature consistency
-  countryCode,  // kept for signature consistency
+  categoryId,
+  countryCode,
   products,
   totalCount,
   region,
 }: {
   sortBy?: string;
+  brand?: string;
   page: string | number;
   categoryId?: string;
   countryCode: string;
@@ -24,11 +25,16 @@ export default function PaginatedProducts({
   totalCount: number;
   region: HttpTypes.StoreRegion | null;
 }) {
-  // Normalize page to number
   const page = typeof pageProp === 'string' ? parseInt(pageProp, 10) || 1 : pageProp;
   const totalPages = Math.ceil(totalCount / PRODUCT_LIMIT);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  console.log("PaginatedProducts products:", products.map(p => ({
+    id: p.id,
+    title: p.title,
+    brand: (p as any).brand,
+  })));
 
   const handleLoadMore = () => {
     const params = new URLSearchParams(searchParams.toString());

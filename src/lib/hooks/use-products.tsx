@@ -155,6 +155,9 @@ export function useProducts({
         collection: p.collection
           ? { id: p.collection.id, title: p.collection.title }
           : null,
+        brand: p.collection
+          ? { id: p.collection.id, name: p.collection.title }
+          : null,
         variants: p.variants
           ? p.variants.map((v) => ({
               id: v.id,
@@ -181,7 +184,7 @@ export function useProducts({
       brand: p.collection
         ? {
             id: p.collection.id,
-            name: p.collection.title,
+            name: p.collection.title || "Unknown Brand",
           }
         : undefined,
     }));

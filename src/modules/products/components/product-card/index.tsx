@@ -45,7 +45,7 @@ const ProductCard: FC<ProductProps> = ({
     ...product,
     tags: product.tags === null ? undefined : product.tags,
   };
-
+  
   const inventoryQuantity = productForPrice.variants?.reduce(
     (total, variant) => total + (variant.inventory_quantity ?? 0),
     0
@@ -53,9 +53,9 @@ const ProductCard: FC<ProductProps> = ({
 
   const [imgError, setImgError] = useState(false);
 
-  const brandName = product.brand?.name;
+  const brandName = product.collection?.title;
 
-  // Calculate discount percentage for the sale label
+  // Calculate discount percentage for the sale label (similar to ProductPrice logic)
   const priceData = ((): { price_type: string; percentage_diff: string } | undefined => {
     let priceAmount: number | undefined;
     let msrp: number | undefined;
@@ -89,7 +89,7 @@ const ProductCard: FC<ProductProps> = ({
     );
     if (!p) return undefined;
 
-    priceAmount = p.amount;
+    priceAmount = p.amount; // Amount in dollars
     msrp = (cheapest.metadata as any)?.msrp !== undefined ? (cheapest.metadata as any).msrp : undefined;
 
     if (priceAmount !== undefined && msrp !== undefined && priceAmount < msrp) {
@@ -158,6 +158,7 @@ const ProductCard: FC<ProductProps> = ({
           />
         </noscript>
 
+        {/* Hover Image (using the first additional image if available) */}
         {product.images && product.images.length > 1 && (
           <>
             <Image
@@ -183,6 +184,7 @@ const ProductCard: FC<ProductProps> = ({
           </>
         )}
 
+        {/* Sale Label */}
         {priceData?.price_type === "sale" && priceData.percentage_diff && (
           <div className="absolute top-1 end-0">
             <div className="flex justify-end">
@@ -223,29 +225,30 @@ const ProductCard: FC<ProductProps> = ({
       <div className="card__info-container px-3 py-2 flex flex-col w-full min-h-[100px]">
         <div className="card__info-inner flex flex-col h-full w-full min-h-[100px]">
           <div className="flex flex-col">
-            {/* Brand row - Always at the top */}
-            {brandName && (
-              <p className="mb-1 text-sm font-semibold text-gray-700 truncate w-full">
-                {brandName}
-              </p>
-            )}
+            {/* Dedicated row for brand name, always takes space */}
+            <div className="h-5">
+              {brandName && (
+                <p className="mb-0 text-sm text-gray-500 opacity-70 truncate w-full">
+                  {brandName}
+                </p>
+              )}
+            </div>
 
-            {/* Title row - Directly below brand */}
-            <p className="font-bold mb-1 text-sm line-clamp-2">
+            {/* Title row, now pushed below the brand row */}
+            <p className="font-bold mb-0 text-sm line-clamp-2">
               <span className="text-current">
                 {product.title}
               </span>
             </p>
 
-            {/* Product type row - Below title, if present */}
+            {/* Product type row, if present */}
             {product.type?.value && (
-              <p className="mb-0 text-xs text-gray-500 opacity-70 truncate w-full">
+              <p className="mt-1 mb-0 text-sm text-gray-500 opacity-70 truncate w-full">
                 {product.type.value}
               </p>
             )}
           </div>
 
-          {/* Price - Aligned to the bottom */}
           <div className="flex-grow flex items-end">
             <div className={cn("inline-flex items-center space-x-2", { "text-red-500": priceData?.price_type === "sale" })}>
               <ProductPrice product={productForPrice} region={effectiveRegion} />

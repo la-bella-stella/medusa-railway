@@ -87,17 +87,7 @@ export type PriceEntry = {
 
 export interface Filters {
   category: string[];
-  brand: string[];
-  collection: string[];
-  grouped_color: string[];
-  gender: string[];
-  season: string[];
-  price: string[];
-}
-
-export interface Filters {
-  category: string[];
-  brand: string[];
+  brand?: string[]; // Made optional
   collection: string[];
   grouped_color: string[];
   gender: string[];
