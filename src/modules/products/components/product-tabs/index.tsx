@@ -10,10 +10,10 @@ type ProductTabsProps = {
     brand?: { name: string; handle: string };
     type?: HttpTypes.StoreProductType | null;
     handle: string;
-    subtitle: string | null;
-    description: string | null;
-    material: string | null;
-    origin_country: string | null;
+    subtitle?: string | null;
+    description?: string | null;
+    material?: string | null;
+    origin_country?: string | null;
     metadata?: {
       materials?: string | string[] | null;
       style?: string | null;

@@ -21,7 +21,7 @@ const DOMPurify = createDOMPurify(_window);
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct & {
-    brand?: { name: string };
+    brand?: { name: string; handle: string }; // Updated to include handle
     type?: HttpTypes.StoreProductType | null;
     handle: string;
     subtitle?: string | null;
@@ -29,8 +29,13 @@ type ProductTemplateProps = {
     material?: string | null;
     origin_country?: string | null;
     metadata?: {
+      materials?: string | string[] | null;
+      style?: string | null;
+      origin?: string | null;
       season?: string | null;
       gender?: string | null;
+      size_code?: string | null;
+      hs_code?: string | null;
     };
   };
   region: HttpTypes.StoreRegion;
@@ -55,7 +60,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   TransitionWrapper.displayName = "TransitionWrapper";
 
   const productForInfo: StoreProductWithTags & {
-    brand?: { name: string };
+    brand?: { name: string; handle: string };
     type?: HttpTypes.StoreProductType | null;
   } = {
     ...product,
