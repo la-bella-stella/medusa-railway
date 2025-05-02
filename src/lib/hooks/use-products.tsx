@@ -78,6 +78,8 @@ export function useProducts({
   grouped_color,
   season,
   tags,
+  min_price,
+  max_price,
   limit = 12,
   page = 1,
   regionId,
@@ -96,6 +98,8 @@ export function useProducts({
     grouped_color,
     season,
     tags,
+    min_price,
+    max_price,
     page,
     regionId,
     countryCode,
@@ -128,12 +132,13 @@ export function useProducts({
       collection_id: collectionIds,
       order,
       tag_id: tagIds.length ? tagIds : undefined,
+      min_price,
+      max_price,
       limit,
       offset: (pageParam - 1) * limit,
+      fields: "id,title,handle,thumbnail,collection.id,collection.title,variants,prices,tags,metadata",
     };
     Object.keys(q).forEach((k) => q[k] == null && delete q[k]);
-
-    console.log("useProducts query params:", q);
 
     const res = await listProducts({
       pageParam,
@@ -147,6 +152,9 @@ export function useProducts({
       products: res.response.products.map((p) => ({
         id: p.id,
         title: p.title,
+        collection: p.collection
+          ? { id: p.collection.id, title: p.collection.title }
+          : null,
         variants: p.variants
           ? p.variants.map((v) => ({
               id: v.id,
@@ -170,6 +178,12 @@ export function useProducts({
     let filtered = (res.response.products as StoreProductWithBrand[]).map((p) => ({
       ...p,
       variantId: p.variants && p.variants.length > 0 ? p.variants[0].id : undefined,
+      brand: p.collection
+        ? {
+            id: p.collection.id,
+            name: p.collection.title,
+          }
+        : undefined,
     }));
 
     if (grouped_color) {

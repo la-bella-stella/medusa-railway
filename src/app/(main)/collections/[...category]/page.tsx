@@ -1,8 +1,9 @@
+"use server";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategoryByHandle, listCategories } from "@lib/data/categories";
 import { getRegion, listRegions } from "@lib/data/regions";
-import { listProducts } from "@lib/data/products"; // Added import
+import { listProducts } from "@lib/data/products";
 import CollectionPageClient from "./collection-page-client";
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products";
 import { HttpTypes } from "@medusajs/types";
@@ -44,7 +45,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       description,
       alternates: { canonical: `collections/${params.category.join("/")}` },
     };
-  } catch (error) {
+  } catch {
     notFound();
   }
 }
@@ -52,32 +53,34 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function CollectionPage(props: Props) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const { sortBy, page, category, brand, collection, grouped_color, gender, season, price, tags } = searchParams;
+  const {
+    sortBy,
+    page = "1",
+    category,
+    brand,
+    collection,
+    grouped_color,
+    gender,
+    season,
+    price,
+    tags,
+  } = searchParams;
 
   const productCategory = await getCategoryByHandle(params.category);
   if (!productCategory) notFound();
 
-  console.log("Category ID:", productCategory.id); // Debug category ID
-
+  // Determine region & country
   const regions = await listRegions();
-  const countryCode = regions?.[0]?.countries?.[0]?.iso_2 || "us";
+  const DEFAULT_COUNTRY = (process.env.NEXT_PUBLIC_DEFAULT_REGION || "us").toLowerCase();
+  const countryCode = regions?.[0]?.countries?.[0]?.iso_2?.toLowerCase() ?? DEFAULT_COUNTRY;
   let region: HttpTypes.StoreRegion;
   try {
-    region = await getRegion(countryCode) || {
-      id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8", // Default region ID
-      currency_code: "USD",
-      name: "Default Region",
-    };
-  } catch (error) {
-    console.error("Failed to fetch region:", error);
-    region = {
-      id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
-      currency_code: "USD",
-      name: "Default Region",
-    };
+    region = (await getRegion(countryCode))!;
+  } catch {
+    region = { id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8", currency_code: "USD", name: "Default Region" };
   }
 
-  // Build filters from searchParams
+  // Build filters
   const filters: Filters = {
     category: category ? category.split(",") : [productCategory.id],
     brand: brand ? brand.split(",") : [],
@@ -88,142 +91,117 @@ export default async function CollectionPage(props: Props) {
     price: price ? [price] : [],
     tags: tags ? tags.split(",") : [],
   };
-
-  if (filters.price?.length) {
+  if (filters.price.length) {
     const [min, max] = filters.price[0].split("-").map((v) => v.trim());
-    if (!min || !max || isNaN(Number(min)) || isNaN(Number(max))) {
-      filters.price = [];
-    }
+    if (isNaN(Number(min)) || isNaN(Number(max))) filters.price = [];
   }
 
-  // Fetch filter data server-side using fetch
-  let filterData: {
-    tags: any[];
-    categories: HttpTypes.StoreProductCategory[];
-    collections: any[];
-    brands: { id: string; name: string; slug: string }[];
-    colors: { id: string; value: string; meta: string }[];
-  } = {
-    tags: [],
-    categories: [],
-    collections: [],
-    brands: [],
-    colors: [],
+  // Fetch filter data
+  let filterData = {
+    tags: [] as any[],
+    categories: [] as HttpTypes.StoreProductCategory[],
+    collections: [] as any[],
+    brands: [] as { id: string; name: string; slug: string }[],
+    colors: [] as { id: string; value: string; meta: string }[],
   };
 
   try {
-    const tagsResponse = await fetch(
+    // Tags and reuse for colors
+    const tagsRes = await fetch(
       `${process.env.MEDUSA_BACKEND_URL}/store/product-tags?limit=100`,
       { headers: { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" } }
     );
-    if (!tagsResponse.ok) throw new Error(`Tags API failed: ${tagsResponse.statusText}`);
-    const tagsData = await tagsResponse.json();
-    filterData.tags = tagsData.product_tags || [];
-    console.log("Tags fetched:", filterData.tags.length); // Debug tags
+    let tagsData: { product_tags?: any[] } = {};
+    if (tagsRes.ok) {
+      tagsData = await tagsRes.json();
+      filterData.tags = tagsData.product_tags || [];
+    }
 
+    // Categories
     filterData.categories = (await listCategories()) || [];
-    console.log("Categories fetched:", filterData.categories.length); // Debug categories
 
-    const collectionsResponse = await fetch(
+    // Collections
+    const colsRes = await fetch(
       `${process.env.MEDUSA_BACKEND_URL}/store/collections?limit=100`,
       { headers: { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" } }
     );
-    if (!collectionsResponse.ok) throw new Error(`Collections API failed: ${collectionsResponse.statusText}`);
-    const collectionsData = await collectionsResponse.json();
-    filterData.collections = collectionsData.collections || [];
-    console.log("Collections fetched:", filterData.collections.length); // Debug collections
+    if (colsRes.ok) {
+      const colsData = await colsRes.json();
+      filterData.collections = colsData.collections || [];
+    }
 
-    // Fetch brands
-    const brandsResponse = await fetch(
+    // Brands
+    const brandsRes = await fetch(
       `${process.env.MEDUSA_BACKEND_URL}/store/products?limit=100&fields=metadata`,
       { headers: { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" } }
     );
-    if (!brandsResponse.ok) throw new Error(`Brands API failed: ${brandsResponse.statusText}`);
-    const brandsData = await brandsResponse.json();
-    const brandSet = new Set<string>(
-      brandsData.products
-        .filter((p: any) => p.metadata?.brand)
-        .map((p: any) => JSON.stringify({
-          id: p.metadata.brand,
-          name: p.metadata.brand,
-          slug: p.metadata.brand.toLowerCase().replace(/\s+/g, "-"),
-        }))
-    );
-    filterData.brands = Array.from(brandSet, (item: string) => JSON.parse(item));
-    console.log("Brands fetched:", filterData.brands.length); // Debug brands
+    if (brandsRes.ok) {
+      const brandsData = await brandsRes.json();
+      const set = new Set<string>();
+      (brandsData.products || []).forEach((p: any) => {
+        if (p.metadata?.brand) {
+          set.add(
+            JSON.stringify({
+              id: p.metadata.brand,
+              name: p.metadata.brand,
+              slug: p.metadata.brand.toLowerCase().replace(/\s+/g, "-"),
+            })
+          );
+        }
+      });
+      filterData.brands = Array.from(set).map((s) => JSON.parse(s));
+    }
 
-    // Fetch colors
-    const colorsResponse = await fetch(
-      `${process.env.MEDUSA_BACKEND_URL}/store/product-tags?limit=100`,
-      { headers: { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" } }
-    );
-    if (!colorsResponse.ok) throw new Error(`Colors API failed: ${colorsResponse.statusText}`);
-    const colorsData = await colorsResponse.json();
-    filterData.colors = colorsData.product_tags
+    // Colors
+    filterData.colors = (tagsData.product_tags || [])
       .filter((tag: any) => tag.value.startsWith("COLOR_"))
       .map((tag: any) => ({
         id: tag.id,
         value: tag.value.replace("COLOR_", ""),
         meta: tag.metadata?.hex || "#000000",
       }));
-    console.log("Colors fetched:", filterData.colors.length); // Debug colors
-  } catch (error) {
-    console.error("Failed to fetch filter data:", error);
+  } catch (e) {
+    console.error("Error fetching filter data:", e);
   }
 
-  // Fetch products using listProducts
-  let products: HttpTypes.StoreProduct[] = [];
-  let count: number = 0;
-  try {
-    const queryParams: any = {
-      limit: 12,
-      offset: (parseInt(page || "1") - 1) * 12,
-      order: sortBy || "created_at",
-      category_id: [productCategory.id],
-    };
-
-    // Apply filters
-    if (filters.brand?.length) queryParams["metadata[brand]"] = filters.brand.join(",");
-    if (filters.collection?.length) queryParams.collection_id = filters.collection;
-    if (filters.grouped_color?.length) queryParams.tags = filters.grouped_color.map((c) => `COLOR_${c}`);
-    if (filters.gender?.length) queryParams["metadata[gender]"] = filters.gender.join(",");
-    if (filters.season?.length) queryParams["metadata[season]"] = filters.season.join(",");
-    if (filters.tags?.length) queryParams.tags = (queryParams.tags || []).concat(filters.tags);
-    if (filters.price?.length) {
-      const [min, max] = filters.price[0].split("-").map(Number);
-      queryParams.min_price = min;
-      queryParams.max_price = max;
+  // Helper to fetch products and count
+  async function fetchProducts(queryParams: Record<string, any>) {
+    try {
+      const { response } = await listProducts({
+        countryCode,
+        regionId: region.id,
+        queryParams,
+      });
+      return { products: response.products || [], count: response.count || 0 };
+    } catch (e: any) {
+      console.error("listProducts error:", e.message, queryParams);
+      return { products: [], count: 0 };
     }
-
-    const { response } = await listProducts({
-      countryCode,
-      regionId: region.id,
-      queryParams,
-    });
-
-    products = response.products || [];
-    count = response.count || 0;
-    console.log("Products fetched:", products.length, "Count:", count); // Debug products
-
-    // Map products to include expected fields for ProductCard
-    products = products.map((product: HttpTypes.StoreProduct) => ({
-      ...product,
-      brand: product.metadata?.brand ? { name: String(product.metadata.brand) } : undefined,
-      type: product.type ?? null,
-      handle: product.handle || "",
-      subtitle: product.subtitle ?? null,
-      description: product.description ?? null,
-      material: (product.metadata?.materials as string) ?? null,
-      origin_country: (product.metadata?.origin as string) ?? null,
-      metadata: {
-        season: (product.metadata?.season as string) ?? null,
-        gender: (product.metadata?.gender as string) ?? null,
-        msrp: product.variants?.[0]?.metadata?.msrp ?? undefined,
-      },
-    }));
-  } catch (error) {
-    console.error("Failed to fetch products:", error);
   }
+
+  // Build product query
+  const limit = 12;
+  const offset = (Number(page) - 1) * limit;
+  const baseQuery: Record<string, any> = {
+    limit,
+    offset,
+    order: sortBy || "created_at",
+    category_id: [productCategory.id],
+  };
+  if (filters.brand.length) baseQuery["metadata[brand]"] = filters.brand.join(",");
+  if (filters.collection.length) baseQuery.collection_id = filters.collection;
+  if (filters.grouped_color.length) baseQuery.tags = filters.grouped_color.map((c) => `COLOR_${c}`);
+  if (filters.gender.length) baseQuery["metadata[gender]"] = filters.gender.join(",");
+  if (filters.season.length) baseQuery["metadata[season]"] = filters.season.join(",");
+  if (filters.tags.length) baseQuery.tags = (baseQuery.tags || []).concat(filters.tags);
+  if (filters.price.length) {
+    const [min, max] = filters.price[0].split("-").map(Number);
+    baseQuery.min_price = min;
+    baseQuery.max_price = max;
+  }
+
+  // Fetch products and count
+  const { products, count } = await fetchProducts(baseQuery);
 
   return (
     <CollectionPageClient
