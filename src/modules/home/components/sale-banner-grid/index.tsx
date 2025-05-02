@@ -14,7 +14,7 @@ const SaleBannerGrid: React.FC<BannerProps> = ({
   className = "mb-12 lg:mb-14 xl:mb-16 lg:pb-1 xl:pb-0",
   limit = 4,
 }) => {
-  console.log("SaleBannerGrid: Data:", saleBannerGrid);
+  // console.log("SaleBannerGrid: Data:", saleBannerGrid);
 
   if (!saleBannerGrid || saleBannerGrid.length === 0) {
     return <div>No banners available.</div>;

@@ -1,7 +1,7 @@
 // src/modules/layout/templates/nav/DesktopNav.tsx
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { StoreRegion, HttpTypes } from "@medusajs/types";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import LanguageSwitcher from "@modules/common/components/language-switcher";
@@ -16,6 +16,7 @@ import HeaderMenu from "@modules/layout/components/header-menu";
 import Alert from "@modules/common/components/alert";
 import CountdownTimer from "@modules/common/components/countdown-timer";
 import CartSidebar from "@modules/layout/components/cart-sidebar";
+import SearchOverlay from "@modules/layout/components/search";
 import { useUI } from "@lib/context/ui-context";
 import {
   RESPONSIVE_WIDTH,
@@ -71,6 +72,10 @@ export default function DesktopNav({
   const openCart = () => openSidebar({ view: "CART_SIDEBAR" });
   const closeCart = () => closeSidebar();
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const openSearch = () => setIsSearchOpen(true);
+  const closeSearch = () => setIsSearchOpen(false);
+
   return (
     <div
       className={classNames(
@@ -97,7 +102,7 @@ export default function DesktopNav({
       {/* Top row (desktop only) */}
       <div className="hidden lg:flex content-container px-4 lg:px-6 items-center justify-between h-14">
         {/* Search */}
-        <button onClick={() => {/* open your desktop search here if needed */}}>
+        <button onClick={openSearch} aria-label="search-button">
           <SearchIcon className="w-6 h-6 text-gray-600" />
         </button>
 
@@ -162,6 +167,12 @@ export default function DesktopNav({
           </div>
         </>
       )}
+
+      <SearchOverlay
+        regionId={regionId}
+        isOpen={isSearchOpen}
+        onClose={closeSearch}
+      />
     </div>
   );
 }

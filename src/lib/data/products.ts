@@ -178,21 +178,21 @@ export async function listProducts(
 
     const { products, count } = response;
 
-    console.log("listProducts inventory:", {
-      count,
-      products: products.map((p) => ({
-        id: p.id,
-        title: p.title,
-        variants: p.variants
-          ? p.variants.map((v) => ({
-              id: v.id,
-              inventory_quantity: v.inventory_quantity,
-              manage_inventory: v.manage_inventory,
-              allow_backorder: v.allow_backorder,
-            }))
-          : "No variants available",
-      })),
-    });
+    // console.log("listProducts inventory:", {
+    //   count,
+    //   products: products.map((p) => ({
+    //     id: p.id,
+    //     title: p.title,
+    //     variants: p.variants
+    //       ? p.variants.map((v) => ({
+    //           id: v.id,
+    //           inventory_quantity: v.inventory_quantity,
+    //           manage_inventory: v.manage_inventory,
+    //           allow_backorder: v.allow_backorder,
+    //         }))
+    //       : "No variants available",
+    //   })),
+    // });
 
     if (
       !products.every((p) =>
