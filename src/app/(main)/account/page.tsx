@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function AccountPage() {
   const customer = await retrieveCustomer().catch(() => null);
   if (!customer) {
-    redirect("/login?from=/account");
+    redirect("/account/login?from=/account");
   }
 
   const orders = (await listOrders().catch(() => [])) || [];

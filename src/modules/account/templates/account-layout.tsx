@@ -1,44 +1,53 @@
-import React from "react";
+"use client"
 
-import UnderlineLink from "@modules/common/components/interactive-link";
-import AccountNav from "../components/account-nav";
-import { HttpTypes } from "@medusajs/types";
+import React from "react"
+import { usePathname } from "next/navigation"
+import UnderlineLink from "@modules/common/components/interactive-link"
+import AccountNav from "../components/account-nav"
+import { HttpTypes } from "@medusajs/types"
 
 interface AccountLayoutProps {
-  customer: HttpTypes.StoreCustomer | null;
-  children: React.ReactNode;
+  customer: HttpTypes.StoreCustomer | null
+  children: React.ReactNode
 }
 
 const AccountLayout: React.FC<AccountLayoutProps> = ({ customer, children }) => {
-  return (
-    <div className="flex-1 small:py-12" data-testid="account-page">
-      <div className="flex-1 content-container h-full max-w-[1920px] mx-auto bg-white flex flex-col">
-        <div className="flex flex-col small:flex-row py-12">
-          {/* Sidebar */}
-          <div className="w-full small:w-[240px]">
-            {customer && <AccountNav customer={customer} />}
-          </div>
+  const pathname = usePathname()
+  const isAuthPage =
+    pathname === "/account/login" || pathname === "/account/register"
 
-          {/* Main Content */}
-          <div className="flex-1">{children}</div>
+  if (isAuthPage) {
+    return <>{children}</>
+  }
+
+  return (
+    <div className="w-full bg-white" data-testid="account-page">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col small:flex-row gap-12 py-12">
+          {/* Sidebar */}
+          {customer && (
+            <aside className="w-full small:w-[240px] shrink-0">
+              <AccountNav customer={customer} />
+            </aside>
+          )}
+
+          {/* Main content */}
+          <main className="flex-1 min-w-0">{children}</main>
         </div>
-        <div className="flex flex-col small:flex-row items-end justify-between small:border-t border-gray-200 py-12 gap-8">
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 pt-10 pb-12 flex flex-col small:flex-row items-start small:items-center justify-between gap-6">
           <div>
-            <h3 className="text-xl-semi mb-4">Got questions?</h3>
-            <span className="txt-medium">
-              You can find frequently asked questions and answers on our
-              customer service page.
-            </span>
+            <h3 className="text-lg font-semibold mb-2">Got questions?</h3>
+            <p className="text-sm text-gray-600">
+              You can find frequently asked questions and answers on our customer service page.
+            </p>
           </div>
-          <div>
-            <UnderlineLink href="/customer-service">
-              Customer Service
-            </UnderlineLink>
-          </div>
+          <UnderlineLink href="/customer-service">Customer Service</UnderlineLink>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AccountLayout;
+export default AccountLayout

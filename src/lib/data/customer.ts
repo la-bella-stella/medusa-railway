@@ -61,47 +61,47 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
  * Sign up a new customer and log them in.
  */
 export async function signup(_currentState: unknown, formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const email = formData.get("email") as string
+  const password = formData.get("password") as string
   const customerForm = {
     email,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     phone: formData.get("phone") as string,
-  };
+  }
 
   try {
     // Register and store token
     const token = (await sdk.auth.register("customer", "emailpass", {
       email,
       password,
-    })) as string;
-    await setAuthToken(token);
+    })) as string
+    await setAuthToken(token)
 
     // Create the customer record
-    const headers = { ...(await getAuthHeaders()) };
-    await sdk.store.customer.create(customerForm, {}, headers);
+    const headers = { ...(await getAuthHeaders()) }
+    await sdk.store.customer.create(customerForm, {}, headers)
 
     // Log in again to refresh token
     const loginToken = (await sdk.auth.login("customer", "emailpass", {
       email,
       password,
-    })) as string;
-    await setAuthToken(loginToken);
+    })) as string
+    await setAuthToken(loginToken)
 
     // Revalidate cache and transfer cart
-    revalidateTag(await getCacheTag("customers"));
-    const cartId = await getCartId();
+    revalidateTag(await getCacheTag("customers"))
+
+    const cartId = await getCartId()
     if (cartId) {
-      const transferHeaders = { ...(await getAuthHeaders()) };
-      await sdk.store.cart.transferCart(cartId, {}, transferHeaders);
-      revalidateTag(await getCacheTag("carts"));
+      const transferHeaders = { ...(await getAuthHeaders()) }
+      await sdk.store.cart.transferCart(cartId, {}, transferHeaders)
+      revalidateTag(await getCacheTag("carts"))
     }
 
-    // Finally, redirect into the account dashboard
-    redirect("/account");
+    redirect("/account")
   } catch (error: any) {
-    return error.toString();
+    return error.toString()
   }
 }
 
@@ -109,30 +109,32 @@ export async function signup(_currentState: unknown, formData: FormData) {
  * Log in an existing customer.
  */
 export async function login(_currentState: unknown, formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const email = formData.get("email") as string
+  const password = formData.get("password") as string
 
   try {
     const token = (await sdk.auth.login("customer", "emailpass", {
       email,
       password,
-    })) as string;
-    await setAuthToken(token);
-    revalidateTag(await getCacheTag("customers"));
+    })) as string
+    await setAuthToken(token)
+    revalidateTag(await getCacheTag("customers"))
   } catch (error: any) {
-    return error.toString();
+    return error.toString()
   }
 
   try {
-    const cartId = await getCartId();
+    const cartId = await getCartId()
     if (cartId) {
-      const headers = { ...(await getAuthHeaders()) };
-      await sdk.store.cart.transferCart(cartId, {}, headers);
-      revalidateTag(await getCacheTag("carts"));
+      const headers = { ...(await getAuthHeaders()) }
+      await sdk.store.cart.transferCart(cartId, {}, headers)
+      revalidateTag(await getCacheTag("carts"))
     }
   } catch (error: any) {
-    return error.toString();
+    return error.toString()
   }
+
+  redirect("/account")
 }
 
 /**
