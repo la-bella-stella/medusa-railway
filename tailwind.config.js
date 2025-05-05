@@ -1,4 +1,4 @@
-// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
 const path = require("path")
 
 module.exports = {
@@ -13,7 +13,6 @@ module.exports = {
     "./node_modules/@nextui-org/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    // Mirror legacy container settings:
     container: {
       center: true,
       padding: {
@@ -31,6 +30,10 @@ module.exports = {
       },
     },
     extend: {
+      boxShadow: {
+        product: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        cart: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      },
       transitionProperty: {
         width: "width margin",
         height: "height",

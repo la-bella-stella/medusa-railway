@@ -60,16 +60,16 @@
 
   /* Text color utilities */
   .text-heading {
-    @apply text-gray-900; /* #1a1a1a */
+    @apply text-grey-90; /* #111827 */
   }
   .text-body {
-    @apply text-gray-600; /* #6b7280 */
+    @apply text-grey-50; /* #6B7280 */
   }
   .placeholder-body {
-    @apply text-gray-400; /* #9ca3af */
+    @apply placeholder-grey-40; /* #9CA3AF */
   }
   .text-input {
-    @apply text-gray-900; /* #1a1a1a */
+    @apply text-grey-90; /* #111827 */
   }
 
   /* Focus ring utilities */
@@ -84,6 +84,11 @@
   }
   .focus\:border-indigo-500:focus {
     border-color: #6366f1;
+  }
+
+  /* Case utilities */
+  .normal-case {
+    text-transform: none;
   }
 }
 
@@ -112,14 +117,14 @@
   .text-3xl-regular    { @apply text-[32px] leading-[44px] font-normal; }
   .text-3xl-semi       { @apply text-[32px] leading-[44px] font-semibold; }
 
-  /* Header Menu Hover Effect (legacy) */
+  /* Header Menu Hover Effect */
   .headerMenu .menuItem:hover > a > span {
     @apply w-full;
   }
 
-  /* NAV LINKS (updated) */
+  /* NAV LINKS */
   .headerMenu .menuItem > a {
-    @apply uppercase tracking-wide text-base font-semibold text-gray-700 hover:text-gray-900 relative;
+    @apply uppercase tracking-wide text-base font-semibold text-grey-70 hover:text-grey-90 relative;
   }
   .headerMenu .menuItem > a::before {
     content: "";
@@ -129,48 +134,67 @@
     @apply w-full;
   }
 
-  /* Product Card Styles for Legacy Design */
+  /* Product Card Styles */
+  .card--product {
+    @apply flex flex-col h-full bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1;
+  }
   .card--product .card__info-container {
-    flex: 1;
+    @apply px-3 py-3 flex flex-col flex-1 w-full;
   }
-
-  .card__info-container {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    width: 100%;
-  }
-
   .card__info-inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
+    @apply flex flex-col h-full w-full;
   }
-
   .card__vendor {
-    margin-bottom: 0;
-    font-size: 14px; /* Tailwind text-sm */
-    color: rgba(0, 0, 0, 0.7); /* Approximates text-theme-light (text-gray-500 opacity-70) */
+    @apply text-xs text-grey-50 uppercase mb-1 truncate;
   }
-
   .card__title {
-    font-weight: bold;
-    margin-top: 4px; /* Tailwind mt-1 */
-    margin-bottom: 0;
+    @apply text-sm font-semibold text-heading truncate mb-1.5;
   }
-
   .card-link {
-    color: currentColor;
+    @apply text-current;
   }
-
-  /* Override ProductPrice styling within ProductCard */
+  .card--product .inline-flex {
+    @apply items-center space-x-2 mt-2;
+  }
   .card--product .inline-flex [data-testid="product-price"] {
-    @apply text-sm !important; /* Removed font-bold */
+    @apply text-base font-semibold text-heading;
+  }
+  .card--product .inline-flex [data-testid="original-product-price"] {
+    @apply text-sm line-through text-grey-40;
   }
 
-  .card--product .inline-flex [data-testid="original-product-price"] {
-    @apply text-sm line-through text-gray-400 !important;
+  /* Breadcrumb Styling */
+  .breadcrumb a {
+    @apply text-sm text-body hover:text-heading;
+  }
+  .breadcrumb li + li::before {
+    @apply text-base text-body mt-0.5 mx-2.5;
+    content: "/";
+  }
+
+  /* Filter Button Styles */
+  .filter-button {
+    @apply border border-grey-20 text-heading text-[13px] md:text-sm font-semibold relative w-full py-2 ltr:pl-3 rtl:pr-3 ltr:pr-10 rtl:pl-10 ltr:text-left rtl:text-right bg-white rounded-md shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-orange-300 focus-visible:ring-offset-2 focus-visible:border-indigo-500 sm:text-sm cursor-pointer;
+  }
+  .filter-button span {
+    @apply block truncate;
+  }
+  .filter-button .icon {
+    @apply absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center ltr:pr-2 rtl:pl-2 pointer-events-none;
+  }
+  .filter-button .icon svg {
+    @apply w-5 h-5 text-grey-40;
+  }
+
+  /* Typography */
+  .font-body {
+    @apply font-sans;
+  }
+  .leading-tight {
+    line-height: 1.25;
+  }
+  .transform-none {
+    transform: none;
   }
 }
 
@@ -209,7 +233,7 @@
   text-align: center;
 }
 #siteHeader .flex.items-center.space-x-4 > *,
-#siteHeader .flex.items-center.space-x-4 svg,
+#siteHeader .flex.items.center.space-x-4 svg,
 #siteHeader .flex.items-center.justify-center {
   display: inline-flex !important;
   visibility: visible !important;
@@ -228,7 +252,7 @@
   width: 100%;
 }
 .bg-heading {
-  background-color: #1a1a1a !important; /* Updated from #000 */
+  background-color: #111827 !important; /* grey-90 */
 }
 
 /* Header Menu and MegaMenu Styles */
@@ -247,9 +271,7 @@
   transform: translateX(-50%);
   background-color: white;
   border-radius: 0.75rem;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px  6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
   opacity: 0;
   visibility: hidden;
@@ -319,7 +341,7 @@
   @apply w-full h-full object-contain;
 }
 .active-slider-img {
-  @apply border-2 border-gray-500;
+  @apply border-2 border-grey-50;
 }
 .desc-pdp {
   @apply my-5 text-sm lg:text-base leading-6 lg:leading-8;
@@ -367,53 +389,4 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Custom Collection Page Styles */
-@layer components {
-  .chawkbazarBreadcrumb a {
-    @apply text-sm text-body hover:text-heading;
-  }
-  .chawkbazarBreadcrumb li + li::before {
-    @apply text-base text-body mt-0.5 mx-2.5;
-    content: "/";
-  }
-  .hover\:shadow-product:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  .hover\:shadow-cart:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  .font-body {
-    font-family: Inter, sans-serif;
-  }
-  .leading-tight {
-    line-height: 1.25;
-  }
-  .transform-none {
-    transform: none;
-  }
-}
-
-/* Additional Colors */
-.text-gray-400 {
-  color: #9ca3af;
-}
-.text-gray-500 {
-  color: #6b7280;
-}
-.text-red-500 {
-  color: #ef4444;
-}
-.bg-red-500 {
-  background-color: #ef4444;
-}
-.text-white {
-  color: #ffffff;
-}
-.text-blue-500 {
-  color: #3b82f6;
-}
-.bg-gray-600 {
-  background-color: #4b5563;
 }
