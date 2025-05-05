@@ -6,6 +6,7 @@ import { useState } from "react";
 
 type RefinementListProps = {
   sortBy: SortOptions;
+  search?: boolean
   "data-testid"?: string;
 };
 

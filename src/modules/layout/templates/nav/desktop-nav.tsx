@@ -1,4 +1,3 @@
-// src/modules/layout/templates/nav/DesktopNav.tsx
 "use client";
 
 import React, { useCallback, useState } from "react";
@@ -16,7 +15,7 @@ import HeaderMenu from "@modules/layout/components/header-menu";
 import Alert from "@modules/common/components/alert";
 import CountdownTimer from "@modules/common/components/countdown-timer";
 import CartSidebar from "@modules/layout/components/cart-sidebar";
-import SearchOverlay from "@modules/layout/components/search";
+import SearchModal from "@modules/search/templates/search-modal";
 import { useUI } from "@lib/context/ui-context";
 import {
   RESPONSIVE_WIDTH,
@@ -72,9 +71,14 @@ export default function DesktopNav({
   const openCart = () => openSidebar({ view: "CART_SIDEBAR" });
   const closeCart = () => closeSidebar();
 
+  // Search modal control
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const openSearch = () => setIsSearchOpen(true);
-  const closeSearch = () => setIsSearchOpen(false);
+  const openSearch = () => {
+    setIsSearchOpen(true);
+  };
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+  };
 
   return (
     <div
@@ -168,11 +172,8 @@ export default function DesktopNav({
         </>
       )}
 
-      <SearchOverlay
-        regionId={regionId}
-        isOpen={isSearchOpen}
-        onClose={closeSearch}
-      />
+      {/* Search Modal */}
+      {isSearchOpen && <SearchModal onClose={closeSearch} />}
     </div>
   );
 }

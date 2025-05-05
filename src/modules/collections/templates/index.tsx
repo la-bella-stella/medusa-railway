@@ -56,6 +56,14 @@ export default function CollectionTemplate({
 
   if (!collection || !countryCode) notFound();
 
+  // Ensure filterData.collections only includes the current collection
+  const filteredFilterData = {
+    ...filterData,
+    collections: filterData.collections.filter(c => c.id === collection.id) || [collection],
+  };
+
+  console.log("CollectionTemplate filterData.collections:", filteredFilterData.collections);
+
   return (
     <div className="mx-auto max-w-[1920px] px-4 md:px-8 2xl:px-16">
       <div className="flex pt-8 pb-16 lg:pb-20" data-testid="collection-container">
@@ -82,7 +90,7 @@ export default function CollectionTemplate({
                   <h2 className="font-semibold text-heading text-xl md:text-2xl">Filters</h2>
                 </div>
                 <div className="flex flex-wrap -m-1.5 pt-2">
-                  <StoreFilters filters={filters} onChange={onFilterChange} filterData={filterData} />
+                  <StoreFilters filters={filters} onChange={onFilterChange} filterData={filteredFilterData} />
                 </div>
               </div>
             </div>
@@ -152,11 +160,8 @@ export default function CollectionTemplate({
             <PaginatedProducts
               sortBy={sort}
               page={pageNumber}
-              collectionId={collection.id} // Temporarily use categoryId; update to collectionId if PaginatedProducts is modified
+              collectionId={collection.id}
               countryCode={countryCode}
-              products={products}
-              totalCount={totalCount}
-              region={region}
             />
           </Suspense>
         </div>
@@ -186,7 +191,7 @@ export default function CollectionTemplate({
             </div>
             <button
               data-variant="flat"
-              className="text-[13px] md:text-sm leading-4 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-semibold font-body text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none focus:bg-opacity-80 bg-heading text-white px-5 md:px-6 lg:px-8 py-4 md:py修为-3.5 lg:py-4 hover:text-white hover:bg-gray-600 hover:shadow-cart mt-3 sm:mt-0 w-full sm:w-auto ltr:sm:ml-2 rtl:sm:mr-2 md:h-full flex-shrink-0"
+              className="text-[13px] md:text-sm leading-4 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-semibold font-body text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none focus:bg-opacity-80 bg-heading text-white px-5 md:px-6 lg:px-8 py-4 md:py-3.5 lg:py-4 hover:text-white hover:bg-gray-600 hover:shadow-cart mt-3 sm:mt-0 w-full sm:w-auto ltr:sm:ml-2 rtl:sm:mr-2 md:h-full flex-shrink-0"
             >
               <span className="lg:py-0.5">Subscribe</span>
             </button>

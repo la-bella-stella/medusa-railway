@@ -39,11 +39,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**", // Wildcard to allow all hostnames
+      },{
+        protocol: "http",
+        hostname: "**", // Wildcard to allow all hostnames
       },
-      { // Note: needed to serve images from /public folder
-        protocol: process.env.NEXT_PUBLIC_BASE_URL?.startsWith('https') ? 'https' : 'http',
-        hostname: process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, ''),
-      },
+      
 
     ],
   },

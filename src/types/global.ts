@@ -86,8 +86,9 @@ export type PriceEntry = {
 };
 
 export interface Filters {
+  q?: string;
   category: string[];
-  brand?: string[]; // Made optional
+  brand?: string[];
   collection: string[];
   grouped_color: string[];
   gender: string[];

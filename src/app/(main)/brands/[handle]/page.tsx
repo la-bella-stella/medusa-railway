@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCollectionByHandle, listCollections } from "@lib/data/collections";
 import { getRegion, listRegions } from "@lib/data/regions";
-import { listProducts } from "@lib/data/products";
+import { listProductsWithSort } from "@lib/data/products";
 import BrandPageClient from "./brand-page-client";
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products";
 import { HttpTypes } from "@medusajs/types";
@@ -29,16 +29,15 @@ type Props = {
 
 export async function generateStaticParams() {
   try {
-    const productCollections = await listCollections();
-    console.log("productCollections:", productCollections);
-    if (!productCollections || !productCollections.collections) {
+    const { collections } = await listCollections({ limit: "50" }); // Optimize with smaller limit
+    if (!collections) {
       console.warn("No collections found");
       return [];
     }
-    const collectionHandles: string[] = productCollections.collections.map(
+    const collectionHandles: string[] = collections.map(
       (collection: HttpTypes.StoreCollection) => collection.handle
     );
-    console.log("collectionHandles:", collectionHandles);
+    console.log("generateStaticParams collectionHandles:", collectionHandles);
     return collectionHandles.map((handle) => ({ handle }));
   } catch (e) {
     console.error("Error in generateStaticParams:", e);
@@ -57,7 +56,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const description = productCollection.metadata?.description || `Explore the ${productCollection.title} collection`;
     return {
       title,
-      alternates: { canonical: `brand/${params.handle}` },
+      alternates: { canonical: `brands/${params.handle}` },
     };
   } catch (e) {
     console.error("Error in generateMetadata:", e);
@@ -118,8 +117,8 @@ export default async function CollectionPage(props: Props) {
   let filterData = {
     tags: [] as any[],
     categories: [] as HttpTypes.StoreProductCategory[],
-    collections: [] as HttpTypes.StoreCollection[],
-    brands: [] as any[], // Placeholder for brands
+    collections: [productCollection], // Only include the requested collection
+    brands: [] as any[],
     colors: [] as { id: string; value: string; meta: string }[],
   };
 
@@ -138,18 +137,8 @@ export default async function CollectionPage(props: Props) {
     // Categories
     filterData.categories = (await listCategories()) || [];
 
-    // Collections
-    const colsRes = await fetch(
-      `${process.env.MEDUSA_BACKEND_URL}/store/collections?limit=100`,
-      { headers: { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" } }
-    );
-    if (colsRes.ok) {
-      const colsData = await colsRes.json();
-      filterData.collections = colsData.collections || [];
-    }
-
     // Brands (Placeholder - replace with actual brand fetching logic if needed)
-    filterData.brands = []; // Temporary placeholder
+    filterData.brands = [];
 
     // Colors
     filterData.colors = (tagsData.product_tags || [])
@@ -163,47 +152,48 @@ export default async function CollectionPage(props: Props) {
     console.error("Error fetching filter data:", e);
   }
 
-  // Helper to fetch products and count
-  async function fetchProducts(queryParams: Record<string, any>) {
-    try {
-      const { response } = await listProducts({
-        countryCode,
-        regionId: region.id,
-        queryParams,
-      });
-      return { products: response.products || [], count: response.count || 0 };
-    } catch (e: any) {
-      console.error("listProducts error:", e.message, queryParams);
-      return { products: [], count: 0 };
-    }
-  }
-
   // Build product query
   const limit = 12;
-  const offset = (Number(page) - 1) * limit;
-  const baseQuery: Record<string, any> = {
+  const pageNum = Number(page);
+  const queryParams: Record<string, any> = {
     limit,
-    offset,
-    order: sortBy || "created_at",
+    offset: (pageNum - 1) * limit,
     collection_id: [productCollection.id],
   };
 
-  if (filters.collection.length) baseQuery.collection_id = filters.collection;
-  if (filters.category.length) baseQuery.category_id = filters.category;
-  if (filters.grouped_color.length) baseQuery.tags = filters.grouped_color.map((c) => `COLOR_${c}`);
-  if (filters.gender.length) baseQuery["metadata[gender]"] = filters.gender.join(",");
-  if (filters.season.length) baseQuery["metadata[season]"] = filters.season.join(",");
-  if (filters.tags.length) baseQuery.tags = (baseQuery.tags || []).concat(filters.tags);
+  if (filters.collection.length) queryParams.collection_id = filters.collection;
+  if (filters.category.length) queryParams.category_id = filters.category;
+  if (filters.grouped_color.length) queryParams.tags = filters.grouped_color.map((c) => `COLOR_${c}`);
+  if (filters.gender.length) queryParams["metadata[gender]"] = filters.gender.join(",");
+  if (filters.season.length) queryParams["metadata[season]"] = filters.season.join(",");
+  if (filters.tags.length) queryParams.tags = (queryParams.tags || []).concat(filters.tags);
   if (filters.price.length) {
     const [min, max] = filters.price[0].split("-").map(Number);
-    baseQuery.min_price = min;
-    baseQuery.max_price = max;
+    queryParams.min_price = min;
+    queryParams.max_price = max;
+  }
+  if (sortBy === "created_at") {
+    queryParams.order = "created_at";
   }
 
   // Fetch products and count
-  const { products, count } = await fetchProducts(baseQuery);
+  let products: HttpTypes.StoreProduct[] = [];
+  let count = 0;
+  try {
+    const { response } = await listProductsWithSort({
+      page: pageNum,
+      queryParams,
+      sortBy,
+      countryCode,
+    });
+    products = response.products || [];
+    count = response.count || 0;
+  } catch (e: any) {
+    console.error("getProductsListWithSort error:", e.message, queryParams);
+  }
+
   if (!products.length && count === 0) {
-    console.warn("No products found for query:", baseQuery);
+    console.warn("No products found for query:", queryParams);
     notFound();
   }
 

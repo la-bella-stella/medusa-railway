@@ -85,9 +85,6 @@ const StoreTemplate = ({
             sortBy={sort}
             page={pageNumber}
             countryCode={countryCode}
-            products={products}
-            totalCount={totalCount}
-            region={region}
           />
         </Suspense>
       </div>

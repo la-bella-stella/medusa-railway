@@ -1,11 +1,9 @@
-// src/app/search/search-page-client.tsx
 "use client";
 
 import React, { useState } from "react";
 import StickyBox from "react-sticky-box";
 import { Breadcrumb } from "@modules/common/components/breadcrumb";
 import ActiveLink from "@modules/common/components/active-link";
-import StoreFilters from "@modules/store/components/store-filters";
 import FilterSidebar from "@modules/store/components/filter-sidebar";
 import ProductSearchBlock from "@modules/products/components/product-search-block";
 import type { HttpTypes } from "@medusajs/types";
@@ -22,7 +20,7 @@ export default function SearchPageClient({
   countryCode,
   filters: initialFilters,
 }: SearchPageClientProps) {
-  // lift server-computed filters into local state
+  // Lift server-computed filters into local state
   const [filters, setFilters] = useState<Filters>(initialFilters);
 
   return (
@@ -37,15 +35,15 @@ export default function SearchPageClient({
             <div className="pb-7">
               <Breadcrumb
                 items={[
-                  { label: "breadcrumb-home", href: `/`, linkComponent: ActiveLink },
-                  { label: "breadcrumb-search", href: `/search`, linkComponent: ActiveLink },
+                  { label: "breadcrumb-home", href: "/", linkComponent: ActiveLink },
+                  { label: "breadcrumb-search", href: "/search", linkComponent: ActiveLink },
                 ]}
                 separator="/"
                 className="text-sm text-gray-600 mb-4"
                 activeClassName="font-semibold text-heading"
               />
             </div>
-            <StoreFilters filters={filters} onChange={setFilters} />
+            <FilterSidebar filters={filters} onChange={setFilters} />
           </StickyBox>
         </div>
 

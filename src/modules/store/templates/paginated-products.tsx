@@ -1,93 +1,94 @@
-"use client";
+"use server";
 
-import React from "react";
-import { HttpTypes } from "@medusajs/types";
-import { useRouter, useSearchParams } from "next/navigation";
-import ProductCard from "@modules/products/components/product-card";
+import { listProductsWithSort } from "@lib/data/products"
+import { getRegion } from "@lib/data/regions"
+import ProductPreview from "@modules/products/components/product-preview"
+import { Pagination } from "@modules/store/components/pagination"
+import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
-const PRODUCT_LIMIT = 12;
+const PRODUCT_LIMIT = 12
 
-export default function PaginatedProducts({
+type PaginatedProductsParams = {
+  limit: number
+  collection_id?: string[]
+  category_id?: string[]
+  id?: string[]
+  order?: string
+}
+
+export default async function PaginatedProducts({
   sortBy,
-  page: pageProp,
+  page,
+  collectionId,
   categoryId,
+  productsIds,
   countryCode,
-  products,
-  totalCount,
-  region,
 }: {
-  sortBy?: string;
-  brand?: string;
-  page: string | number;
-  categoryId?: string;
-  countryCode: string;
-  products: HttpTypes.StoreProduct[];
-  totalCount: number;
-  region: HttpTypes.StoreRegion | null;
+  sortBy?: SortOptions
+  page: number
+  collectionId?: string
+  categoryId?: string
+  productsIds?: string[]
+  countryCode: string
 }) {
-  const page = typeof pageProp === 'string' ? parseInt(pageProp, 10) || 1 : pageProp;
-  const totalPages = Math.ceil(totalCount / PRODUCT_LIMIT);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const queryParams: PaginatedProductsParams = {
+    limit: PRODUCT_LIMIT,
+  }
 
-  console.log("PaginatedProducts products:", products.map(p => ({
-    id: p.id,
-    title: p.title,
-    brand: (p as any).brand,
-  })));
+  if (collectionId) {
+    queryParams["collection_id"] = [collectionId]
+  }
 
-  const handleLoadMore = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page + 1));
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
+  if (categoryId) {
+    queryParams["category_id"] = [categoryId]
+  }
+
+  if (productsIds) {
+    queryParams["id"] = productsIds
+  }
+
+  if (sortBy === "created_at") {
+    queryParams["order"] = "created_at"
+  }
+
+  const region = await getRegion(countryCode)
+
+  if (!region) {
+    return null
+  }
+
+  let {
+    response: { products, count },
+  } = await listProductsWithSort({
+    page,
+    queryParams,
+    sortBy,
+    countryCode,
+  })
+
+  const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
   return (
     <>
       <ul
-        className="
-          grid
-          grid-cols-2
-          sm:grid-cols-3
-          lg:grid-cols-4
-          gap-x-4
-          gap-y-6
-          w-full
-        "
+        className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
         data-testid="products-list"
       >
-        {products.map((product) => (
-          <li key={product.id} className="h-full">
-            <ProductCard
-              product={product}
-              variant="gridSlim"
-              region={region}
-              className="h-full"
-            />
-          </li>
-        ))}
+        {products.map((p) => {
+          return (
+            <li key={p.id}>
+              <ProductPreview product={p} region={region} />
+            </li>
+          )
+        })}
       </ul>
-
-      {totalPages > page && (
-        <div className="pt-8 text-center">
-          <button
-            className="
-              text-[13px] md:text-sm leading-4
-              inline-flex items-center justify-center
-              font-semibold font-body
-              h-11 md:h-12 px-5 py-2
-              bg-heading text-white
-              rounded-md
-              transition
-              hover:bg-gray-600 hover:shadow-cart
-            "
-            onClick={handleLoadMore}
-            data-variant="slim"
-          >
-            Load More
-          </button>
-        </div>
+      {totalPages > 1 && (
+        <Pagination
+          data-testid="product-pagination"
+          page={page}
+          totalPages={totalPages}
+        />
       )}
     </>
-  );
+  )
 }
