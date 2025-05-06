@@ -80,7 +80,7 @@ const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
               {label === t("text-brand") && product.brand?.handle ? (
                 <Link
                   href={`/brands/${encodeURIComponent(product.brand.handle)}`}
-                  className="text-right transition hover:underline hover:text-heading"
+                  className="text-right transition hover:underline hover:text-heading text-gray-500 underline"
                 >
                   {formatValue(value)}
                 </Link>
