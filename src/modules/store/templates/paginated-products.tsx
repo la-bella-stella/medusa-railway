@@ -18,7 +18,17 @@ type PaginatedProductsProps = {
 }
 
 const PaginatedProducts = ({ hits }: PaginatedProductsProps) => {
-  const products = hits;
+  // TODO: Replace with actual data fetching logic
+  const products = hits.map((hit, index) => ({
+    ...hit,
+    thumbnail: hit.thumbnail,
+    vendor: hit.vendor,
+    price: hit.price || (Math.random() * 1000 + 400).toFixed(2),
+    originalPrice:
+      hit.originalPrice ?? (index % 3 === 0 ? (Math.random() * 1000 + 500).toFixed(2) : null),
+    discountPercentage:
+      hit.discountPercentage ?? (index % 3 === 0 ? Math.floor(Math.random() * 30 + 1) : null),
+  }))
 
   return (
     <>
