@@ -1,33 +1,37 @@
-import { Container, Text } from "@medusajs/ui"
-import { useHits, useSearchBox } from "react-instantsearch-hooks-web"
+"use client";
 
-import InteractiveLink from "@modules/common/components/interactive-link"
+import { useHits, useSearchBox } from "react-instantsearch-hooks-web";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
 
 const ShowAll = () => {
-  const { hits } = useHits()
-  const { query } = useSearchBox()
-  const width = typeof window !== "undefined" ? window.innerWidth : 0
+  const { hits } = useHits();
+  const { query } = useSearchBox();
+  const width = typeof window !== "undefined" ? window.innerWidth : 0;
 
-  if (query === "") return null
-  if (hits.length > 0 && hits.length <= 6) return null
+  if (query.trim() === "") return null;
+  if (hits.length > 0 && hits.length <= 6) return null;
 
   if (hits.length === 0) {
     return (
-      <Container
-        className="flex gap-2 justify-center h-fit py-2"
+      <div
+        className="w-full py-4 text-center text-sm text-gray-500"
         data-testid="no-search-results-container"
       >
-        <Text>No results found.</Text>
-      </Container>
-    )
+        No results found.
+      </div>
+    );
   }
 
   return (
-    <Container className="flex sm:flex-col small:flex-row gap-2 justify-center items-center h-fit py-4 small:py-2">
-      <Text>Showing the first {width > 640 ? 6 : 3} results.</Text>
-      <InteractiveLink href={`/results/${query}`}>View all</InteractiveLink>
-    </Container>
-  )
-}
+    <div className="w-full border-t border-gray-100 mt-2">
+      <LocalizedClientLink
+        href={`/results/${encodeURIComponent(query)}`}
+        className="w-full block text-sm md:text-base text-center px-4 py-3 lg:py-3.5 bg-gray-200 text-gray-700 text-opacity-80 hover:text-opacity-100 transition"
+      >
+        Showing first 6 results – View all
+      </LocalizedClientLink>
+    </div>
+  );
+};
 
-export default ShowAll
+export default ShowAll;

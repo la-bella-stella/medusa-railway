@@ -9,6 +9,7 @@ import CartIcon from "@modules/common/icons/cart-icon";
 import UserIcon from "@modules/common/icons/user";
 import Logo from "@modules/common/components/logo";
 import SearchOverlay from "@modules/layout/components/search";
+import SearchModal from "@modules/search/templates/search-modal";
 import MobileMenu from "@modules/layout/components/mobile-menu";
 import { useUI } from "@lib/context/ui-context";
 
@@ -79,13 +80,7 @@ export default function MobileNav({
         </div>
       </div>
 
-      {searchOpen && (
-        <SearchOverlay
-          isOpen={searchOpen}
-          onClose={() => setSearchOpen(false)}
-          regionId={regionId}
-        />
-      )}
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
     </div>
   );

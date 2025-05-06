@@ -1,56 +1,57 @@
-import { clx } from "@medusajs/ui"
-import React from "react"
+import { clx } from "@medusajs/ui";
+import React from "react";
 import {
   UseHitsProps,
   useHits,
   useSearchBox,
-} from "react-instantsearch-hooks-web"
+} from "react-instantsearch-hooks-web";
 
-import { ProductHit } from "../hit"
-import ShowAll from "../show-all"
+import { ProductHit } from "../hit";
+import ShowAll from "../show-all";
 
 type HitsProps<THit> = React.ComponentProps<"div"> &
   UseHitsProps & {
-    hitComponent: (props: { hit: THit }) => JSX.Element
-  }
+    hitComponent: (props: { hit: THit }) => JSX.Element;
+  };
 
 const Hits = ({
   hitComponent: Hit,
   className,
   ...props
 }: HitsProps<ProductHit>) => {
-  const { query } = useSearchBox()
-  const { hits } = useHits(props)
+  const { query } = useSearchBox();
+  const { hits } = useHits(props);
+
+  const hasHits = hits.length > 0 && query.trim().length > 0;
 
   return (
     <div
       className={clx(
-        "transition-[height,max-height,opacity] duration-300 ease-in-out sm:overflow-hidden w-full sm:w-[50vw] mb-1 p-px",
+        "transition-opacity duration-300 ease-in-out",
         className,
         {
-          "max-h-full opacity-100": !!query,
-          "max-h-0 opacity-0": !query && !hits.length,
+          "opacity-100": hasHits,
+          "opacity-0": !hasHits,
         }
       )}
     >
-      <div
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
-        data-testid="search-results"
-      >
-        {hits.slice(0, 6).map((hit, index) => (
-          <li
-            key={index}
-            className={clx("list-none", {
-              "hidden sm:block": index > 2,
-            })}
+      {hasHits ? (
+        <>
+          <ul
+            className="divide-y divide-gray-100 border-t border-b border-gray-100"
+            data-testid="search-results"
           >
-            <Hit hit={hit as unknown as ProductHit} />
-          </li>
-        ))}
-      </div>
-      <ShowAll />
+            {hits.slice(0, 6).map((hit, index) => (
+              <li key={index} className="p-3 sm:p-4 md:p-5">
+                <Hit hit={hit as unknown as ProductHit} />
+              </li>
+            ))}
+          </ul>
+          <ShowAll />
+        </>
+      ) : null}
     </div>
-  )
-}
+  );
+};
 
-export default Hits
+export default Hits;

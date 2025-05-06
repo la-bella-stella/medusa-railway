@@ -1,7 +1,7 @@
 "use client";
 
-import { InstantSearch } from "react-instantsearch-hooks-web";
-import { MagnifyingGlassMini } from "@medusajs/icons";
+import { InstantSearch, useHits, useSearchBox } from "react-instantsearch-hooks-web";
+import { MagnifyingGlassMini, X } from "@medusajs/icons";
 import { SEARCH_INDEX_NAME, searchClient } from "@lib/search-client";
 import Hit from "@modules/search/components/hit";
 import Hits from "@modules/search/components/hits";
@@ -12,24 +12,35 @@ interface SearchModalProps {
   onClose: () => void;
 }
 
+const Results = () => {
+  const { query } = useSearchBox();
+
+  if (query.trim().length === 0) return null;
+
+  return (
+    <div className="bg-white md:rounded-lg shadow-lg p-4 mt-4">
+      <div className="mt-4 max-h-[50vh] sm:max-h-[64vh] overflow-y-auto">
+        <Hits hitComponent={Hit} />
+      </div>
+    </div>
+  );
+};
+
 export default function SearchModal({ onClose }: SearchModalProps) {
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Close modal on outside click
   const handleOutsideClick = (event: MouseEvent) => {
     if (event.target === searchRef.current) {
       onClose();
     }
   };
 
-  // Close modal on Escape key press
   const handleEsc = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
       onClose();
     }
   };
 
-  // Set up event listeners
   useEffect(() => {
     window.addEventListener("click", handleOutsideClick);
     window.addEventListener("keydown", handleEsc);
@@ -39,7 +50,6 @@ export default function SearchModal({ onClose }: SearchModalProps) {
     };
   }, [onClose]);
 
-  // Disable scroll on body when modal is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -47,7 +57,6 @@ export default function SearchModal({ onClose }: SearchModalProps) {
     };
   }, []);
 
-  // Focus input on mount
   useEffect(() => {
     const input = searchRef.current?.querySelector("input");
     if (input) {
@@ -56,29 +65,26 @@ export default function SearchModal({ onClose }: SearchModalProps) {
   }, []);
 
   return (
-    <div className="relative z-[75]">
-      <div className="fixed inset-0 bg-opacity-75 backdrop-blur-md opacity-100 h-screen w-screen" />
-      <div className="fixed inset-0 px-5 sm:p-0" ref={searchRef}>
-        <div className="flex flex-col justify-start w-full h-fit transform p-5 items-center text-left align-middle transition-all max-h-[75vh] bg-transparent shadow-none">
-          <InstantSearch
-            indexName={SEARCH_INDEX_NAME}
-            searchClient={searchClient}
-          >
-            <div
-              className="flex absolute flex-col h-fit w-full sm:w-fit"
-              data-testid="search-modal-container"
-            >
-              <div className="w-full flex items-center gap-x-2 p-4 bg-[rgba(3,7,18,0.5)] text-ui-fg-on-color backdrop-blur-2xl rounded-rounded">
-                <MagnifyingGlassMini />
+    <>
+      <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={onClose} />
+
+      <div
+        className="fixed top-0 left-1/2 z-50 -translate-x-1/2 w-full sm:w-[600px] md:w-[730px] lg:w-[930px] mt-0 sm:mt-12"
+        ref={searchRef}
+      >
+        <InstantSearch indexName={SEARCH_INDEX_NAME} searchClient={searchClient}>
+          <div className="bg-white md:rounded-lg shadow-lg p-4">
+            <div className="flex items-center justify-between gap-x-2">
+              <div className="flex items-center w-full gap-x-2 bg-gray-100 rounded-md px-3 py-2">
+                <MagnifyingGlassMini className="text-gray-500" />
                 <SearchBox />
               </div>
-              <div className="flex-1 mt-6">
-                <Hits hitComponent={Hit} />
-              </div>
             </div>
-          </InstantSearch>
-        </div>
+          </div>
+
+          <Results />
+        </InstantSearch>
       </div>
-    </div>
+    </>
   );
 }
