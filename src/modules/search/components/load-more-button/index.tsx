@@ -12,7 +12,7 @@ const LoadMoreButton = ({ query, page }: LoadMoreButtonProps) => {
 
   const handleLoadMore = () => {
     const nextPage = page + 1
-    router.push(`/search?query=${encodeURIComponent(query)}&page=${nextPage}`)
+    router.push(`/results/${encodeURIComponent(query)}?page=${nextPage}`)
   }
 
   return (

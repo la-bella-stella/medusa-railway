@@ -1,21 +1,24 @@
+"use client"
+
+type ProductHit = {
+  id: string
+  title: string
+  thumbnail: string
+  vendor: string
+  price: string
+  originalPrice?: string | null
+  discountPercentage?: number | null
+}
+
 type PaginatedProductsProps = {
-  productsIds: string[]
+  hits: ProductHit[]
   sortBy?: string
   page: number
   countryCode: string
 }
 
-const PaginatedProducts = ({ productsIds, sortBy, page, countryCode }: PaginatedProductsProps) => {
-  // Mock data with discounts (replace with actual fetch)
-  const products = productsIds.map((id, index) => ({
-    id,
-    title: `Product ${id}`,
-    thumbnail: "https://via.placeholder.com/300",
-    vendor: "BURBERRY",
-    price: (Math.random() * 1000 + 400).toFixed(2),
-    originalPrice: index % 3 === 0 ? (Math.random() * 1000 + 500).toFixed(2) : null, // Mock discount for every third product
-    discountPercentage: index % 3 === 0 ? Math.floor(Math.random() * 30 + 1) : null, // Mock discount percentage
-  }))
+const PaginatedProducts = ({ hits }: PaginatedProductsProps) => {
+  const products = hits;
 
   return (
     <>
@@ -29,8 +32,8 @@ const PaginatedProducts = ({ productsIds, sortBy, page, countryCode }: Paginated
           <div className="relative w-full aspect-[3/4] overflow-hidden">
             <img
               alt={product.title}
-              className="object-cover rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
               src={product.thumbnail}
+              className="object-cover rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105"
               style={{ position: "absolute", height: "100%", width: "100%", inset: 0 }}
             />
             {product.discountPercentage && (
