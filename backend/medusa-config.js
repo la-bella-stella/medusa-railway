@@ -130,7 +130,7 @@ const medusaConfig = {
     }] : [])
   ],
   plugins: [
-  ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
+    ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
       resolve: '@rokmohar/medusa-plugin-meilisearch',
       options: {
         config: {
@@ -139,16 +139,31 @@ const medusaConfig = {
         },
         settings: {
           products: {
-            indexSettings: {
-              searchableAttributes: ['title', 'description', 'variant_sku'],
-              displayedAttributes: ['id', 'title', 'description', 'variant_sku', 'thumbnail', 'handle'],
-            },
+            transformer: require('./src/meilisearch/transform-product'),
             primaryKey: 'id',
+            indexSettings: {
+              searchableAttributes: [
+                'title', 'description', 'subtitle', 'handle',
+                'tags.value', 'collection.title', 'metadata.style',
+                'variants.title', 'variants.sku', 'color', 'size'
+              ],
+              displayedAttributes: ['*'],
+              filterableAttributes: [
+                'collection.title',
+                'categories.name',
+                'tags.value',
+                'color',
+                'size',
+                'season',
+                'gender',
+                'prices'
+              ],
+            }
           }
         }
       }
     }] : [])
-  ]
+  ]  
 };
 
 console.log(JSON.stringify(medusaConfig, null, 2));
