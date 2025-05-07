@@ -139,26 +139,25 @@ const medusaConfig = {
         },
         settings: {
           products: {
-            transformer: require('./src/meilisearch/transform-product'),
+            // transformer: require('./src/meilisearch/transform-product'),
             primaryKey: 'id',
+            relations: [
+              'collection',
+              'categories',
+              'tags',
+              'options',
+              'option.values',
+              'variants',
+              'variants.options',
+              'variants.prices',
+              'images'
+            ],
             indexSettings: {
-              searchableAttributes: [
-                'title', 'description', 'subtitle', 'handle',
-                'tags.value', 'collection.title', 'metadata.style',
-                'variants.title', 'variants.sku', 'color', 'size'
-              ],
-              displayedAttributes: ['*'],
-              filterableAttributes: [
-                'collection.title',
-                'categories.name',
-                'tags.value',
-                'color',
-                'size',
-                'season',
-                'gender',
-                'prices'
-              ],
-            }
+              filterableAttributes: ["categories.handle", "variants.prices.amount", "variants.prices.currency_code", "collection.handle"],
+              sortableAttributes: ["title", "variants.prices.amount"],
+              searchableAttributes: ["title", "description", "variant_sku", "id"],
+              displayedAttributes: ["*"],
+            },
           }
         }
       }
