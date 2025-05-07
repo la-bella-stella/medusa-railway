@@ -130,38 +130,55 @@ const medusaConfig = {
     }] : [])
   ],
   plugins: [
-    ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
-      resolve: '@rokmohar/medusa-plugin-meilisearch',
-      options: {
-        config: {
-          host: MEILISEARCH_HOST,
-          apiKey: MEILISEARCH_ADMIN_KEY
-        },
-        settings: {
-          products: {
-            // transformer: require('./src/meilisearch/transform-product'),
-            primaryKey: 'id',
-            relations: [
-              'collection',
-              'categories',
-              'tags',
-              'options',
-              'option.values',
-              'variants',
-              'variants.options',
-              'variants.prices',
-              'images'
-            ],
-            indexSettings: {
-              filterableAttributes: ["categories.handle", "variants.prices.amount", "variants.prices.currency_code", "collection.handle"],
-              sortableAttributes: ["title", "variants.prices.amount"],
-              searchableAttributes: ["title", "description", "variant_sku", "id"],
-              displayedAttributes: ["*"],
+    ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY
+      ? [
+          {
+            resolve: '@rokmohar/medusa-plugin-meilisearch',
+            options: {
+              config: {
+                host: MEILISEARCH_HOST,
+                apiKey: MEILISEARCH_ADMIN_KEY,
+              },
+              settings: {
+                products: {
+                  transformer: require('./src/meilisearch/transform-product'),
+                  primaryKey: 'id',
+                  relations: [
+                    'collection',
+                    'categories',
+                    'tags',
+                    'options',
+                    'options.values',
+                    'variants',
+                    'variants.options',
+                    'variants.prices',
+                    'images',
+                  ],                  
+                  indexSettings: {
+                    filterableAttributes: [
+                      'collection.handle',
+                      'categories.handle',
+                      'variants.prices.amount',
+                      'variants.prices.currency_code',
+                      'tags.value',
+                      'metadata.season',
+                      'metadata.gender',
+                    ],
+                    sortableAttributes: ['title', 'variants.prices.amount'],
+                    searchableAttributes: [
+                      'title',
+                      'description',
+                      'variants.sku',
+                      'id',
+                    ],
+                    displayedAttributes: ['*'],
+                  },
+                },
+              },
             },
-          }
-        }
-      }
-    }] : [])
+          },
+        ]
+      : []),
   ]  
 };
 
