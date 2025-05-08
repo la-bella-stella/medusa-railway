@@ -141,7 +141,7 @@ const medusaConfig = {
               },
               settings: {
                 products: {
-                  // transformer: require('./src/meilisearch/transform-product'),
+                  transformer: require('./src/meilisearch/transform'),
                   primaryKey: 'id',               
                   indexSettings: {
                     filterableAttributes: [
