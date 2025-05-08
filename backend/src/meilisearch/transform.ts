@@ -8,6 +8,7 @@ module.exports = async (product, { container }) => {
   const query = container.resolve("query")
 
   // Load full product with relationships and calculated prices
+  console.log(product);
   const { data: products } = await query.graph({
     entity: "product",
     fields: [

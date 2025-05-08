@@ -1,4 +1,5 @@
 import { loadEnv, Modules, defineConfig } from '@medusajs/utils';
+import path from 'path';
 import {
   ADMIN_CORS,
   AUTH_CORS,
@@ -141,7 +142,7 @@ const medusaConfig = {
               },
               settings: {
                 products: {
-                  transformer: require('./src/meilisearch/transform'),
+                  transformer: require(path.resolve(__dirname, "./src/meilisearch/transform")),
                   primaryKey: 'id',               
                   indexSettings: {
                     filterableAttributes: [
