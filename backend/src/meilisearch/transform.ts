@@ -1,36 +1,31 @@
 const { ModuleRegistrationName } = require("@medusajs/utils")
+const { createMedusaContainer, initialize } = require("@medusajs/modules-sdk")
 const { QueryContext } = require("@medusajs/framework/utils")
 
 const region_id = "reg_01JSW66RFBTQRDR1PX0A3MQJP8"
 const currency_code = "usd"
 
-module.exports = async (product, { container }) => {
-  const query = container.resolve("query")
+module.exports = async (product) => {
+  const container = createMedusaContainer()
+  await initialize({ container })
 
-  // Load full product with relationships and calculated prices
-  console.log(product);
-  const { data: products } = await query.graph({
-    entity: "product",
-    fields: [
-      "*",
-      "variants.*",
-      "variants.prices.*",
-      "variants.calculated_price.*",
-      "variants.options.*",
-      "variants.inventory_quantity",
-      "variants.allow_backorder",
-      "variants.manage_inventory",
-      "metadata",
-      "tags.*",
-      "options.*",
-      "images.*",
-      "categories.*",
-      "type.*",
-      "collection.*",
+  const productModuleService = container.resolve(ModuleRegistrationName.PRODUCT)
+
+  // Retrieve full product with relations
+  const fullProduct = await productModuleService.retrieve(product.id, {
+    relations: [
+      "variants",
+      "variants.prices",
+      "variants.calculated_price",
+      "variants.options",
+      "variants.options.option",
+      "tags",
+      "options",
+      "images",
+      "categories",
+      "type",
+      "collection",
     ],
-    filters: {
-      id: [product.id],
-    },
     context: {
       variants: {
         calculated_price: QueryContext({
@@ -40,9 +35,6 @@ module.exports = async (product, { container }) => {
       },
     },
   })
-
-  const fullProduct = products?.[0]
-  if (!fullProduct) return null
 
   const variants = fullProduct.variants ?? []
 
