@@ -122,25 +122,61 @@ const medusaConfig = {
     }] : [])
   ],
   plugins: [
-  ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
-      resolve: '@rokmohar/medusa-plugin-meilisearch',
-      options: {
-        config: {
-          host: MEILISEARCH_HOST,
-          apiKey: MEILISEARCH_ADMIN_KEY
-        },
-        settings: {
-          products: {
-            indexSettings: {
-              searchableAttributes: ['title', 'description', 'variant_sku'],
-              displayedAttributes: ['id', 'title', 'description', 'variant_sku', 'thumbnail', 'handle'],
+    ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY
+      ? [
+          {
+            resolve: '@rokmohar/medusa-plugin-meilisearch',
+            options: {
+              config: {
+                host: MEILISEARCH_HOST,
+                apiKey: MEILISEARCH_ADMIN_KEY,
+              },
+              settings: {
+                products: {
+                  // transformer: require( "./src/meilisearch/transform"),
+                  primaryKey: 'id',               
+                  indexSettings: {
+                    filterableAttributes: [
+                      'color',
+                      'size',
+                      'metadata.gender',
+                      'price',
+                      'metadata.season',
+                      'categories.handle',
+                      'vendor',
+                      'categories.name',
+                      'collection.title',
+                      'collection.handle',
+                    ],                                     
+                    sortableAttributes: ['title', 'variants.prices.amount'],
+                    searchableAttributes: [
+                      'title',
+                      'description',
+                      'variants.sku',
+                      'id',
+                    ],
+                    displayedAttributes: ['*'],
+                  },
+                  relations: [
+                    "variants",
+                    "variants.prices",
+                    "variants.calculated_price",
+                    "variants.options",
+                    "variants.options.option",
+                    "tags",
+                    "options",
+                    "images",
+                    "categories",
+                    "type",
+                    "collection",
+                  ],
+                },
+              },
             },
-            primaryKey: 'id',
-          }
-        }
-      }
-    }] : [])
-  ]
+          },
+        ]
+      : []),
+  ]  
 };
 
 console.log(JSON.stringify(medusaConfig, null, 2));
