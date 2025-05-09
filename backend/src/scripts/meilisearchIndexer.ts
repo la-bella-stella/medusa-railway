@@ -94,7 +94,7 @@ export default async function reindexProducts({ container }: { container: Medusa
       }
 
       const transformed = await Promise.all(products.map(mapProductToMeiliSearch));
-      await meiliSearchService.addDocuments("products", transformed, SearchUtils.indexTypes.PRODUCTS);
+      await meiliSearchService.addDocuments("products", transformed);
 
       console.log(`✅ Indexed ${transformed.length} products [${skip}–${skip + transformed.length}]`);
       totalIndexed += transformed.length;

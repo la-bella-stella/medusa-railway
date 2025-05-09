@@ -88,7 +88,7 @@ export default async function productUpsertHandler({ event: { data }, container 
   }
 
   let product = await mapProductToMeiliSearch(products[0]);
-  await meiliSearchService.addDocuments("products", [product], SearchUtils.indexTypes.PRODUCTS);
+  await meiliSearchService.addDocuments("products", [product]);
 }
 
 export const config: SubscriberConfig = {
