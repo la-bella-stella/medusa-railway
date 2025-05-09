@@ -1,0 +1,123 @@
+diff --git a/node_modules/@rokmohar/medusa-plugin-meilisearch/.medusa/server/src/modules/meilisearch/services/meilisearch.js b/node_modules/@rokmohar/medusa-plugin-meilisearch/.medusa/server/src/modules/meilisearch/services/meilisearch.js
+index 9d0d6dc..f40056d 100644
+--- a/node_modules/@rokmohar/medusa-plugin-meilisearch/.medusa/server/src/modules/meilisearch/services/meilisearch.js
++++ b/node_modules/@rokmohar/medusa-plugin-meilisearch/.medusa/server/src/modules/meilisearch/services/meilisearch.js
+@@ -23,10 +23,10 @@ class MeiliSearchService extends utils_1.SearchUtils.AbstractSearchService {
+         Object.values(this.config_.settings || {})
+             .filter((config) => config.type === type && config.enabled !== false)
+             .forEach((config) => {
+-            if (Array.isArray(config.fields)) {
+-                config.fields.forEach((field) => fields.add(field));
+-            }
+-        });
++                if (Array.isArray(config.fields)) {
++                    config.fields.forEach((field) => fields.add(field));
++                }
++            });
+         if (!fields.size) {
+             fields.add('*');
+         }
+@@ -88,18 +88,95 @@ class MeiliSearchService extends utils_1.SearchUtils.AbstractSearchService {
+             }
+         }
+     }
+-    getTransformedDocuments(indexKey, documents) {
++    async getTransformedDocuments(indexKey, documents) {
+         if (!documents?.length) {
+-            return [];
++            return []
+         }
+-        const indexConfig = (this.config_.settings || {})[indexKey];
+-        switch (indexConfig?.type) {
+-            case utils_1.SearchUtils.indexTypes.PRODUCTS:
+-                return documents.map(indexConfig.transformer ?? transformer_1.transformProduct);
+-            default:
+-                return documents;
++
++        const indexConfig = (this.config_.settings || {})[indexKey]
++
++        if (indexKey === "products") {
++            const query = this.container.resolve("query")
++
++            const ids = documents.map((d) => d.id)
++
++            const { data: products } = await query.graph({
++                entity: "product",
++                fields: [
++                    "*",
++                    "variants.*",
++                    "variants.prices.*",
++                    "variants.calculated_price.*",
++                    "variants.options.*",
++                    "variants.inventory_quantity",
++                    "variants.allow_backorder",
++                    "variants.manage_inventory",
++                    "metadata",
++                    "tags.*",
++                    "options.*",
++                    "images.*",
++                    "categories.*",
++                    "type.*",
++                    "collection.*"
++                ],
++                filters: {
++                    id: ids,
++                },
++                context: {
++                    variants: {
++                        calculated_price: require("@medusajs/framework/utils").QueryContext({
++                            region_id: "reg_01JSW66RFBTQRDR1PX0A3MQJP8",
++                            currency_code: "usd",
++                        }),
++                    },
++                },
++            })
++
++            // No transform — return ready-to-index objects
++            return products.map((p) => ({
++                id: p.id,
++                title: p.title,
++                handle: p.handle,
++                thumbnail: p.thumbnail,
++                collection: p.collection ?? null,
++                categories: p.categories ?? [],
++                tags: p.tags.map((tag) => tag.value) ?? [],
++                images: p.images?.map((img) => img.url) ?? [],
++                variants: p.variants.map((v) => ({
++                    id: v.id,
++                    sku: v.sku,
++                    prices: v.prices ?? [],
++                    metadata: v.metadata ?? {},
++                })),
++                prices: p.variants.flatMap((v) => v.prices ?? []),
++                color: [...new Set(p.variants.map((v) => v.metadata?.color_facet).filter((c) => typeof c === "string"))],
++                size: [...new Set(p.variants.flatMap((v) =>
++                    (v.options ?? []).filter((opt) => opt.option?.title?.toLowerCase() === "size").map((opt) => opt.value)
++                ))],
++                vendor: p.collection?.title ?? null,
++                price: (() => {
++                    const cheapest = p.variants
++                        .filter((v) => v.prices?.length)
++                        .sort((a, b) => Math.min(...a.prices.map(p => p.amount)) - Math.min(...b.prices.map(p => p.amount)))[0]
++                    return cheapest?.prices?.length ? Math.min(...cheapest.prices.map(p => p.amount)) : null
++                })(),
++                originalPrice: (() => {
++                    const cheapest = p.variants.find((v) => v.metadata?.msrp)
++                    return cheapest?.metadata?.msrp ?? null
++                })(),
++                discountPercentage: (() => {
++                    const cheapest = p.variants.find((v) => v.metadata?.msrp && v.prices?.length)
++                    const msrp = cheapest?.metadata?.msrp
++                    const price = Math.min(...(cheapest?.prices ?? []).map((p) => p.amount))
++                    return msrp && price && msrp > price ? Math.round(100 - (price / msrp) * 100) : null
++                })(),
++                metadata: p.metadata ?? {},
++            }))
+         }
++
++        return documents.map(indexConfig.transformer ?? ((x) => x))
+     }
++
+ }
+ exports.MeiliSearchService = MeiliSearchService;
+ MeiliSearchService.identifier = 'index-meilisearch';
