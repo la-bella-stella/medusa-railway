@@ -133,6 +133,7 @@ const medusaConfig = {
               },
               settings: {
                 products: {
+                  enabled: false ,
                   // transformer: require( "./src/meilisearch/transform"),
                   primaryKey: 'id',               
                   indexSettings: {

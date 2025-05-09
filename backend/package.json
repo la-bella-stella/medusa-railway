@@ -13,7 +13,7 @@
     "medusa"
   ],
   "scripts": {
-    "build": "patch-package && medusa build && node src/scripts/postBuild.js",
+  "build": "medusa build && node src/scripts/postBuild.js",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "ib": "init-backend",
     "start": "init-backend && cd .medusa/server && medusa start --verbose",
@@ -24,7 +24,6 @@
     "@medusajs/admin-sdk": "latest",
     "@medusajs/cli": "latest",
     "@medusajs/core-flows": "latest",
-    "@medusajs/dashboard": "^2.7.1",
     "@medusajs/framework": "latest",
     "@medusajs/medusa": "latest",
     "@medusajs/notification-sendgrid": "latest",
