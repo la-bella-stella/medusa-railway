@@ -115,7 +115,7 @@ const Addresses = ({
                       {cart.shipping_address.city}
                     </Text>
                     <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.country_code?.toUpperCase()}
+                      {cart.shipping_address.country_code}
                     </Text>
                   </div>
 
@@ -161,7 +161,7 @@ const Addresses = ({
                           {cart.billing_address?.city}
                         </Text>
                         <Text className="txt-medium text-ui-fg-subtle">
-                          {cart.billing_address?.country_code?.toUpperCase()}
+                          {cart.billing_address?.country_code}
                         </Text>
                       </>
                     )}

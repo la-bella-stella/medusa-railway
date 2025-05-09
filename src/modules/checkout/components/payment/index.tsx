@@ -12,12 +12,13 @@ import PaymentContainer, {
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { HttpTypes } from "@medusajs/types"
 
 const Payment = ({
   cart,
   availablePaymentMethods,
 }: {
-  cart: any
+  cart: HttpTypes.StoreCart
   availablePaymentMethods: any[]
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
@@ -50,11 +51,10 @@ const Payment = ({
     }
   }
 
-  const paidByGiftcard =
-    cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
+  // const paidByGiftcard =
+  //   cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
-  const paymentReady =
-    (activeSession && cart?.shipping_methods.length !== 0) || paidByGiftcard
+  const paymentReady = activeSession && cart.shipping_methods?.length !== 0
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -136,7 +136,7 @@ const Payment = ({
       </div>
       <div>
         <div className={isOpen ? "block" : "hidden"}>
-          {!paidByGiftcard && availablePaymentMethods?.length && (
+          {availablePaymentMethods?.length ? (
             <>
               <RadioGroup
                 value={selectedPaymentMethod}
@@ -164,20 +164,10 @@ const Payment = ({
                 ))}
               </RadioGroup>
             </>
-          )}
-
-          {paidByGiftcard && (
-            <div className="flex flex-col w-1/3">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                Payment method
-              </Text>
-              <Text
-                className="txt-medium text-ui-fg-subtle"
-                data-testid="payment-method-summary"
-              >
-                Gift card
-              </Text>
-            </div>
+          ) : (
+            <Text className="text-ui-fg-subtle">
+              No payment methods available. Please contact support.
+            </Text>
           )}
 
           <ErrorMessage
@@ -190,14 +180,11 @@ const Payment = ({
             className="mt-6"
             onClick={handleSubmit}
             isLoading={isLoading}
-            disabled={
-              (isStripe && !cardComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard)
-            }
+            disabled={isStripe && !cardComplete}
             data-testid="submit-payment-button"
           >
             {!activeSession && isStripeFunc(selectedPaymentMethod)
-              ? " Enter card details"
+              ? "Enter card details"
               : "Continue to review"}
           </Button>
         </div>
@@ -237,18 +224,6 @@ const Payment = ({
                   </Text>
                 </div>
               </div>
-            </div>
-          ) : paidByGiftcard ? (
-            <div className="flex flex-col w-1/3">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                Payment method
-              </Text>
-              <Text
-                className="txt-medium text-ui-fg-subtle"
-                data-testid="payment-method-summary"
-              >
-                Gift card
-              </Text>
             </div>
           ) : null}
         </div>
