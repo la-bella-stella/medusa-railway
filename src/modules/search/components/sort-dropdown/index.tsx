@@ -2,40 +2,48 @@
 
 import { Listbox, Transition } from "@headlessui/react"
 import { Fragment } from "react"
+import { useSortBy } from "react-instantsearch-hooks-web"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 type SortDropdownProps = {
   query: string
   sortBy?: SortOptions
-  page: number
 }
 
-const sortOptions = [
-  { label: "Sort by: Newest", value: "created_at" },
-  { label: "Sort by: Price Low to High", value: "price_asc" },
-  { label: "Sort by: Price High to Low", value: "price_desc" },
+const sortOptions: { label: string; value: SortOptions }[] = [
+  { label: "Sort by: Alphabetical (A-Z)", value: "products_title_asc" },
+  { label: "Sort by: Alphabetical (Z-A)", value: "products_title_desc" },
+  { label: "Sort by: Price Low to High", value: "products_price_asc" },
+  { label: "Sort by: Price High to Low", value: "products_price_desc" },
 ]
 
-const SortDropdown = ({ query, sortBy = "created_at", page }: SortDropdownProps) => {
+const SortDropdown = ({ query, sortBy = "products_title_asc" }: SortDropdownProps) => {
+  const { refine } = useSortBy({
+    items: sortOptions.map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+  })
+
   const handleSortChange = (value: SortOptions) => {
-    window.location.href = `/search?query=${encodeURIComponent(query)}&sortBy=${value}&page=${page}`
+    refine(value)
   }
 
   return (
     <Listbox value={sortBy} onChange={handleSortChange}>
-      <div className="relative">
-        <Listbox.Button className="border border-grey-20 text-heading text-[13px] md:text-sm font-semibold relative w-full py-2 ltr:pl-3 rtl:pr-3 ltr:pr-10 rtl:pl-10 ltr:text-left rtl:text-right bg-white rounded-lg shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-orange-300 focus-visible:ring-offset-2 focus-visible:border-indigo-500 sm:text-sm cursor-pointer">
+      <div className="relative z-10">
+        <Listbox.Button className="text-sm text-gray-600 font-medium bg-white border border-gray-200 rounded-lg py-2.5 px-3 w-48 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-100 hover:bg-gray-50 transition-colors duration-200">
           <span className="block truncate">
-            {sortOptions.find((option) => option.value === sortBy)?.label || "Sorting Options"}
+            {sortOptions.find((option) => option.value === sortBy)?.label || "Sort Options"}
           </span>
-          <span className="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center ltr:pr-2 rtl:pl-2 pointer-events-none">
+          <span className="flex items-center pointer-events-none">
             <svg
               stroke="currentColor"
               fill="none"
               strokeWidth="2"
               viewBox="0 0 24 24"
               aria-hidden="true"
-              className="w-5 h-5 text-grey-40"
+              className="w-5 h-5 text-gray-400"
               height="1em"
               width="1em"
               xmlns="http://www.w3.org/2000/svg"
@@ -50,13 +58,13 @@ const SortDropdown = ({ query, sortBy = "created_at", page }: SortDropdownProps)
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-gray-200 ring-opacity-5 focus:outline-none z-9999">
             {sortOptions.map((option) => (
               <Listbox.Option
                 key={option.value}
                 className={({ active }) =>
-                  `relative cursor-pointer select-none py-2 ltr:pl-3 rtl:pr-3 ltr:pr-4 rtl:pl-4 ${
-                    active ? "bg-grey-5 text-heading" : "text-body"
+                  `relative cursor-pointer select-none py-2 px-3 ${
+                    active ? "bg-gray-50 text-gray-800" : "text-gray-600"
                   }`
                 }
                 value={option.value}

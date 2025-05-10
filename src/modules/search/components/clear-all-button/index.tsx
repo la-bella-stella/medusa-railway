@@ -1,18 +1,18 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useClearRefinements } from "react-instantsearch-hooks-web"
 
 const ClearAllButton = () => {
-  const router = useRouter()
+  const { refine } = useClearRefinements()
 
   const handleClearAll = () => {
-    router.push("/store")
+    refine()
   }
 
   return (
     <button
-      className="flex-shrink text-xs mt-0.5 transition duration-150 ease-in focus:outline-none hover:text-heading"
-      aria-label="Clear All"
+      className="text-sm text-gray-600 hover:text-gray-800 font-medium px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-200"
+      aria-label="Clear all filters"
       onClick={handleClearAll}
     >
       Clear All

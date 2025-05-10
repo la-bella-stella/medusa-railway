@@ -1,28 +1,29 @@
-import { clx } from "@medusajs/ui";
-import React from "react";
+import { clx } from "@medusajs/ui"
+import React from "react"
 import {
   UseHitsProps,
   useHits,
   useSearchBox,
-} from "react-instantsearch-hooks-web";
-
-import { ProductHit } from "../hit";
-import ShowAll from "../show-all";
+} from "react-instantsearch-hooks-web"
+import { ProductHit } from "../hit"
+import ShowAll from "../show-all"
 
 type HitsProps<THit> = React.ComponentProps<"div"> &
   UseHitsProps & {
-    hitComponent: (props: { hit: THit }) => JSX.Element;
-  };
+    hitComponent: (props: { hit: THit }) => JSX.Element
+    onClose?: () => void
+  }
 
 const Hits = ({
   hitComponent: Hit,
   className,
+  onClose,
   ...props
 }: HitsProps<ProductHit>) => {
-  const { query } = useSearchBox();
-  const { hits } = useHits(props);
+  const { query } = useSearchBox()
+  const { hits } = useHits(props)
 
-  const hasHits = hits.length > 0 && query.trim().length > 0;
+  const hasHits = hits.length > 0 && query.trim().length > 0
 
   return (
     <div
@@ -47,11 +48,11 @@ const Hits = ({
               </li>
             ))}
           </ul>
-          <ShowAll />
+          <ShowAll onClose={onClose} />
         </>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
-export default Hits;
+export default Hits

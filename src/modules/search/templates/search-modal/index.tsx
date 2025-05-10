@@ -1,68 +1,68 @@
-"use client";
+"use client"
 
-import { InstantSearch, useHits, useSearchBox } from "react-instantsearch-hooks-web";
-import { MagnifyingGlassMini, X } from "@medusajs/icons";
-import { SEARCH_INDEX_NAME, searchClient } from "@lib/search-client";
-import Hit from "@modules/search/components/hit";
-import Hits from "@modules/search/components/hits";
-import SearchBox from "@modules/search/components/search-box";
-import { useEffect, useRef } from "react";
+import { InstantSearch, useSearchBox } from "react-instantsearch-hooks-web"
+import { MagnifyingGlassMini, X } from "@medusajs/icons"
+import { SEARCH_INDEX_NAME, searchClient } from "@lib/search-client"
+import Hit from "@modules/search/components/hit"
+import Hits from "@modules/search/components/hits"
+import SearchBox from "@modules/search/components/search-box"
+import { useEffect, useRef } from "react"
 
 interface SearchModalProps {
-  onClose: () => void;
+  onClose: () => void
 }
 
-const Results = () => {
-  const { query } = useSearchBox();
+const Results = ({ onClose }: { onClose: () => void }) => {
+  const { query } = useSearchBox()
 
-  if (query.trim().length === 0) return null;
+  if (query.trim().length === 0) return null
 
   return (
     <div className="bg-white md:rounded-lg shadow-lg p-4 mt-4">
       <div className="mt-4 max-h-[50vh] sm:max-h-[64vh] overflow-y-auto">
-        <Hits hitComponent={Hit} />
+        <Hits hitComponent={Hit} onClose={onClose} />
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default function SearchModal({ onClose }: SearchModalProps) {
-  const searchRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null)
 
   const handleOutsideClick = (event: MouseEvent) => {
     if (event.target === searchRef.current) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   const handleEsc = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   useEffect(() => {
-    window.addEventListener("click", handleOutsideClick);
-    window.addEventListener("keydown", handleEsc);
+    window.addEventListener("click", handleOutsideClick)
+    window.addEventListener("keydown", handleEsc)
     return () => {
-      window.removeEventListener("click", handleOutsideClick);
-      window.removeEventListener("keydown", handleEsc);
-    };
-  }, [onClose]);
+      window.removeEventListener("click", handleOutsideClick)
+      window.removeEventListener("keydown", handleEsc)
+    }
+  }, [onClose])
 
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = "hidden"
     return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
+      document.body.style.overflow = "unset"
+    }
+  }, [])
 
   useEffect(() => {
-    const input = searchRef.current?.querySelector("input");
+    const input = searchRef.current?.querySelector("input")
     if (input) {
-      input.focus();
+      input.focus()
     }
-  }, []);
+  }, [])
 
   return (
     <>
@@ -82,9 +82,9 @@ export default function SearchModal({ onClose }: SearchModalProps) {
             </div>
           </div>
 
-          <Results />
+          <Results onClose={onClose} />
         </InstantSearch>
       </div>
     </>
-  );
+  )
 }

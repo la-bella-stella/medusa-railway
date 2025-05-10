@@ -1,8 +1,5 @@
 import { Metadata } from "next"
-
-import SearchResultsTemplate from "@modules/search/templates/search-results-template"
-
-import { search } from "@modules/search/actions"
+import ProductResultsPage from "@modules/search/templates/search-results-template"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 export const metadata: Metadata = {
@@ -10,33 +7,21 @@ export const metadata: Metadata = {
   description: "Explore all of our products.",
 }
 
-type Params = {
-  params: { query: string; countryCode: string }
-  searchParams: {
-    sortBy?: SortOptions
-    page?: string
-  }
+type SearchResultsProps = {
+  params: Promise<{ query: string; countryCode: string }>
+  searchParams: Promise<{ sortBy?: SortOptions }>
 }
 
-export default async function SearchResults({ params, searchParams }: Params) {
-  const { query } = params
-  const { sortBy, page } = searchParams
-
-  const hits = await search(query).then((data) => data)
-
-  const ids = hits
-    .map((h) => h.objectID || h.id)
-    .filter((id): id is string => {
-      return typeof id === "string"
-    })
+export default async function SearchResults({ params, searchParams }: SearchResultsProps) {
+  const { query, countryCode } = await params
+  const { sortBy } = await searchParams
 
   return (
-    <SearchResultsTemplate
+    <ProductResultsPage
       query={query}
-      ids={ids}
+      title="Search Results"
       sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
+      countryCode={countryCode}
     />
   )
 }
