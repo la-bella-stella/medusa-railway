@@ -5,6 +5,8 @@ import ProductTemplate from "@modules/products/templates"
 import { getRegion, listRegions } from "@lib/data/regions"
 import { getProductByHandle, getProductsList } from "@lib/data/products"
 
+export const dynamic = 'force-dynamic'
+
 type Props = {
   params: { countryCode: string; handle: string }
 }
