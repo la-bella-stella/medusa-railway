@@ -1,40 +1,55 @@
-import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@medusajs/ui"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import ProductPrice from "@modules/products/components/product-price";
+import type {
+  StoreProductWithTags,
+  StoreVariantWithPrices,
+} from "types/global";
+import type { HttpTypes } from "@medusajs/types";
 
 type ProductInfoProps = {
-  product: HttpTypes.StoreProduct
-}
+  product: StoreProductWithTags & {
+    brand?: { name: string };
+    type?: HttpTypes.StoreProductType | null;
+  };
+  variant?: StoreVariantWithPrices;
+};
 
-const ProductInfo = ({ product }: ProductInfoProps) => {
+const ProductInfo: React.FC<ProductInfoProps> = ({ product, variant }) => {
+  const size = variant?.options
+    ?.find((o) => o.option_id?.toLowerCase().includes("size"))
+    ?.value;
+
+  const titleWithSize = size
+    ? `${product.title} – Size ${size}`
+    : product.title;
+
   return (
-    <div id="product-info">
-      <div className="flex flex-col gap-y-4 lg:max-w-[500px] mx-auto">
-        {product.collection && (
-          <LocalizedClientLink
-            href={`/collections/${product.collection.handle}`}
-            className="text-medium text-ui-fg-muted hover:text-ui-fg-subtle"
+    <div className="flex flex-col gap-y-2">
+      {product.brand?.name ? (
+        <h1 className="text-heading text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold hover:text-black mb-3.5">
+          <Link
+            href={`/brands/${product.brand.name
+              .toLowerCase()
+              .replace(/\s+/g, "-")}`}
+            className="inline-block pe-1.5 transition hover:underline hover:text-heading last:pe-0"
           >
-            {product.collection.title}
-          </LocalizedClientLink>
-        )}
-        <Heading
-          level="h2"
-          className="text-3xl leading-10 text-ui-fg-base"
-          data-testid="product-title"
-        >
-          {product.title}
-        </Heading>
-
-        <Text
-          className="text-medium text-ui-fg-subtle whitespace-pre-line"
-          data-testid="product-description"
-        >
-          {product.description}
-        </Text>
+            {product.brand.name}
+          </Link>
+        </h1>
+      ) : (
+        <div className="mb-3.5" />
+      )}
+      <h2 className="text-heading text-lg md:text-xl lg:text-2xl 2xl:text-3xl font-bold hover:text-black mb-3.5">
+        {titleWithSize}
+      </h2>
+      <div className="flex items-center mt-5">
+        <ProductPrice product={product} variant={variant} />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductInfo
+export default ProductInfo;

@@ -1,29 +1,35 @@
-import { Text, clx } from "@medusajs/ui"
-import { VariantPrice } from "types/global"
+"use client";
 
-export default async function PreviewPrice({ price }: { price: VariantPrice }) {
+import { Text, clx } from "@medusajs/ui";
+import { VariantPrice } from "types/global";
+
+export default function PreviewPrice({ price }: { price: VariantPrice }) {
   if (!price) {
-    return null
+    return null;
   }
 
   return (
     <>
       {price.price_type === "sale" && (
         <Text
-          className="line-through text-ui-fg-muted"
+          className="text-sm text-gray-400 font-normal line-through"
           data-testid="original-price"
         >
           {price.original_price}
         </Text>
       )}
       <Text
-        className={clx("text-ui-fg-muted", {
-          "text-ui-fg-interactive": price.price_type === "sale",
-        })}
+        className={clx(
+          "text-base font-semibold",
+          {
+            "text-red-500": price.price_type === "sale",
+            "text-gray-800": price.price_type !== "sale", // Updated to match legacy
+          }
+        )}
         data-testid="price"
       >
         {price.calculated_price}
       </Text>
     </>
-  )
+  );
 }

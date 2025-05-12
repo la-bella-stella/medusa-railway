@@ -1,92 +1,72 @@
-import { getProductsListWithSort } from "@lib/data/products"
-import { getRegion } from "@lib/data/regions"
-import ProductPreview from "@modules/products/components/product-preview"
-import { Pagination } from "@modules/store/components/pagination"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+"use client"
 
-const PRODUCT_LIMIT = 12
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-type PaginatedProductsParams = {
-  limit: number
-  collection_id?: string[]
-  category_id?: string[]
-  id?: string[]
-  order?: string
+type ProductHit = {
+  id: string
+  title: string
+  handle: string
+  thumbnail: string
+  vendor: string
+  price: string
+  originalPrice?: string | null
+  discountPercentage?: number | null
 }
 
-export default async function PaginatedProducts({
-  sortBy,
-  page,
-  collectionId,
-  categoryId,
-  productsIds,
-  countryCode,
-}: {
-  sortBy?: SortOptions
+type PaginatedProductsProps = {
+  hits: ProductHit[]
+  sortBy?: string
   page: number
-  collectionId?: string
-  categoryId?: string
-  productsIds?: string[]
   countryCode: string
-}) {
-  const queryParams: PaginatedProductsParams = {
-    limit: 12,
-  }
+}
 
-  if (collectionId) {
-    queryParams["collection_id"] = [collectionId]
-  }
-
-  if (categoryId) {
-    queryParams["category_id"] = [categoryId]
-  }
-
-  if (productsIds) {
-    queryParams["id"] = productsIds
-  }
-
-  if (sortBy === "created_at") {
-    queryParams["order"] = "created_at"
-  }
-
-  const region = await getRegion(countryCode)
-
-  if (!region) {
-    return null
-  }
-
-  let {
-    response: { products, count },
-  } = await getProductsListWithSort({
-    page,
-    queryParams,
-    sortBy,
-    countryCode,
-  })
-
-  const totalPages = Math.ceil(count / PRODUCT_LIMIT)
-
+const PaginatedProducts = ({ hits }: PaginatedProductsProps) => {
   return (
     <>
-      <ul
-        className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
-        data-testid="products-list"
-      >
-        {products.map((p) => {
-          return (
-            <li key={p.id}>
-              <ProductPreview product={p} region={region} />
-            </li>
-          )
-        })}
-      </ul>
-      {totalPages > 1 && (
-        <Pagination
-          data-testid="product-pagination"
-          page={page}
-          totalPages={totalPages}
-        />
-      )}
+      {hits.map((product) => (
+        <LocalizedClientLink
+          key={product.id}
+          href={`/products/${product.handle}`}
+          data-testid={`${product.handle}-link`}
+          className="card--product block"
+          title={product.title}
+        >
+          <div className="relative w-full aspect-[3/4] overflow-hidden">
+            <img
+              alt={product.title}
+              src={product.thumbnail}
+              className="object-cover rounded-md transition-transform duration-300 ease-in-out group-hover:scale-105 absolute inset-0 w-full h-full"
+            />
+            {product.discountPercentage && (
+              <span className="absolute top-3 start-3 bg-red-500 text-white text-[11px] px-2.5 py-1.5 rounded-md leading-tight font-semibold">
+                {product.discountPercentage}% OFF
+              </span>
+            )}
+          </div>
+          <div className="card__info-container">
+            <div className="card__info-inner">
+              <div className="card__vendor text-xs uppercase text-gray-500">
+                {product.vendor}
+              </div>
+              <h3 className="card__title font-medium text-sm line-clamp-2">
+                {product.title}
+              </h3>
+              <div className="inline-flex items-center gap-2">
+                {product.originalPrice ? (
+                  <>
+                    <span className="text-base font-semibold text-red-500">${product.price}</span>
+                    <del className="text-sm text-gray-400">${product.originalPrice}</del>
+                  </>
+                ) : (
+                  <span className="text-base font-semibold">${product.price}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </LocalizedClientLink>
+      ))}
     </>
   )
 }
+
+export default PaginatedProducts

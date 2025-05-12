@@ -1,79 +1,96 @@
-import { HttpTypes } from "@medusajs/types"
-import { getPercentageDiff } from "./get-precentage-diff"
-import { convertToLocale } from "./money"
+import { HttpTypes } from "@medusajs/types";
+import { getPercentageDiff } from "./get-precentage-diff";
+import { convertToLocale } from "./money";
 
-export const getPricesForVariant = (variant: any) => {
-  if (!variant?.calculated_price?.calculated_amount) {
-    return null
+export const getPricesForVariant = (variant: any, region?: HttpTypes.StoreRegion | null) => {
+  if (!variant?.prices || !region) {
+    return null;
   }
+
+  const regionPrice = variant.prices.find(
+    (price: any) => price.currency_code.toLowerCase() === region.currency_code.toLowerCase()
+  );
+
+  if (!regionPrice) {
+    return null;
+  }
+
+  const calculatedAmount = regionPrice.amount / 100;
+  const originalAmount = regionPrice.amount / 100;
 
   return {
-    calculated_price_number: variant.calculated_price.calculated_amount,
+    calculated_price_number: calculatedAmount,
     calculated_price: convertToLocale({
-      amount: variant.calculated_price.calculated_amount,
-      currency_code: variant.calculated_price.currency_code,
+      amount: calculatedAmount,
+      currency_code: region.currency_code,
     }),
-    original_price_number: variant.calculated_price.original_amount,
+    original_price_number: originalAmount,
     original_price: convertToLocale({
-      amount: variant.calculated_price.original_amount,
-      currency_code: variant.calculated_price.currency_code,
+      amount: originalAmount,
+      currency_code: region.currency_code,
     }),
-    currency_code: variant.calculated_price.currency_code,
-    price_type: variant.calculated_price.calculated_price.price_list_type,
-    percentage_diff: getPercentageDiff(
-      variant.calculated_price.original_amount,
-      variant.calculated_price.calculated_amount
-    ),
-  }
-}
+    currency_code: region.currency_code,
+    price_type: "default",
+    percentage_diff: getPercentageDiff(originalAmount, calculatedAmount),
+  };
+};
 
 export function getProductPrice({
   product,
   variantId,
+  region,
 }: {
-  product: HttpTypes.StoreProduct
-  variantId?: string
+  product: HttpTypes.StoreProduct;
+  variantId?: string;
+  region?: HttpTypes.StoreRegion | null;
 }) {
   if (!product || !product.id) {
-    throw new Error("No product provided")
+    throw new Error("No product provided");
   }
 
   const cheapestPrice = () => {
     if (!product || !product.variants?.length) {
-      return null
+      return null;
     }
 
     const cheapestVariant: any = product.variants
-      .filter((v: any) => !!v.calculated_price)
+      .filter((v: any) => v.prices && v.prices.length > 0)
       .sort((a: any, b: any) => {
-        return (
-          a.calculated_price.calculated_amount -
-          b.calculated_price.calculated_amount
-        )
-      })[0]
+        const aPrice = a.prices?.find(
+          (p: any) => p.currency_code.toLowerCase() === region?.currency_code.toLowerCase()
+        )?.amount || Infinity;
+        const bPrice = b.prices?.find(
+          (p: any) => p.currency_code.toLowerCase() === region?.currency_code.toLowerCase()
+        )?.amount || Infinity;
+        return aPrice - bPrice;
+      })[0];
 
-    return getPricesForVariant(cheapestVariant)
-  }
+    if (!cheapestVariant) {
+      return null;
+    }
+
+    return getPricesForVariant(cheapestVariant, region);
+  };
 
   const variantPrice = () => {
     if (!product || !variantId) {
-      return null
+      return null;
     }
 
     const variant: any = product.variants?.find(
       (v) => v.id === variantId || v.sku === variantId
-    )
+    );
 
     if (!variant) {
-      return null
+      return null;
     }
 
-    return getPricesForVariant(variant)
-  }
+    return getPricesForVariant(variant, region);
+  };
 
   return {
     product,
     cheapestPrice: cheapestPrice(),
     variantPrice: variantPrice(),
-  }
+  };
 }

@@ -2,30 +2,39 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Base Styles */
+@layer base {
+  html, body {
+    @apply antialiased text-base font-sans;
+  }
+}
+
+/* Utilities */
 @layer utilities {
-  /* Chrome, Safari and Opera */
+  /* Hide scrollbar for Chrome, Safari, and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
   .no-scrollbar::-webkit-scrollbar-track {
     background-color: transparent;
   }
 
+  /* Hide scrollbar for IE, Edge, and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
+  /* Input label behavior on focus or when not empty */
   input:focus ~ label,
   input:not(:placeholder-shown) ~ label {
     @apply -translate-y-2 text-xsmall-regular;
   }
-
   input:focus ~ label {
     @apply left-0;
   }
 
+  /* Autofill styles */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -41,72 +50,343 @@
     transition: background-color 5000s ease-in-out 0s;
   }
 
+  /* Remove search input decorations */
   input[type="search"]::-webkit-search-decoration,
   input[type="search"]::-webkit-search-cancel-button,
   input[type="search"]::-webkit-search-results-button,
   input[type="search"]::-webkit-search-results-decoration {
     -webkit-appearance: none;
   }
+
+  /* Text color utilities */
+  .text-heading {
+    @apply text-grey-90; /* #111827 */
+  }
+  .text-body {
+    @apply text-grey-50; /* #6B7280 */
+  }
+  .placeholder-body {
+    @apply placeholder-grey-40; /* #9CA3AF */
+  }
+  .text-input {
+    @apply text-grey-90; /* #111827 */
+  }
+
+  /* Focus ring utilities */
+  .focus\:ring-offset-orange-300:focus {
+    --tw-ring-offset-color: #fdba74;
+  }
+  .focus\:ring-white:focus {
+    --tw-ring-color: #ffffff;
+  }
+  .focus\:ring-opacity-75:focus {
+    --tw-ring-opacity: 0.75;
+  }
+  .focus\:border-indigo-500:focus {
+    border-color: #6366f1;
+  }
+
+  /* Case utilities */
+  .normal-case {
+    text-transform: none;
+  }
 }
 
+/* Components */
 @layer components {
   .content-container {
-    @apply max-w-[1440px] w-full mx-auto px-6;
+    @apply max-w-[1920px] mx-auto px-4 md:px-8 2xl:px-16;
   }
 
   .contrast-btn {
     @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
   }
 
-  .text-xsmall-regular {
-    @apply text-[10px] leading-4 font-normal;
+  /* Typography */
+  .text-xsmall-regular { @apply text-[10px] leading-4 font-normal; }
+  .text-small-regular  { @apply text-xs leading-5 font-normal; }
+  .text-small-semi     { @apply text-xs leading-5 font-semibold; }
+  .text-base-regular   { @apply text-sm leading-6 font-normal; }
+  .text-base-semi      { @apply text-sm leading-6 font-semibold; }
+  .text-large-regular  { @apply text-base leading-6 font-normal; }
+  .text-large-semi     { @apply text-base leading-6 font-semibold; }
+  .text-xl-regular     { @apply text-2xl leading-[36px] font-normal; }
+  .text-xl-semi        { @apply text-2xl leading-[36px] font-semibold; }
+  .text-2xl-regular    { @apply text-[30px] leading-[48px] font-normal; }
+  .text-2xl-semi       { @apply text-[30px] leading-[48px] font-semibold; }
+  .text-3xl-regular    { @apply text-[32px] leading-[44px] font-normal; }
+  .text-3xl-semi       { @apply text-[32px] leading-[44px] font-semibold; }
+
+  /* Header Menu Hover Effect */
+  .headerMenu .menuItem:hover > a > span {
+    @apply w-full;
   }
 
-  .text-small-regular {
-    @apply text-xs leading-5 font-normal;
+  /* NAV LINKS */
+  .headerMenu .menuItem > a {
+    @apply uppercase tracking-wide text-base font-semibold text-grey-70 hover:text-grey-90 relative;
+  }
+  .headerMenu .menuItem > a::before {
+    content: "";
+    @apply absolute left-0 bottom-0 h-[2px] bg-black w-0 transition-all duration-300 ease-in-out;
+  }
+  .headerMenu .menuItem:hover > a::before {
+    @apply w-full;
   }
 
-  .text-small-semi {
-    @apply text-xs leading-5 font-semibold;
+  /* Product Card Styles */
+  .card--product {
+    @apply flex flex-col h-full bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1;
+  }
+  .card--product .card__info-container {
+    @apply px-3 py-3 flex flex-col flex-1 w-full;
+  }
+  .card__info-inner {
+    @apply flex flex-col h-full w-full;
+  }
+  .card__vendor {
+    @apply text-xs text-grey-50 uppercase mb-1 truncate;
+  }
+  .card__title {
+    @apply text-sm font-semibold text-heading truncate mb-1.5;
+  }
+  .card-link {
+    @apply text-current;
+  }
+  .card--product .inline-flex {
+    @apply items-center space-x-2 mt-2;
+  }
+  .card--product .inline-flex [data-testid="product-price"] {
+    @apply text-base font-semibold text-heading;
+  }
+  .card--product .inline-flex [data-testid="original-product-price"] {
+    @apply text-sm line-through text-grey-40;
   }
 
-  .text-base-regular {
-    @apply text-sm leading-6 font-normal;
+  /* Breadcrumb Styling */
+  .breadcrumb a {
+    @apply text-sm text-body hover:text-heading;
+  }
+  .breadcrumb li + li::before {
+    @apply text-base text-body mt-0.5 mx-2.5;
+    content: "/";
   }
 
-  .text-base-semi {
-    @apply text-sm leading-6 font-semibold;
+  /* Filter Button Styles */
+  .filter-button {
+    @apply border border-grey-20 text-heading text-[13px] md:text-sm font-semibold relative w-full py-2 ltr:pl-3 rtl:pr-3 ltr:pr-10 rtl:pl-10 ltr:text-left rtl:text-right bg-white rounded-md shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-orange-300 focus-visible:ring-offset-2 focus-visible:border-indigo-500 sm:text-sm cursor-pointer;
+  }
+  .filter-button span {
+    @apply block truncate;
+  }
+  .filter-button .icon {
+    @apply absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center ltr:pr-2 rtl:pl-2 pointer-events-none;
+  }
+  .filter-button .icon svg {
+    @apply w-5 h-5 text-grey-40;
   }
 
-  .text-large-regular {
-    @apply text-base leading-6 font-normal;
+  /* Typography */
+  .font-body {
+    @apply font-sans;
   }
-
-  .text-large-semi {
-    @apply text-base leading-6 font-semibold;
+  .leading-tight {
+    line-height: 1.25;
   }
-
-  .text-xl-regular {
-    @apply text-2xl leading-[36px] font-normal;
+  .transform-none {
+    transform: none;
   }
+}
 
-  .text-xl-semi {
-    @apply text-2xl leading-[36px] font-semibold;
+/* Animations */
+@keyframes shine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+.animate-shine {
+  animation: shine 1s ease-in-out;
+}
+
+/* Specific Component Styles */
+.collection-title {
+  color: #000;
+}
+.btn-home-collection {
+  background-color: #fff;
+  color: #000;
+  text-transform: uppercase;
+}
+
+/* Site Header Overrides */
+#siteHeader .innerSticky,
+#siteHeader .innerSticky > div {
+  overflow: visible !important;
+}
+#siteHeader .flex.items-center.justify-between {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+#siteHeader .flex.items-center.justify-between > div {
+  flex-shrink: 0;
+}
+#siteHeader .absolute.left-1\/2.-translate-x-1\/2 {
+  text-align: center;
+}
+#siteHeader .flex.items-center.space-x-4 > *,
+#siteHeader .flex.items.center.space-x-4 svg,
+#siteHeader .flex.items-center.justify-center {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Cart Sidebar Styles */
+.cart-drawer-main {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+.cart-scrollbar {
+  flex-grow: 1;
+  width: 100%;
+}
+.bg-heading {
+  background-color: #111827 !important; /* grey-90 */
+}
+
+/* Header Menu and MegaMenu Styles */
+.headerMenu {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+}
+.megaMenu {
+  position: absolute;
+  z-index: 50;
+  width: calc(100vw - 2rem);
+  max-width: 1400px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+}
+.menuItem:hover .megaMenu {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Additional MegaMenu Content Styling */
+.megaMenu .grid > ul > li > a {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+.megaMenu .grid > ul > li > ul > li > a {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+/* Search Overlay Styles */
+.search-overlay {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  width: 300px;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.search-overlay.open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Desktop: Position to the right of the search icon */
+@media (min-width: 1024px) {
+  .content-container > div.relative > .search-overlay {
+    left: 0;
   }
+}
 
-  .text-2xl-regular {
-    @apply text-[30px] leading-[48px] font-normal;
+/* Mobile: Position to the right of the search icon */
+@media (max-width: 1023px) {
+  .lg\:hidden .relative > .search-overlay {
+    right: 0;
+    left: auto;
   }
+}
 
-  .text-2xl-semi {
-    @apply text-[30px] leading-[48px] font-semibold;
-  }
+/* Style the SearchBox inside SearchOverlay */
+.search-overlay .relative.ltr\:pr-12.rtl\:pl-12.ltr\:md\:pr-14.rtl\:md\:pl-14 {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
 
-  .text-3xl-regular {
-    @apply text-[32px] leading-[44px] font-normal;
-  }
+/* Product Gallery */
+.product-gallery {
+  @apply w-full;
+}
+.product-main-image,
+.product-thumbnail {
+  @apply w-full h-full object-contain;
+}
+.active-slider-img {
+  @apply border-2 border-grey-50;
+}
+.desc-pdp {
+  @apply my-5 text-sm lg:text-base leading-6 lg:leading-8;
+}
 
-  .text-3xl-semi {
-    @apply text-[32px] leading-[44px] font-semibold;
+/* Carousel */
+.carouselWrapper .swiper .swiper-pagination-bullets .swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  background-color: #fff;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+  opacity: 1;
+}
+.carouselWrapper .swiper .swiper-pagination-bullets .swiper-pagination-bullet.swiper-pagination-bullet-active {
+  width: 16px;
+  background-color: #000;
+}
+
+/* Buttons */
+.ui-button-primary {
+  padding: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.2s ease-in-out;
+}
+.ui-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ui-button-primary.loading::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

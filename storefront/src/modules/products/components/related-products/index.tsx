@@ -1,78 +1,70 @@
-import Product from "../product-preview"
-import { getRegion } from "@lib/data/regions"
-import { getProductsList } from "@lib/data/products"
-import { HttpTypes } from "@medusajs/types"
+"use client";
+
+import React from "react";
+import Carousel from "@modules/common/components/carousel";
+import ProductCard from "@modules/products/components/product-card";
+import { SwiperSlide } from "swiper/react";
+import { useTranslation } from "react-i18next";
+import isEmpty from "lodash/isEmpty";
+import HomeSectionHeader from "@modules/home/components/home-section-header";
+import { HttpTypes } from "@medusajs/types";
+
+const breakpoints = {
+  "1500": { slidesPerView: 4, spaceBetween: 28 },
+  "1025": { slidesPerView: 4, spaceBetween: 20 },
+  "768":  { slidesPerView: 2, spaceBetween: 20 },
+  "480":  { slidesPerView: 2, spaceBetween: 12 },
+  "0":    { slidesPerView: 2, spaceBetween: 12 },
+};
 
 type RelatedProductsProps = {
-  product: HttpTypes.StoreProduct
-  countryCode: string
-}
+  product: HttpTypes.StoreProduct;
+  region: HttpTypes.StoreRegion | null;
+  countryCode: string;
+  relatedProducts?: HttpTypes.StoreProduct[];
+  sectionHeading?: string;
+};
 
-type StoreProductParamsWithTags = HttpTypes.StoreProductParams & {
-  tags?: string[]
-}
-
-type StoreProductWithTags = HttpTypes.StoreProduct & {
-  tags?: { value: string }[]
-}
-
-export default async function RelatedProducts({
+export default function RelatedProducts({
   product,
+  region,
   countryCode,
+  relatedProducts = [],
+  sectionHeading = "text-related-products",
 }: RelatedProductsProps) {
-  const region = await getRegion(countryCode)
+  const { t } = useTranslation("common");
 
-  if (!region) {
-  const queryParams: StoreProductParamsWithTags = {}
-  }
-
-  // edit this function to define your related products logic
-  const queryParams: StoreProductParamsWithTags = {}
-  if (region?.id) {
-    queryParams.region_id = region.id
-  }
-  if (product.collection_id) {
-    queryParams.collection_id = [product.collection_id]
-  }
-  const productWithTags = product as StoreProductWithTags
-  if (productWithTags.tags) {
-    queryParams.tags = productWithTags.tags
-      .map((t) => t.value)
-      .filter(Boolean) as string[]
-  }
-  queryParams.is_giftcard = false
-
-  const products = await getProductsList({
-    queryParams,
-    countryCode,
-  }).then(({ response }) => {
-    return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id
-    )
-  })
-
-  if (!products.length) {
-    return null
+  if (!region || isEmpty(relatedProducts)) {
+    return null;
   }
 
   return (
-    <div className="product-page-constraint">
-      <div className="flex flex-col items-center text-center mb-16">
-        <span className="text-base-regular text-gray-600 mb-6">
-          Related products
-        </span>
-        <p className="text-2xl-regular text-ui-fg-base max-w-lg">
-          You might also want to check out these products.
-        </p>
+    <div className="mb-12 md:mb-14 xl:mb-16 2xl:pt-2">
+      <div className="text-center">
+        <HomeSectionHeader sectionHeading={sectionHeading} />
       </div>
 
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            {region && <Product region={region} product={product} />}
-          </li>
+      <Carousel
+        autoplay={{ delay: 3500 }}
+        breakpoints={breakpoints}
+        buttonClassName="hidden"
+        prevActivateId="relatedProductsSlidePrev"
+        nextActivateId="relatedProductsSlideNext"
+        className="mt-6"
+      >
+        {relatedProducts.map((related) => (
+          <SwiperSlide
+            key={`related-product-${related.id}`} 
+            className="h-full"
+          >
+            <ProductCard 
+              product={related} 
+              variant="gridSlim" 
+              region={region} 
+            />
+          </SwiperSlide>
         ))}
-      </ul>
+      </Carousel>
     </div>
-  )
+  );
 }

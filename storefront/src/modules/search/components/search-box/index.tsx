@@ -1,10 +1,10 @@
-import { XMarkMini } from "@medusajs/icons"
-import { FormEvent } from "react"
-import { useRouter } from "next/navigation"
+import { XMarkMini } from "@medusajs/icons";
+import { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import SearchBoxWrapper, {
   ControlledSearchBoxProps,
-} from "../search-box-wrapper"
+} from "../search-box-wrapper";
 
 const ControlledSearchBox = ({
   inputRef,
@@ -16,33 +16,31 @@ const ControlledSearchBox = ({
   ...props
 }: ControlledSearchBoxProps) => {
   const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
+    event.preventDefault();
+    event.stopPropagation();
 
-    if (onSubmit) {
-      onSubmit(event)
-    }
+    onSubmit?.(event);
 
     if (inputRef.current) {
-      inputRef.current.blur()
+      inputRef.current.blur();
     }
-  }
+  };
 
   const handleReset = (event: FormEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
+    event.preventDefault();
+    event.stopPropagation();
 
-    onReset(event)
+    onReset(event);
 
     if (inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }
+  };
 
   return (
     <div {...props} className="w-full">
       <form action="" noValidate onSubmit={handleSubmit} onReset={handleReset}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center w-full gap-x-2 bg-gray-100 rounded-md px-3 py-2">
           <input
             ref={inputRef}
             data-testid="search-input"
@@ -54,38 +52,31 @@ const ControlledSearchBox = ({
             type="search"
             value={value}
             onChange={onChange}
-            className="txt-compact-large h-6 placeholder:text-ui-fg-on-color placeholder:transition-colors focus:outline-none flex-1 bg-transparent "
+            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
           />
           {value && (
             <button
               onClick={handleReset}
               type="button"
-              className="items-center justify-center text-ui-fg-on-color focus:outline-none gap-x-2 px-2 txt-compact-large flex"
+              className="flex items-center text-gray-600 hover:text-gray-800 focus:outline-none"
             >
-              <XMarkMini />
-              Cancel
+              <XMarkMini className="h-4 w-4" />
             </button>
           )}
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
 const SearchBox = () => {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <SearchBoxWrapper>
-      {(props) => {
-        return (
-          <>
-            <ControlledSearchBox {...props} />
-          </>
-        )
-      }}
+      {(props) => <ControlledSearchBox {...props} />}
     </SearchBoxWrapper>
-  )
-}
+  );
+};
 
-export default SearchBox
+export default SearchBox;

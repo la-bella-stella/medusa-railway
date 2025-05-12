@@ -13,36 +13,76 @@ export default async function CheckoutForm({
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
 }) {
-  if (!cart) {
-    return null
+  // Log cart to debug
+  console.log("CheckoutForm cart:", cart)
+
+  // Fallback cart, aligned with HttpTypes.StoreCart
+  const fallbackCart: HttpTypes.StoreCart = cart || {
+    id: "",
+    region: undefined,
+    currency_code: "USD",
+    shipping_address: undefined,
+    billing_address: undefined,
+    email: "",
+    shipping_methods: [],
+    payment_collection: undefined,
+    items: [],
+    promotions: [],
+    total: 0,
+    subtotal: 0,
+    original_item_total: 0,
+    original_item_subtotal: 0,
+    original_item_tax_total: 0,
+    item_total: 0,
+    item_subtotal: 0,
+    item_tax_total: 0,
+    shipping_total: 0,
+    shipping_subtotal: 0,
+    shipping_tax_total: 0,
+    original_total: 0,
+    original_subtotal: 0,
+    original_tax_total: 0,
+    original_shipping_total: 0,
+    original_shipping_subtotal: 0,
+    original_shipping_tax_total: 0,
+    discount_total: 0,
+    discount_tax_total: 0,
+    tax_total: 0,
+    gift_card_total: 0,
+    gift_card_tax_total: 0,
+    created_at: undefined,
+    updated_at: undefined,
+    metadata: undefined,
   }
 
-  const shippingMethods = await listCartShippingMethods(cart.id)
-  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
+  // Fetch shipping and payment methods with fallbacks
+  const shippingMethods = fallbackCart.id
+    ? await listCartShippingMethods(fallbackCart.id).catch((err) => {
+        console.error("Error fetching shipping methods:", err)
+        return []
+      })
+    : []
+  const paymentMethods = await listCartPaymentMethods().catch((err) => {
+    console.error("Error fetching payment methods:", err)
+    return []
+      })
 
-  if (!shippingMethods || !paymentMethods) {
-    return null
-  }
+  // Log fetched data
+  console.log("Shipping Methods:", shippingMethods)
+  console.log("Payment Methods:", paymentMethods)
 
   return (
-    <div>
-      <div className="w-full grid grid-cols-1 gap-y-8">
-        <div>
-          <Addresses cart={cart} customer={customer} />
-        </div>
-
-        <div>
-          <Shipping cart={cart} availableShippingMethods={shippingMethods} />
-        </div>
-
-        <div>
-          <Payment cart={cart} availablePaymentMethods={paymentMethods} />
-        </div>
-
-        <div>
-          <Review cart={cart} />
-        </div>
-      </div>
+    <div className="w-full grid grid-cols-1 gap-y-8">
+      <Addresses cart={fallbackCart} customer={customer} />
+      <Shipping
+        cart={fallbackCart}
+        availableShippingMethods={shippingMethods || []}
+      />
+      <Payment
+        cart={fallbackCart}
+        availablePaymentMethods={paymentMethods || []}
+      />
+      <Review cart={fallbackCart} />
     </div>
   )
 }
