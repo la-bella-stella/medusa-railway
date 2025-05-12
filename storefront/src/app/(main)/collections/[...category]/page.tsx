@@ -6,6 +6,8 @@ import ProductResultsPage from "@modules/search/templates/search-results-templat
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { HttpTypes } from "@medusajs/types"
 
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
   try {
     const { product_categories } = await fetch(

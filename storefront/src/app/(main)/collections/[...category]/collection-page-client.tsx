@@ -7,6 +7,8 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { Filters } from "types/global";
 import { useRouter, useSearchParams } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 interface CollectionPageClientProps {
   category: HttpTypes.StoreProductCategory;
   sortBy?: SortOptions;

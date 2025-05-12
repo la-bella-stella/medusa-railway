@@ -8,6 +8,8 @@ import { retrieveCollection } from "@lib/data/collections"; // Import collection
 import ProductTemplate from "@modules/products/templates";
 import { HttpTypes } from "@medusajs/types";
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_COUNTRY = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us";
 const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
 
