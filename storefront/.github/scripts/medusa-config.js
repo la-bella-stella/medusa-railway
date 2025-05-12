@@ -60,7 +60,7 @@ export default defineConfig({
     },
   ],
   admin: {
-    backendUrl: "http://localhost:9000",
+    backendUrl: "https://backend-production-3da01.up.railway.app",
   },
   projectConfig: {
     databaseUrl: DATABASE_URL,

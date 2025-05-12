@@ -21,7 +21,7 @@ env:
   TEST_POSTGRES_HOST: localhost
   TEST_POSTGREST_PORT: 5432
   PRODUCTION_POSTGRES_DATABASE: medusa_db
-  CLIENT_SERVER: http://localhost:9000
+  CLIENT_SERVER: https://backend-production-3da01.up.railway.app
 
   JWT_SECRET: something
   COOKIE_SECRET: something
@@ -34,7 +34,7 @@ env:
 
   NEXT_PUBLIC_BASE_URL: http://localhost:8000
   NEXT_PUBLIC_DEFAULT_REGION: us
-  NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+  NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://backend-production-3da01.up.railway.app
   NEXT_PUBLIC_INDEX_NAME: products
   NEXT_PUBLIC_SEARCH_ENDPOINT: http://127.0.0.1:7700
   NEXT_PUBLIC_SEARCH_API_KEY: meili_api_key
