@@ -10,9 +10,9 @@
   "scripts": {
     "wait": "await-backend",
     "launcher": "launch-storefront",
-    "dev": "next dev --turbopack -p 3000",
-    "build": "next build",
-    "start": "next start -p 8000",
+    "dev": "npm run wait && npm run launcher dev",
+    "build": "npm run wait && npm run launcher build",
+    "start": "npm run launcher start",
     "build:next": "next build",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
