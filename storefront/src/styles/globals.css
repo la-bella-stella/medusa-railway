@@ -133,7 +133,12 @@
   .headerMenu .menuItem:hover > a::before {
     @apply w-full;
   }
-
+/* Define custom shadow-product class */
+@layer utilities {
+  .shadow-product {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* Customize as needed */
+  }
+}
   /* Product Card Styles */
   .card--product {
     @apply flex flex-col h-full bg-white cursor-pointer overflow-hidden rounded-md transition duration-200 ease-in hover:shadow-product hover:-translate-y-1;
