@@ -4,7 +4,6 @@ import React, { useCallback, useState } from "react";
 import { StoreRegion, HttpTypes } from "@medusajs/types";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import LanguageSwitcher from "@modules/common/components/language-switcher";
-import CartIcon from "@modules/common/icons/cart-icon";
 import SearchIcon from "@modules/common/icons/search-icon";
 import Logo from "@modules/common/components/logo";
 import UserIcon from "@modules/common/icons/user";
@@ -14,16 +13,15 @@ import classNames from "classnames";
 import HeaderMenu from "@modules/layout/components/header-menu";
 import Alert from "@modules/common/components/alert";
 import CountdownTimer from "@modules/common/components/countdown-timer";
-import CartSidebar from "@modules/layout/components/cart-sidebar";
 import SearchModal from "@modules/search/templates/search-modal";
-import { useUI } from "@lib/context/ui-context";
+import CartDropdown from "@modules/layout/components/cart-dropdown";
 import {
   RESPONSIVE_WIDTH,
   checkIsMaintenanceModeComing,
-  checkIsMaintenanceModeStart,
-  checkIsScrollingStart,
   checkIsShopMaintenanceModeComing,
+  checkIsMaintenanceModeStart,
   checkIsShopMaintenanceModeStart,
+  checkIsScrollingStart,
 } from "@lib/config/constants";
 import { useWindowSize } from "react-use";
 import { useAtom } from "jotai";
@@ -45,7 +43,6 @@ export default function DesktopNav({
   const { t } = useTranslation("common");
   const { width } = useWindowSize();
   const router = useRouter();
-  const { openSidebar, closeSidebar, sidebarView } = useUI();
 
   const totalItems = cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
 
@@ -65,11 +62,6 @@ export default function DesktopNav({
   // When countdown completes
   const onUnderComplete = useCallback(() => setUnderStart(true), [setUnderStart]);
   const onShopComplete = useCallback(() => setShopStart(true), [setShopStart]);
-
-  // Cart sidebar control
-  const isCartOpen = sidebarView === "CART_SIDEBAR";
-  const openCart = () => openSidebar({ view: "CART_SIDEBAR" });
-  const closeCart = () => closeSidebar();
 
   // Search modal control
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -130,18 +122,10 @@ export default function DesktopNav({
             <UserIcon className="w-full h-full text-gray-600" />
           </LocalizedClientLink>
 
-          <button
-            onClick={openCart}
-            className="relative focus:outline-none"
-            aria-label="cart-button"
-          >
-            <CartIcon className="w-6 h-6 text-gray-600" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                {totalItems}
-              </span>
-            )}
-          </button>
+          {/* Cart Dropdown */}
+          <div className="flex items-center">
+            <CartDropdown cart={cart} />
+          </div>
         </div>
       </div>
 
@@ -149,28 +133,6 @@ export default function DesktopNav({
       <div className="hidden lg:flex flex-col content-container px-4 lg:px-6">
         <HeaderMenu data={menu} />
       </div>
-
-      {/* Cart Sidebar */}
-      {isCartOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
-            onClick={closeCart}
-          />
-          <div
-            className="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg z-50 transition-transform duration-200 ease-in-out"
-            style={{
-              transform: isCartOpen ? "translateX(0)" : "translateX(100%)",
-            }}
-          >
-            <CartSidebar
-              cart={cart}
-              isOpen={isCartOpen}
-              onClose={closeCart}
-            />
-          </div>
-        </>
-      )}
 
       {/* Search Modal */}
       {isSearchOpen && <SearchModal onClose={closeSearch} />}
