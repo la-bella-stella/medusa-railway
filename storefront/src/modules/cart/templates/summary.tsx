@@ -12,7 +12,6 @@ type SummaryProps = {
   cart: HttpTypes.StoreCart & {
     promotions: HttpTypes.StorePromotion[];
   };
-  cartId: string | null;
 };
 
 function getCheckoutStep(cart: HttpTypes.StoreCart) {
@@ -25,7 +24,7 @@ function getCheckoutStep(cart: HttpTypes.StoreCart) {
   }
 }
 
-const Summary = ({ cart, cartId }: SummaryProps) => {
+const Summary = ({ cart }: SummaryProps) => {
   const step = getCheckoutStep(cart);
 
   return (
@@ -37,7 +36,7 @@ const Summary = ({ cart, cartId }: SummaryProps) => {
       <Divider />
       <CartTotals totals={cart} />
       <LocalizedClientLink
-        href={cartId ? `/checkout?step=${step}&cartId=${cartId}` : `/checkout?step=${step}`}
+        href="/checkout"
         data-testid="checkout-button"
       >
         <Button className="w-full h-10">Go to checkout</Button>

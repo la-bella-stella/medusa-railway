@@ -1,30 +1,39 @@
-import { retrieveCart } from "@lib/data/cart"
-import { retrieveCustomer } from "@lib/data/customer"
-import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
-import CheckoutForm from "@modules/checkout/templates/checkout-form"
-import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
-import { HttpTypes } from "@medusajs/types"
-import { Metadata } from "next"
-import { notFound } from "next/navigation"
+// storefront/src/app/(checkout)/checkout/page.tsx
+import { retrieveCart } from "@lib/data/cart";
+import { retrieveCustomer } from "@lib/data/customer";
+import PaymentWrapper from "@modules/checkout/components/payment-wrapper";
+import CheckoutForm from "@modules/checkout/templates/checkout-form";
+import CheckoutSummary from "@modules/checkout/templates/checkout-summary";
+import { HttpTypes } from "@medusajs/types";
+import { Metadata } from "next";
+import { redirect, notFound } from "next/navigation";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Checkout",
-}
+};
 
 export default async function Checkout() {
-  const cart: HttpTypes.StoreCart | null = await retrieveCart()
+  // Read cartId and step from custom headers set by middleware
+  const headersInstance = await headers();
+  const cartId = headersInstance.get("x-checkout-cart-id");
+  const step = headersInstance.get("x-checkout-step") || "address";
 
-  if (!cart) {
-    return notFound()
+  if (!cartId) {
+    redirect("/cart");
   }
 
-  const customer: HttpTypes.StoreCustomer | null = await retrieveCustomer()
+  const cart: HttpTypes.StoreCart | null = await retrieveCart(cartId);
 
-  // Log cart and customer
-  console.log("Checkout cart:", cart)
-  console.log("Checkout customer:", customer)
+  if (!cart) {
+    redirect("/cart");
+  }
 
-  // Fallback cart, aligned with HttpTypes.StoreCart
+  const customer: HttpTypes.StoreCustomer | null = await retrieveCustomer();
+
+  console.log("Checkout cart:", cart);
+  console.log("Checkout customer:", customer);
+
   const fallbackCart: HttpTypes.StoreCart = {
     ...cart,
     region: cart.region || undefined,
@@ -61,14 +70,14 @@ export default async function Checkout() {
     created_at: cart.created_at || undefined,
     updated_at: cart.updated_at || undefined,
     metadata: cart.metadata || undefined,
-  }
+  };
 
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
       <PaymentWrapper cart={fallbackCart}>
-        <CheckoutForm cart={fallbackCart} customer={customer || null} />
+        <CheckoutForm cart={fallbackCart} customer={customer} step={step} />
       </PaymentWrapper>
       <CheckoutSummary cart={fallbackCart} />
     </div>
-  )
+  );
 }

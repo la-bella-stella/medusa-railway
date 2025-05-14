@@ -1,54 +1,53 @@
-"use client"
+// @modules/checkout/components/addresses.tsx
+"use client";
 
-import { setAddresses } from "@lib/data/cart"
-import compareAddresses from "@lib/util/compare-addresses"
-import { CheckCircleSolid } from "@medusajs/icons"
-import { HttpTypes } from "@medusajs/types"
-import { Heading, Text, useToggleState } from "@medusajs/ui"
-import Divider from "@modules/common/components/divider"
-import Spinner from "@modules/common/icons/spinner"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState } from "react"
-import BillingAddress from "../billing_address"
-import ErrorMessage from "../error-message"
-import ShippingAddress from "../shipping-address"
-import { SubmitButton } from "../submit-button"
+import { setAddresses } from "@lib/data/cart";
+import compareAddresses from "@lib/util/compare-addresses";
+import { CheckCircleSolid } from "@medusajs/icons";
+import { HttpTypes } from "@medusajs/types";
+import { Text, useToggleState } from "@medusajs/ui";
+import Divider from "@modules/common/components/divider";
+import Spinner from "@modules/common/icons/spinner";
+import { usePathname, useRouter } from "next/navigation";
+import { useActionState } from "react";
+import BillingAddress from "../billing_address";
+import ErrorMessage from "../error-message";
+import ShippingAddress from "../shipping-address";
+import { SubmitButton } from "../submit-button";
 
 const Addresses = ({
   cart,
   customer,
+  step, // Add step prop
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: HttpTypes.StoreCart | null;
+  customer: HttpTypes.StoreCustomer | null;
+  step: string;
 }) => {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const isOpen = searchParams.get("step") === "address"
+  const isOpen = step === "address"; // Use step prop instead of searchParams
 
   const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
     cart?.shipping_address && cart?.billing_address
       ? compareAddresses(cart?.shipping_address, cart?.billing_address)
       : true
-  )
+  );
 
   const handleEdit = () => {
-    router.push(pathname + "?step=address")
-  }
+    router.push(pathname + "?step=address");
+  };
 
-  const [message, formAction] = useActionState(setAddresses, null)
+  const [message, formAction] = useActionState(setAddresses, null);
 
   return (
     <div className="bg-white">
       <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular gap-x-2 items-baseline"
-        >
+        <h2 className="flex flex-row text-3xl-regular gap-x-2 items-baseline">
           Shipping Address
           {!isOpen && <CheckCircleSolid />}
-        </Heading>
+        </h2>
         {!isOpen && cart?.shipping_address && (
           <Text>
             <button
@@ -73,12 +72,9 @@ const Addresses = ({
 
             {!sameAsBilling && (
               <div>
-                <Heading
-                  level="h2"
-                  className="text-3xl-regular gap-x-4 pb-6 pt-8"
-                >
+                <h2 className="text-3xl-regular gap-x-4 pb-6 pt-8">
                   Billing address
-                </Heading>
+                </h2>
 
                 <BillingAddress cart={cart} />
               </div>
@@ -94,11 +90,11 @@ const Addresses = ({
           <div className="text-small-regular">
             {cart && cart.shipping_address ? (
               <div className="flex items-start gap-x-8">
-                <div className="flex items-start gap-x-1 w-full">
-                  <div
-                    className="flex flex-col w-1/3"
-                    data-testid="shipping-address-summary"
-                  >
+                <div
+                  className="flex items-start gap-x-1 w-full"
+                  data-testid="shipping-address-summary"
+                >
+                  <div className="flex flex-col w-1/3">
                     <Text className="txt-medium-plus text-ui-fg-base mb-1">
                       Shipping Address
                     </Text>
@@ -178,7 +174,7 @@ const Addresses = ({
       )}
       <Divider className="mt-8" />
     </div>
-  )
-}
+  );
+};
 
-export default Addresses
+export default Addresses;

@@ -1,5 +1,5 @@
 // storefront/src/app/(main)/cart/page.tsx
-import { retrieveCart, getCartId } from "@lib/data/cart";
+import { retrieveCart } from "@lib/data/cart";
 import { retrieveCustomer } from "@lib/data/customer";
 import CartTemplate from "@modules/cart/templates";
 import { Metadata } from "next";
@@ -18,8 +18,5 @@ export default async function Cart() {
 
   const customer = await retrieveCustomer();
 
-  // Fetch the cartId to pass to CartTemplate
-  const cartId = await getCartId();
-
-  return <CartTemplate cart={cart} customer={customer} cartId={cartId} />;
+  return <CartTemplate cart={cart} customer={customer} />;
 }

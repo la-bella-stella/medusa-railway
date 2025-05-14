@@ -1,6 +1,7 @@
-// middleware.ts
-import { HttpTypes } from "@medusajs/types";
+// middleware.ts (or src/middleware.ts)
 import { NextRequest, NextResponse } from "next/server";
+import { getCartId, retrieveCart } from "@lib/data/cart";
+import { HttpTypes } from "@medusajs/types";
 
 const BACKEND_URL = process.env.MEDUSA_BACKEND_URL;
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY;
@@ -94,6 +95,17 @@ async function getCountryCode(
   }
 }
 
+// Function to compute the checkout step (same as in Summary)
+function getCheckoutStep(cart: HttpTypes.StoreCart) {
+  if (!cart?.shipping_address?.address_1 || !cart.email) {
+    return "address";
+  } else if (cart?.shipping_methods?.length === 0) {
+    return "delivery";
+  } else {
+    return "payment";
+  }
+}
+
 export async function middleware(request: NextRequest) {
   // Start with a "next" response (no redirect by default)
   let response = NextResponse.next();
@@ -106,6 +118,31 @@ export async function middleware(request: NextRequest) {
 
   const urlHasCountryCode =
     countryCode && request.nextUrl.pathname.split("/")[1]?.includes(countryCode);
+
+  // Handle /checkout requests
+  if (request.nextUrl.pathname === "/checkout") {
+    // Fetch the cartId
+    const cartId = await getCartId();
+
+    if (!cartId) {
+      // If no cartId, redirect to /cart
+      return NextResponse.redirect(new URL("/cart", request.url));
+    }
+
+    // Fetch the cart to compute the step
+    const cart = await retrieveCart(cartId);
+    if (!cart) {
+      return NextResponse.redirect(new URL("/cart", request.url));
+    }
+
+    const step = getCheckoutStep(cart);
+
+    // Set custom headers for cartId and step
+    response.headers.set("x-checkout-cart-id", cartId);
+    response.headers.set("x-checkout-step", step);
+
+    return response;
+  }
 
   // Redirect /us to /
   if (request.nextUrl.pathname === "/us") {
@@ -153,5 +190,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    "/checkout", // Add /checkout to the matcher
   ],
 };

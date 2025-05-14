@@ -1,20 +1,23 @@
-import { listCartShippingMethods } from "@lib/data/fulfillment"
-import { listCartPaymentMethods } from "@lib/data/payment"
-import { HttpTypes } from "@medusajs/types"
-import Addresses from "@modules/checkout/components/addresses"
-import Payment from "@modules/checkout/components/payment"
-import Review from "@modules/checkout/components/review"
-import Shipping from "@modules/checkout/components/shipping"
+// @modules/checkout/templates/checkout-form.tsx
+import { listCartShippingMethods } from "@lib/data/fulfillment";
+import { listCartPaymentMethods } from "@lib/data/payment";
+import { HttpTypes } from "@medusajs/types";
+import Addresses from "@modules/checkout/components/addresses";
+import Payment from "@modules/checkout/components/payment";
+import Review from "@modules/checkout/components/review";
+import Shipping from "@modules/checkout/components/shipping";
 
 export default async function CheckoutForm({
   cart,
   customer,
+  step, // Add step prop
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: HttpTypes.StoreCart | null;
+  customer: HttpTypes.StoreCustomer | null;
+  step: string;
 }) {
   // Log cart to debug
-  console.log("CheckoutForm cart:", cart)
+  console.log("CheckoutForm cart:", cart);
 
   // Fallback cart, aligned with HttpTypes.StoreCart
   const fallbackCart: HttpTypes.StoreCart = cart || {
@@ -53,27 +56,27 @@ export default async function CheckoutForm({
     created_at: undefined,
     updated_at: undefined,
     metadata: undefined,
-  }
+  };
 
   // Fetch shipping and payment methods with fallbacks
   const shippingMethods = fallbackCart.id
     ? await listCartShippingMethods(fallbackCart.id).catch((err) => {
-        console.error("Error fetching shipping methods:", err)
-        return []
+        console.error("Error fetching shipping methods:", err);
+        return [];
       })
-    : []
+    : [];
   const paymentMethods = await listCartPaymentMethods().catch((err) => {
-    console.error("Error fetching payment methods:", err)
-    return []
-      })
+    console.error("Error fetching payment methods:", err);
+    return [];
+  });
 
   // Log fetched data
-  console.log("Shipping Methods:", shippingMethods)
-  console.log("Payment Methods:", paymentMethods)
+  console.log("Shipping Methods:", shippingMethods);
+  console.log("Payment Methods:", paymentMethods);
 
   return (
     <div className="w-full grid grid-cols-1 gap-y-8">
-      <Addresses cart={fallbackCart} customer={customer} />
+      <Addresses cart={fallbackCart} customer={customer} step={step} />
       <Shipping
         cart={fallbackCart}
         availableShippingMethods={shippingMethods || []}
@@ -84,5 +87,5 @@ export default async function CheckoutForm({
       />
       <Review cart={fallbackCart} />
     </div>
-  )
+  );
 }
