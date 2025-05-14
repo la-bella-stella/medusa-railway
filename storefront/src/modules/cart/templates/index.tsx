@@ -1,16 +1,19 @@
-import ItemsTemplate from "./items"
-import Summary from "./summary"
-import EmptyCartMessage from "../components/empty-cart-message"
-import SignInPrompt from "../components/sign-in-prompt"
-import Divider from "@modules/common/components/divider"
-import { HttpTypes } from "@medusajs/types"
+// @modules/cart/templates/index.tsx
+import ItemsTemplate from "./items";
+import Summary from "./summary";
+import EmptyCartMessage from "../components/empty-cart-message";
+import SignInPrompt from "../components/sign-in-prompt";
+import Divider from "@modules/common/components/divider";
+import { HttpTypes } from "@medusajs/types";
 
 const CartTemplate = ({
   cart,
   customer,
+  cartId, // Add cartId prop
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: HttpTypes.StoreCart | null;
+  customer: HttpTypes.StoreCustomer | null;
+  cartId: string | null;
 }) => {
   return (
     <div className="py-12">
@@ -31,7 +34,7 @@ const CartTemplate = ({
                 {cart && cart.region && (
                   <>
                     <div className="bg-white py-6">
-                      <Summary cart={cart as any} />
+                      <Summary cart={cart as any} cartId={cartId} /> {/* Pass cartId to Summary */}
                     </div>
                   </>
                 )}
@@ -45,7 +48,7 @@ const CartTemplate = ({
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CartTemplate
+export default CartTemplate;

@@ -1,21 +1,25 @@
-import { retrieveCart } from "@lib/data/cart"
-import { retrieveCustomer } from "@lib/data/customer"
-import CartTemplate from "@modules/cart/templates"
-import { Metadata } from "next"
-import { notFound } from "next/navigation"
+// storefront/src/app/(main)/cart/page.tsx
+import { retrieveCart, getCartId } from "@lib/data/cart";
+import { retrieveCustomer } from "@lib/data/customer";
+import CartTemplate from "@modules/cart/templates";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Cart",
   description: "View your cart",
-}
+};
 
 export default async function Cart() {
   const cart = await retrieveCart().catch((error) => {
-    console.error(error)
-    return notFound()
-  })
+    console.error(error);
+    return notFound();
+  });
 
-  const customer = await retrieveCustomer()
+  const customer = await retrieveCustomer();
 
-  return <CartTemplate cart={cart} customer={customer} />
+  // Fetch the cartId to pass to CartTemplate
+  const cartId = await getCartId();
+
+  return <CartTemplate cart={cart} customer={customer} cartId={cartId} />;
 }
