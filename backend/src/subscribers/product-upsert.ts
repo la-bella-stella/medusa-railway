@@ -63,7 +63,7 @@ export default async function productUpsertHandler({ event: { data }, container 
   const meiliSearchService: MeiliSearchService = container.resolve("meilisearch");
   const query = container.resolve("query");
 
-  const region_id = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
+  const region_id = "reg_01JV62N5VTWTWYGTYT91JE39Q1";
   const currency_code = "usd";
 
   const { data: products } = await query.graph({

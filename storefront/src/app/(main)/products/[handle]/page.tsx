@@ -9,7 +9,7 @@ import { HttpTypes } from "@medusajs/types";
 export const dynamic = 'force-dynamic';
 
 const DEFAULT_COUNTRY = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us";
-const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
+const DEFAULT_REGION_ID = "reg_01JV62N5VTWTWYGTYT91JE39Q1";
 
 type Params = Promise<{ handle: string }>;
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;

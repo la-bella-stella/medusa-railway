@@ -111,7 +111,7 @@ export async function listProducts(
       "us";
   }
 
-  const DEFAULT_REGION_ID = "reg_01JSW66RFBTQRDR1PX0A3MQJP8";
+  const DEFAULT_REGION_ID = "reg_01JV62N5VTWTWYGTYT91JE39Q1";
   let region: HttpTypes.StoreRegion;
 
   if (regionId) {

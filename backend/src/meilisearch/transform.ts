@@ -2,7 +2,7 @@ const { ModuleRegistrationName } = require("@medusajs/utils")
 const { createMedusaContainer, initialize } = require("@medusajs/modules-sdk")
 const { QueryContext } = require("@medusajs/framework/utils")
 
-const region_id = "reg_01JSW66RFBTQRDR1PX0A3MQJP8"
+const region_id = "reg_01JV62N5VTWTWYGTYT91JE39Q1"
 const currency_code = "usd"
 
 module.exports = async (product) => {
