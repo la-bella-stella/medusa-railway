@@ -28,7 +28,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  const countries = ["gb", "de", "dk", "se", "fr", "es", "it", "us", "ca"];
 
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
@@ -59,10 +59,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
         supported_currencies: [
           {
             currency_code: "eur",
-            is_default: true,
           },
           {
             currency_code: "usd",
+                is_default: true,
           },
         ],
         default_sales_channel_id: defaultSalesChannel[0].id,
@@ -74,8 +74,8 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       regions: [
         {
-          name: "Europe",
-          currency_code: "eur",
+          name: "US",
+          currency_code: "usd",
           countries,
           payment_providers: ["pp_system_default"],
         },
@@ -100,10 +100,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "US Warehouse",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
+            city: "Los Angeles",
+            country_code: "US",
             address_1: "",
           },
         },
@@ -143,11 +143,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
   }
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "US Warehouse delivery",
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
+        name: "US",
         geo_zones: [
           {
             country_code: "gb",
@@ -175,6 +175,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
           },
           {
             country_code: "it",
+            type: "country",
+          },
+          {
+            country_code: "us",
+            type: "country",
+          },
+          {
+            country_code: "ca",
             type: "country",
           },
         ],
