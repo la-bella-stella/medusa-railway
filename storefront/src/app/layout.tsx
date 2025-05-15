@@ -1,10 +1,11 @@
-// src/app/layout.tsx
+// /app/layout.tsx
 import { getBaseURL } from "@lib/util/env";
 import { Metadata } from "next";
 import "styles/globals.css";
 import Nav from "@modules/layout/templates/nav";
 import Footer from "@modules/layout/templates/footer";
 import { Suspense } from "react";
+import Script from "next/script"; // Import next/script
 import { retrieveCart, listCartOptions, getCartId } from "@lib/data/cart";
 import { retrieveCustomer } from "@lib/data/customer";
 import { StoreCartShippingOption } from "@medusajs/types";
@@ -67,6 +68,27 @@ async function RootLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <html lang="en" data-mode="light">
+      <head>
+        {/* Matomo Tag Manager - Load only in production */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            {/* Inline Script */}
+            <Script id="matomo-inline" strategy="afterInteractive">
+              {`
+                var _mtm = window._mtm = window._mtm || [];
+                _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+              `}
+            </Script>
+            {/* External Script */}
+            <Script
+              id="matomo-container"
+              strategy="afterInteractive"
+              src="https://cdn.matomo.cloud/labellastella.matomo.cloud/container_yieOfcv1.js"
+              async
+            />
+          </>
+        )}
+      </head>
       <body>
         <NextUIProviderWrapper>
           <ClientWrapper cart={cart}>
