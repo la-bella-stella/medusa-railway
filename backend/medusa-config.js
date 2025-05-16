@@ -173,8 +173,8 @@ const medusaConfig = {
                   ],
                 },
               },
-            },
-          },
+            }, 
+          }, 
           {
             resolve: "./plugins/universal-fulfillment",
             options: {
