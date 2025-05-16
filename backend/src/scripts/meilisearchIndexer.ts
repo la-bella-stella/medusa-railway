@@ -3,7 +3,7 @@ import { QueryContext, SearchUtils } from "@medusajs/framework/utils";
 import { MeiliSearchService } from "@rokmohar/medusa-plugin-meilisearch";
 
 const BATCH_SIZE = 20;
-const region_id = "reg_01JV62N5VTWTWYGTYT91JE39Q1";
+const region_id = "reg_01JVDHXWGRAG2DCGP3894QA4WX";
 const currency_code = "usd";
 
 async function mapProductToMeiliSearch(product) {

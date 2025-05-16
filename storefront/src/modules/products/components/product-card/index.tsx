@@ -35,7 +35,7 @@ const ProductCard: FC<ProductProps> = ({
 
   // Ensure region has a default value if null
   const effectiveRegion: HttpTypes.StoreRegion = region ?? {
-    id: "reg_01JV62N5VTWTWYGTYT91JE39Q1",
+    id: "reg_01JVDHXWGRAG2DCGP3894QA4WX",
     currency_code: "USD",
     name: "US",
   };

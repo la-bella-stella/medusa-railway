@@ -13,7 +13,7 @@ import Subscription from "@modules/common/components/subscription";
 import { collectionData, collectionDataNew } from "@lib/data/home-collection";
 
 const DEFAULT_COUNTRY = (process.env.NEXT_PUBLIC_DEFAULT_REGION || "us").toLowerCase();
-const DEFAULT_REGION_ID = "reg_01JV62N5VTWTWYGTYT91JE39Q1";
+const DEFAULT_REGION_ID = "reg_01JVDHXWGRAG2DCGP3894QA4WX";
 
 export async function renderHomepage() {
   const currentDate = new Date().toISOString();
