@@ -2,6 +2,7 @@
   "name": "universal-fulfillment-plugin",
   "version": "0.0.1",
   "description": "A starter for Medusa plugins.",
+  "main": "src/providers/universal-fulfillment/index.js",
   "author": "Medusa (https://medusajs.com)",
   "license": "MIT",
   "files": [
