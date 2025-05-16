@@ -176,7 +176,7 @@ const medusaConfig = {
             },
           },
           {
-            resolve: "./plugins/universal-fulfillment",
+            resolve: "./src/plugins/universal-fulfillment",
             options: {
               id: "universal-fulfillment"
             }
